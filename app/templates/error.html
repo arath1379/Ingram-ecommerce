@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - IT Data Global</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #F1F3F4 0%, #E8EAED 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1C2A2F;
+        }
+
+        .error-container {
+            background: #FFFFFF;
+            padding: 3rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(28, 42, 47, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            border-top: 5px solid #F15A29;
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            color: #F15A29;
+            margin-bottom: 1rem;
+        }
+
+        .error-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1C2A2F;
+            margin-bottom: 1rem;
+        }
+
+        .error-message {
+            font-size: 1.1rem;
+            color: #6C757D;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .error-details {
+            background: #F1F3F4;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #F15A29;
+        }
+
+        .error-details strong {
+            color: #1C2A2F;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #F15A29;
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background: #d14a1f;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(241, 90, 41, 0.3);
+        }
+
+        .btn-secondary {
+            background: #F1F3F4;
+            color: #6C757D;
+            border: 2px solid #F1F3F4;
+        }
+
+        .btn-secondary:hover {
+            background: #FFFFFF;
+            border-color: #6C757D;
+            color: #1C2A2F;
+            transform: translateY(-2px);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1C2A2F;
+        }
+
+        .logo i {
+            color: #F15A29;
+        }
+
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+            
+            .error-title {
+                font-size: 1.5rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-container {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="logo">
+            <i class="fas fa-microchip"></i>
+            IT Data Global
+        </div>
+        
+        <div class="error-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        
+        <h1 class="error-title">¡Oops! Algo salió mal</h1>
+        
+        <p class="error-message">
+            {{ error if error else "Ha ocurrido un error inesperado. Por favor, intenta nuevamente o contacta con soporte técnico." }}
+        </p>
+        
+        {% if error %}
+        <div class="error-details">
+            <strong>Detalles del error:</strong><br>
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        <div class="action-buttons">
+            <a href="/catalogo-completo-cards" class="btn btn-primary">
+                <i class="fas fa-home"></i>
+                Volver al catálogo
+            </a>
+            
+            <button onclick="history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Página anterior
+            </button>
+        </div>
+    </div>
+    <script>
+        // Funcionalidad adicional
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-redirect después de 10 segundos si no hay interacción
+            let autoRedirectTimer = setTimeout(function() {
+                window.location.href = '/catalogo-completo-cards';
+            }, 10000);
+            
+            // Cancelar auto-redirect si el usuario interactúa con la página
+            document.addEventListener('click', function() {
+                clearTimeout(autoRedirectTimer);
+            });
+            
+            document.addEventListener('keydown', function() {
+                clearTimeout(autoRedirectTimer);
+            });
+            
+            // Mostrar contador regresivo opcional
+            let countdown = 10;
+            const countdownElement = document.createElement('div');
+            countdownElement.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: #F15A29;
+                color: white;
+                padding: 10px 15px;
+                border-radius: 8px;
+                font-size: 0.9rem;
+                box-shadow: 0 4px 12px rgba(241, 90, 41, 0.3);
+            `;
+            
+            function updateCountdown() {
+                countdownElement.textContent = `Redirigiendo en ${countdown}s`;
+                countdown--;
+                
+                if (countdown < 0) {
+                    countdownElement.remove();
+                }
+            }
+            
+            document.body.appendChild(countdownElement);
+            updateCountdown();
+            const countdownInterval = setInterval(updateCountdown, 1000);
+            
+            // Limpiar contador si el usuario interactúa
+            document.addEventListener('click', function() {
+                clearInterval(countdownInterval);
+                countdownElement.remove();
+            });
+        });
+    </script>
+</body>
+</html>
