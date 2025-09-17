@@ -453,16 +453,16 @@
     <!-- Header -->
     <header class="header">
         <div class="header-content">
-            <a href="/catalogo-completo-cards" class="logo">
+            <a href="/products/catalogo-completo-cards" class="logo">
                 <i class="fas fa-microchip"></i>
                 IT Data Global
             </a>
             <div class="nav-buttons">
-                <a href="/catalogo-completo-cards" class="nav-btn secondary">
+                <a href="/products/catalogo-completo-cards" class="nav-btn secondary">
                     <i class="fas fa-arrow-left"></i>
                     Volver al catálogo
                 </a>
-                <a href="/favoritos" class="nav-btn">
+                <a href="/products/mis-favoritos" class="nav-btn">
                     <i class="fas fa-heart"></i>
                     Favoritos
                 </a>
@@ -477,19 +477,18 @@
             <ul class="breadcrumb-list">
                 <li><i class="fas fa-home"></i></li>
                 <li><i class="fas fa-chevron-right"></i></li>
-                <li><a href="/catalogo-completo-cards">Catálogo</a></li>
+                <li><a href="/products/catalogo-completo-cards">Catálogo</a></li>
                 <li><i class="fas fa-chevron-right"></i></li>
                 <li>Mis Cotizaciones</li>
             </ul>
         </nav>
 
-        <!-- Título de página -->
+        <br>
         <h1 class="page-title">
             <i class="fas fa-file-invoice-dollar"></i>
             Mi Cotización
         </h1>
 
-        <!-- Mensaje Flash -->
         {% if flash_message %}
         <div class="flash-message">
             <i class="fas fa-info-circle"></i>
@@ -524,7 +523,7 @@
                     <h3>Tu cotización está vacía</h3>
                     <p>Agrega productos desde el catálogo para comenzar</p>
                     <br>
-                    <a href="/catalogo-completo-cards" class="btn btn-primary">
+                    <a href="/products/catalogo-completo-cards" class="btn btn-primary">
                         <i class="fas fa-search"></i>
                         Explorar catálogo
                     </a>
@@ -555,7 +554,7 @@
                         
                         <!-- Controles de cantidad -->
                         <div class="item-quantity">
-                            <form method="POST" action="/actualizar-cantidad" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <form method="POST" action="/products/actualizar-cantidad-cotizacion" style="display: flex; align-items: center; gap: 0.5rem;">
                                 <input type="hidden" name="part_number" value="{{ item.product.ingramPartNumber }}">
                                 <button type="button" class="quantity-btn" onclick="updateQuantity('{{ item.product.ingramPartNumber }}', {{ item.quantity - 1 }})" {{ 'disabled' if item.quantity <= 1 else '' }}>
                                     <i class="fas fa-minus"></i>
@@ -581,10 +580,12 @@
                         
                         <!-- Acciones -->
                         <div class="item-actions">
-                            <form method="POST" action="/eliminar-de-cotizacion" onsubmit="return confirm('¿Eliminar este producto?')">
-                                <input type="hidden" name="part_number" value="{{ item.product.ingramPartNumber }}">
-                                <button type="submit" class="action-btn" title="Eliminar producto">
-                                    <i class="fas fa-trash"></i>
+                            <form action="/products/api/remove-from-quote" method="POST" 
+                                onsubmit="return confirm('¿Eliminar este producto?')">
+                                <input type="hidden" name="product_id" value="{{ item.product.ingramPartNumber }}">
+                                <button class="btn btn-danger btn-sm" 
+                                        onclick="removeFromQuote('{{ item.product.ingramPartNumber }}')">
+                                    <i class="fas fa-trash"></i> Eliminar
                                 </button>
                             </form>
                         </div>
@@ -610,7 +611,7 @@
                 </div>
 
                 <div class="quote-actions">
-                    <form method="POST" action="/limpiar-cotizacion" style="display: inline;" 
+                    <form method="POST" action="/products/limpiar-cotizacion" style="display: inline;" 
                         onsubmit="return confirm('¿Limpiar toda la cotización?')">
                         <button type="submit" class="btn btn-secondary">
                             <i class="fas fa-trash"></i>
@@ -634,7 +635,7 @@
             
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '/actualizar-cantidad';
+            form.action = '/products/actualizar-cantidad-cotizacion';
             
             const partInput = document.createElement('input');
             partInput.type = 'hidden';
@@ -666,6 +667,86 @@
                 setTimeout(() => flashMessage.remove(), 500);
             }
         }, 5000);
+
+        function removeFromQuote(productId) {
+            if (confirm('¿Eliminar este producto de la cotización?')) {
+                // Mostrar indicador de carga
+                const button = event.target;
+                const originalHtml = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+                
+                fetch('/products/api/remove-from-quote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ product_id: productId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Mostrar notificación de éxito
+                        showNotification('Producto eliminado correctamente', 'success');
+                        
+                        // Redirigir a la página de cotización después de 1 segundo
+                        setTimeout(() => {
+                            window.location.href = '/products/mi-cotizacion';
+                        }, 1000);
+                    } else {
+                        alert('Error: ' + data.error);
+                        button.innerHTML = originalHtml;
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    alert('Error de conexión');
+                    button.innerHTML = originalHtml;
+                    button.disabled = false;
+                });
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Crear notificación toast
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            toast.style.position = 'fixed';
+            toast.style.top = '20px';
+            toast.style.right = '20px';
+            toast.style.padding = '12px 20px';
+            toast.style.borderRadius = '8px';
+            toast.style.color = 'white';
+            toast.style.zIndex = '10000';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            
+            if (type === 'success') {
+                toast.style.background = '#28a745';
+            } else if (type === 'error') {
+                toast.style.background = '#dc3545';
+            } else {
+                toast.style.background = '#17a2b8';
+            }
+            
+            document.body.appendChild(toast);
+            
+            // Mostrar toast
+            setTimeout(() => {
+                toast.style.opacity = '1';
+            }, 100);
+            
+            // Ocultar y remover después de 3 segundos
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
     </script>
 </body>
 </html>

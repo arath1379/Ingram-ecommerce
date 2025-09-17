@@ -827,19 +827,30 @@ class ProductUtils:
             params["vendor"] = vendor
             
         try:
+            print(f"DEBUG - Llamando a API con params: {params}")
             res = APIClient.make_request("GET", url, params=params)
-            data = res.json() if res.status_code == 200 else {}
+            
+            if res.status_code != 200:
+                print(f"ERROR - API returned status: {res.status_code}")
+                return [], 0, True
+                
+            data = res.json()
+            print(f"DEBUG - API response keys: {list(data.keys()) if isinstance(data, dict) else 'Not dict'}")
             
             productos = data.get("catalog", []) if isinstance(data, dict) else []
             total_records = data.get("recordsFound", 0)
             
-            # Detectar si la página está vacía (no hay productos reales)
+            print(f"DEBUG - Productos encontrados: {len(productos)}, Total: {total_records}")
+            
+            # Detectar si la página está vacía
             pagina_vacia = len(productos) == 0
             
             return productos, total_records, pagina_vacia
             
         except Exception as e:
-            print(f"Error en búsqueda de catálogo: {e}")
+            print(f"ERROR en búsqueda de catálogo: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return [], 0, True
 
     @staticmethod

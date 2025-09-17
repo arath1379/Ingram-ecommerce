@@ -1,0 +1,7 @@
+# Exportar todos los modelos
+from .user import User
+from .product import Product
+from .favorite import Favorite
+from .quote import Quote, QuoteItem
+from .category import Category
+from .vendor import Vendor

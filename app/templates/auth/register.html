@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - IT Data Global</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .register-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            overflow: hidden;
+        }
+
+        .register-header {
+            background: #1C2A2F;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 4px solid #F15A29;
+        }
+
+        .register-logo {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .register-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .register-subtitle {
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+
+        .register-form {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #1C2A2F;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #DEE2E6;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #F15A29;
+            box-shadow: 0 0 0 3px rgba(241, 90, 41, 0.1);
+        }
+
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236C757D' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1rem;
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 1rem;
+            background: #F15A29;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            margin-top: 1rem;
+        }
+
+        .btn-register:hover {
+            background: #d14a1f;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(241, 90, 41, 0.3);
+        }
+
+        .register-links {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #F1F3F4;
+        }
+
+        .register-links a {
+            color: #F15A29;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .register-links a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .account-type-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .account-type-card {
+            border: 2px solid #DEE2E6;
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .account-type-card:hover {
+            border-color: #F15A29;
+        }
+
+        .account-type-card.selected {
+            border-color: #F15A29;
+            background: rgba(241, 90, 41, 0.1);
+        }
+
+        .account-type-card i {
+            font-size: 2rem;
+            color: #6C757D;
+            margin-bottom: 0.5rem;
+        }
+
+        .account-type-card.selected i {
+            color: #F15A29;
+        }
+
+        .account-type-card h4 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: #1C2A2F;
+        }
+
+        .account-type-card p {
+            font-size: 0.8rem;
+            color: #6C757D;
+        }
+
+        input[type="radio"] {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .account-type-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            body {
+                padding: 1rem;
+            }
+            
+            .register-container {
+                margin: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <div class="register-logo">
+                <i class="fas fa-microchip"></i>
+            </div>
+            <h1 class="register-title">IT Data Global</h1>
+            <p class="register-subtitle">Crea tu cuenta para acceder a precios especiales</p>
+        </div>
+
+        <div class="register-form">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}exclamation-triangle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="form-group">
+                    <label class="form-label">Nombre completo *</label>
+                    <input type="text" name="full_name" class="form-input" required 
+                           placeholder="Tu nombre completo" value="{{ request.form.full_name or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email" name="email" class="form-input" required 
+                           placeholder="tu.email@ejemplo.com" value="{{ request.form.email or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Contraseña *</label>
+                    <input type="password" name="password" class="form-input" required 
+                           placeholder="Mínimo 8 caracteres" minlength="8">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirmar contraseña *</label>
+                    <input type="password" name="confirm_password" class="form-input" required 
+                           placeholder="Repite tu contraseña">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tipo de cuenta *</label>
+                    <div class="account-type-cards">
+                        <label class="account-type-card {% if request.form.account_type == 'public' %}selected{% endif %}">
+                            <input type="radio" name="account_type" value="public" {% if request.form.account_type == 'public' %}checked{% endif %} required>
+                            <i class="fas fa-user"></i>
+                            <h4>Público General</h4>
+                            <p>Acceso básico al catálogo</p>
+                        </label>
+                        
+                        <label class="account-type-card {% if request.form.account_type == 'client' %}selected{% endif %}">
+                            <input type="radio" name="account_type" value="client" {% if request.form.account_type == 'client' %}checked{% endif %}>
+                            <i class="fas fa-building"></i>
+                            <h4>Cliente Empresarial</h4>
+                            <p>Precios especiales y cotizaciones</p>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Campos adicionales para clientes empresariales -->
+                <div id="business-fields" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">RFC</label>
+                        <input type="text" name="rfc" class="form-input" 
+                               placeholder="RFC de la empresa" value="{{ request.form.rfc or '' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Razón Social</label>
+                        <input type="text" name="business_name" class="form-input" 
+                               placeholder="Nombre de la empresa" value="{{ request.form.business_name or '' }}">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-register">
+                    <i class="fas fa-user-plus"></i>
+                    Crear Cuenta
+                </button>
+            </form>
+
+            <div class="register-links">
+                <p>¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión aquí</a></p>
+                <p><a href="{{ url_for('products.catalogo_completo_cards') }}">Continuar como invitado</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mostrar/ocultar campos empresariales
+        document.addEventListener('DOMContentLoaded', function() {
+            const accountTypeRadios = document.querySelectorAll('input[name="account_type"]');
+            const businessFields = document.getElementById('business-fields');
+            
+            function toggleBusinessFields() {
+                const selectedValue = document.querySelector('input[name="account_type"]:checked').value;
+                businessFields.style.display = selectedValue === 'client' ? 'block' : 'none';
+                
+                // Hacer requeridos los campos de negocio solo para clientes
+                const businessInputs = businessFields.querySelectorAll('input');
+                businessInputs.forEach(input => {
+                    input.required = selectedValue === 'client';
+                });
+            }
+            
+            accountTypeRadios.forEach(radio => {
+                radio.addEventListener('change', toggleBusinessFields);
+            });
+            
+            // Ejecutar al cargar la página
+            toggleBusinessFields();
+            
+            // Validación de contraseña
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+                const password = document.querySelector('input[name="password"]');
+                const confirmPassword = document.querySelector('input[name="confirm_password"]');
+                
+                if (password.value !== confirmPassword.value) {
+                    e.preventDefault();
+                    alert('Las contraseñas no coinciden');
+                    confirmPassword.focus();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

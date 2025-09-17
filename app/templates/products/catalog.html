@@ -602,7 +602,7 @@
         <!-- Header Profesional -->
         <header class="header">
             <div class="header-content">
-                <a href="/catalogo-completo-cards" class="logo">
+                <a href="/products/catalogo-completo-cards" class="logo">
                     <i class="fas fa-microchip"></i>
                     IT Data Global
                 </a>
@@ -669,7 +669,7 @@
                         <i class="fas fa-search"></i>
                         Buscar
                     </button>
-                    <a href="/catalogo-completo-cards" class="btn btn-secondary">
+                    <a href="/products/catalogo-completo-cards" class="btn btn-secondary">
                         <i class="fas fa-eraser"></i>
                         Limpiar
                     </a>
@@ -741,7 +741,7 @@
              <!-- Grid de productos -->
             <div class="products-grid">
                 {% for p in productos %}
-                <a class="product-card" href="/producto/{{ p.get('ingramPartNumber') }}">
+                <a class="product-card" href="/products/producto/{{ p.get('ingramPartNumber') }}">
                     <div class="product-image-container">
                         <img src="{{ get_image_url_enhanced(p) }}" alt="{{ p.get('description', 'Producto') }}" class="product-image" loading="lazy">
                         {% if p.get('availability') %}
