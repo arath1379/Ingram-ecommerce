@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Empresarial | IT Data Global</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #F1F3F4;
+            min-height: 100vh;
+            color: #1C2A2F;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: #1C2A2F;
+            color: #FFFFFF;
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(28, 42, 47, 0.3);
+            border-bottom: 3px solid #4F46E5;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            text-decoration: none;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo i {
+            color: #4F46E5;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: #4F46E5;
+            color: #FFFFFF;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: #4338CA;
+            transform: translateY(-2px);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .user-header {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #4F46E5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .user-info h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-role {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #4F46E5;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1C2A2F;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(79, 70, 229, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4F46E5;
+            font-size: 1.5rem;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1C2A2F;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #6C757D;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: #4F46E5;
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background: #4338CA;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #F1F3F4;
+            color: #6C757D;
+        }
+
+        .btn-secondary:hover {
+            background: #E9ECEF;
+        }
+
+        .recent-activity {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #F1F3F4;
+        }
+
+        .data-table th {
+            background: #F8F9FA;
+            font-weight: 600;
+            color: #1C2A2F;
+        }
+
+        .data-table tr:hover {
+            background: #F8F9FA;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .status-inactive {
+            background: #F8D7DA;
+            color: #721C24;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 0 1rem;
+            }
+            
+            .user-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .data-table {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <i class="fas fa-microchip"></i>
+                IT Data Global
+            </a>
+            <div class="nav-links">
+                <a href="/products/catalogo-completo-cards" class="nav-link">
+                    <i class="fas fa-boxes"></i>
+                    Catálogo
+                </a>
+                <a href="/logout" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="user-header">
+            <div class="user-avatar">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="user-info">
+                <h1>{{ business_name }}</h1>
+                <div style="margin-bottom: 0.5rem;">
+                    <span class="user-role">Cliente Empresarial</span>
+                </div>
+                <p style="color: #6C757D;">{{ user_name }} • RFC: {{ rfc }}</p>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3 class="card-title">Cotización Actual</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                </div>
+                <div class="stat-number">${{ quote_total|number_format(2) }}</div>
+                <p class="stat-label">{{ quote_items }} productos en cotización</p>
+                <a href="/products/mi-cotizacion" class="btn btn-primary">Ver Cotización</a>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3 class="card-title">Descuento Especial</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-percent"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ discount }}%</div>
+                <p class="stat-label">Descuento corporativo aplicado</p>
+                <a href="/business-benefits" class="btn btn-primary">Ver Beneficios</a>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3 class="card-title">Historial de Pedidos</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ orders_count }}</div>
+                <p class="stat-label">Pedidos realizados en los últimos 30 días</p>
+                <a href="/order-history" class="btn btn-primary">Ver Historial</a>
+            </div>
+        </div>
+
+        <div class="recent-activity">
+            <h2 style="margin-bottom: 1.5rem;">Cotizaciones Recientes</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Número de Cotización</th>
+                        <th>Fecha</th>
+                        <th>Productos</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>COT-2023-00125</td>
+                        <td>05/12/2023</td>
+                        <td>8 productos</td>
+                        <td>$45,678.90</td>
+                        <td><span class="status-badge status-pending">Pendiente</span></td>
+                        <td><a href="#" class="btn btn-secondary">Ver Detalles</a></td>
+                    </tr>
+                    <tr>
+                        <td>COT-2023-00118</td>
+                        <td>02/12/2023</td>
+                        <td>12 productos</td>
+                        <td>$62,345.60</td>
+                        <td><span class="status-badge status-active">Aprobada</span></td>
+                        <td><a href="#" class="btn btn-secondary">Ver Detalles</a></td>
+                    </tr>
+                    <tr>
+                        <td>COT-2023-00105</td>
+                        <td>28/11/2023</td>
+                        <td>5 productos</td>
+                        <td>$23,456.75</td>
+                        <td><span class="status-badge status-active">Completada</span></td>
+                        <td><a href="#" class="btn btn-secondary">Ver Detalles</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,8 +1,8 @@
 # app/routes/admin.py - VERSIÓN CORRECTA
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, session
 from flask_login import login_required, current_user
 
-# Definir el Blueprint - ¡ESTA LÍNEA ES ESENCIAL!
+# Definir el Blueprint
 admin_bp = Blueprint('admin', __name__)
 
 @admin_bp.before_request
@@ -13,11 +13,20 @@ def require_admin():
         flash('Acceso restringido a administradores', 'danger')
         return redirect(url_for('main.index'))
 
-@admin_bp.route('/')
+@admin_bp.route('/dashboard')
 def dashboard():
     """Panel de administración principal."""
-    return render_template('admin/dashboard.html')
+    admin_data = {
+        'user_name': current_user.name or 'Administrador',
+        'total_users': 143,  # Esto deberías obtenerlo de la BD
+        'pending_quotes': 24,  # Esto deberías obtenerlo de la BD
+        'monthly_revenue': 125000.75,  # Esto deberías obtenerlo de la BD
+        'low_stock': 18,  # Esto deberías obtenerlo de la BD
+        'user_type': 'admin'
+    }
+    return render_template('admin_dashboard.html', **admin_data)
 
+# Mantén tus otras rutas de admin...
 @admin_bp.route('/users')
 def manage_users():
     """Gestión de usuarios."""

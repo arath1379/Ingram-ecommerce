@@ -1,5 +1,6 @@
-# app/routes/main.py - RUTAS PRINCIPALES CORREGIDAS
-from flask import Blueprint, render_template, redirect, url_for, jsonify
+# app/routes/main.py - RUTAS PRINCIPALES CORREGIDAS CON DASHBOARDS
+from flask import Blueprint, render_template, redirect, url_for, jsonify, request, flash
+from flask_login import login_required, current_user
 
 # Definir el Blueprint
 main_bp = Blueprint('main', __name__)
@@ -59,6 +60,64 @@ def api_health_check():
         'message': 'Todos los servicios operativos'
     })
 
+# ==================== RUTAS DE DASHBOARD ====================
+
+@main_bp.route('/dashboard')
+@login_required
+def dashboard():
+    """Redirige al dashboard según el tipo de usuario."""
+    # Verificar si el usuario es administrador
+    if hasattr(current_user, 'is_admin') and current_user.is_admin:
+        return redirect(url_for('admin.dashboard'))
+    # Verificar si el usuario es cliente empresarial
+    elif hasattr(current_user, 'user_type') and current_user.user_type == 'business':
+        return redirect(url_for('main.business_dashboard'))
+    else:
+        # Usuario público por defecto
+        return redirect(url_for('main.public_dashboard'))
+
+@main_bp.route('/dashboard/public')
+@login_required
+def public_dashboard():
+    """Dashboard para usuarios públicos."""
+    # Verificar que el usuario no sea admin ni business
+    if (hasattr(current_user, 'is_admin') and current_user.is_admin) or \
+       (hasattr(current_user, 'user_type') and current_user.user_type == 'business'):
+        return redirect(url_for('main.dashboard'))
+    
+    # Aquí deberías obtener datos reales de tu base de datos
+    public_data = {
+        'user_name': getattr(current_user, 'name', 'Usuario'),
+        'favorites_count': 5,  # Esto deberías obtenerlo de la BD
+        'quote_items': 3,      # Esto deberías obtenerlo de la BD
+        'user_type': 'public'
+    }
+    
+    return render_template('public_dashboard.html', **public_data)
+
+@main_bp.route('/dashboard/business')
+@login_required
+def business_dashboard():
+    """Dashboard para clientes empresariales."""
+    # Verificar que el usuario sea business
+    if not (hasattr(current_user, 'user_type') and current_user.user_type == 'business'):
+        flash('Acceso restringido a clientes empresariales', 'danger')
+        return redirect(url_for('main.public_dashboard'))
+    
+    # Aquí deberías obtener datos reales de tu base de datos
+    business_data = {
+        'user_name': getattr(current_user, 'name', 'Cliente'),
+        'business_name': getattr(current_user, 'business_name', 'Empresa'),
+        'rfc': getattr(current_user, 'rfc', ''),
+        'quote_total': 45678.90,  # Esto deberías obtenerlo de la BD
+        'quote_items': 8,         # Esto deberías obtenerlo de la BD
+        'discount': 15,           # Esto deberías obtenerlo de la BD
+        'orders_count': 12,       # Esto deberías obtenerlo de la BD
+        'user_type': 'client'
+    }
+    
+    return render_template('business_dashboard.html', **business_data)
+
 # ==================== RUTAS DE COMPATIBILIDAD ====================
 
 @main_bp.route('/catalogo')
@@ -78,14 +137,14 @@ def tienda_redirect():
 
 # ==================== PÁGINAS DE ERROR PERSONALIZADAS ====================
 
-@main_bp.errorhandler(404)
+@main_bp.app_errorhandler(404)
 def page_not_found(e):
     """Página de error 404 personalizada"""
     return render_template('errors/404.html', 
                          title='Página no encontrada',
                          message='La página que buscas no existe'), 404
 
-@main_bp.errorhandler(500)
+@main_bp.app_errorhandler(500)
 def internal_server_error(e):
     """Página de error 500 personalizada"""
     return render_template('errors/500.html',

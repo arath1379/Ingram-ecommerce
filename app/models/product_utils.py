@@ -1,4 +1,4 @@
-from flask import current_app
+from flask import current_app, json
 from app.models.api_client import APIClient
 from app.models.cache_manager import search_cache
 import re
@@ -453,75 +453,80 @@ class ProductUtils:
     @staticmethod
     def find_matching_search_terms(query):
         """
-        Encuentra términos de búsqueda mejorados basados en palabras clave.
-        Devuelve una lista de términos para usar en la búsqueda.
+        Encuentra términos de búsqueda mejorados pero más conservadores
         """
         normalized_query = ProductUtils.normalize_text(query)
         search_terms = set([query.strip()])  # Siempre incluir la búsqueda original
         
-        # Buscar coincidencias en el mapeo de palabras clave
+        # Buscar coincidencias en el mapeo de palabras clave (más conservador)
         for category, keywords in ProductUtils.KEYWORD_MAPPING.items():
-            for keyword in keywords:
-                if keyword.lower() in normalized_query:
-                    # Agregar términos relacionados - aumentar a 5 términos
-                    search_terms.update(keywords[:5])  # Aumentado a 5 términos relacionados
-                    break
+            # Solo agregar términos si la categoría está relacionada con la consulta
+            if any(keyword in normalized_query for keyword in keywords[:3]):
+                # Agregar solo los 2-3 términos principales de la categoría
+                search_terms.update(keywords[:3])
         
-        # Extraer palabras individuales de la consulta
+        # Extraer palabras individuales significativas de la consulta
         query_words = normalized_query.split()
         for word in query_words:
-            if len(word) >= 2:  # Reducido a 2 caracteres mínimo para capturar más términos
+            if len(word) >= 3:  # Solo palabras de 3+ caracteres
                 search_terms.add(word)
         
-        return list(search_terms)[:8]  # Aumentado a 8 términos máximo
+        return list(search_terms)[:5] 
 
     @staticmethod
-    def score_product_relevance(producto, search_terms):
+    def score_product_relevance_specific(producto, search_term, original_query):
         """
-        Calcula un score de relevancia para un producto basado en los términos de búsqueda.
-        MEJORADO: Mayor puntuación para coincidencias exactas en campos importantes.
+        Calcula score de relevancia específico para un término de búsqueda
         """
         if not isinstance(producto, dict):
             return 0
             
-        # Textos donde buscar - priorizar algunos campos
-        campos_prioritarios = {
-            "description": 20,  # Mayor peso a descripción
-            "vendorName": 15,   # Alto peso a marca
+        score = 0
+        original_terms = original_query.lower().split()
+        
+        # Campos y sus pesos
+        campos = {
+            "description": 20,
+            "vendorName": 15,
             "ingramPartNumber": 10,
             "vendorPartNumber": 10,
             "category": 8,
-            "subCategory": 8,
-            "extraDescription": 5  # Si existe este campo
+            "subCategory": 8
         }
-        score = 0
         
-        for campo, peso in campos_prioritarios.items():
+        for campo, peso in campos.items():
             texto = producto.get(campo, "")
             if texto:
                 texto_lower = str(texto).lower()
-                for term in search_terms:
-                    term_lower = term.lower()
-                    
-                    # Coincidencia exacta (máxima puntuación)
-                    if term_lower == texto_lower:
-                        score += peso * 3
-                    # Coincidencia como palabra completa
-                    elif f" {term_lower} " in f" {texto_lower} ":
-                        score += peso * 2
-                    # Coincidencia parcial
-                    elif term_lower in texto_lower:
-                        score += peso
+                
+                # Coincidencia exacta con el término de búsqueda
+                if search_term.lower() == texto_lower:
+                    score += peso * 3
+                
+                # Coincidencia como palabra completa
+                elif f" {search_term.lower()} " in f" {texto_lower} ":
+                    score += peso * 2
+                
+                # Coincidencia parcial
+                elif search_term.lower() in texto_lower:
+                    score += peso
         
-        # Bonus por disponibilidad
-        if producto.get('availability', {}).get('available'):
-            score += 5
+        # Bonus adicional si coincide con términos de la consulta original
+        for original_term in original_terms:
+            for campo in ["description", "vendorName", "category"]:
+                texto = producto.get(campo, "")
+                if texto and original_term.lower() in str(texto).lower():
+                    score += 5
+                    break
+        
         return score
 
     @staticmethod
     def buscar_productos_hibrido(query="", vendor="", page_number=1, page_size=25, use_keywords=False):
         """
         Búsqueda híbrida mejorada con tracking y analytics
+        PRIORIDAD 1: Búsqueda local en base de datos
+        PRIORIDAD 2: Búsqueda en API de Ingram Micro
         """
         # Optimizar query
         optimized_query = ProductUtils.optimize_search_query(query)
@@ -531,6 +536,36 @@ class ProductUtils:
         
         start_time = time.time()
         
+        # INICIALIZAR variables locales para evitar errores
+        productos_locales = []
+        total_local = 0
+        error_local = False
+        
+        # PRIORIDAD 1: Búsqueda local si hay query significativa
+        if optimized_query and len(optimized_query.strip()) > 2:
+            try:
+                productos_locales, total_local, error_local = ProductUtils.buscar_local_avanzado(
+                    query=optimized_query,
+                    vendor=vendor,
+                    category=None,
+                    page=page_number,
+                    page_size=page_size
+                )
+                
+                # Si encontramos resultados locales, usarlos (son más rápidos y precisos)
+                if productos_locales and total_local > 0:
+                    end_time = time.time()
+                    ProductUtils.log_search_metrics(optimized_query, total_local, end_time - start_time)
+                    print(f"✅ Búsqueda LOCAL exitosa: {len(productos_locales)} resultados")
+                    return (productos_locales, total_local, False)
+                    
+            except Exception as e:
+                print(f"⚠️  Error en búsqueda local: {str(e)}")
+                # Continuar con búsqueda API si falla la local
+                error_local = True
+        
+        # PRIORIDAD 2: Búsqueda en API con sistema de caché
+        
         # Generar clave única para esta búsqueda
         cache_key = f"{optimized_query}_{vendor}_{page_number}_{page_size}_{use_keywords}"
         
@@ -539,6 +574,7 @@ class ProductUtils:
         if cached_result:
             end_time = time.time()
             ProductUtils.log_search_metrics(optimized_query, cached_result['total_records'], end_time - start_time)
+            print(f"✅ Resultados desde CACHÉ: {cached_result['total_records']} resultados")
             return (cached_result['productos'], cached_result['total_records'], 
                     cached_result['pagina_vacia'])
 
@@ -551,33 +587,55 @@ class ProductUtils:
             # Verificar si la consulta parece un SKU (sin espacios, principalmente alfanumérico)
             sku_like = optimized_query.replace(" ", "").replace("-", "").replace("_", "")
             if sku_like.isalnum() and len(sku_like) >= 3:
-                productos_sku = ProductUtils.buscar_por_sku_directo(optimized_query)
-                if productos_sku:
-                    productos = productos_sku
-                    total_records = len(productos)
-                    # Guardar en caché
-                    search_cache.save(cache_key, {
-                        'productos': productos,
-                        'total_records': total_records,
-                        'pagina_vacia': pagina_vacia
-                    })
-                    end_time = time.time()
-                    ProductUtils.log_search_metrics(optimized_query, total_records, end_time - start_time)
-                    ProductUtils.analyze_search_patterns(optimized_query, total_records)
-                    return productos, total_records, pagina_vacia
-
-        # Si no es un SKU o no se encontraron resultados, usar búsqueda en catálogo general
-        if use_keywords and optimized_query:
-            productos, total_records, pagina_vacia = ProductUtils.buscar_por_palabras_clave(optimized_query, vendor, page_number, page_size)
-        else:
-            productos, total_records, pagina_vacia = ProductUtils.buscar_en_catalogo_general(optimized_query, vendor, page_number, page_size)
+                try:
+                    productos_sku = ProductUtils.buscar_por_sku_directo(optimized_query)
+                    if productos_sku:
+                        productos = productos_sku
+                        total_records = len(productos)
+                        # Guardar en caché
+                        search_cache.save(cache_key, {
+                            'productos': productos,
+                            'total_records': total_records,
+                            'pagina_vacia': pagina_vacia
+                        })
+                        end_time = time.time()
+                        ProductUtils.log_search_metrics(optimized_query, total_records, end_time - start_time)
+                        ProductUtils.analyze_search_patterns(optimized_query, total_records)
+                        print(f"✅ Búsqueda por SKU exitosa: {total_records} resultados")
+                        return productos, total_records, pagina_vacia
+                        
+                except Exception as e:
+                    print(f"⚠️  Error en búsqueda por SKU: {str(e)}")
+                    # Continuar con búsqueda normal
+        try:
+            if use_keywords and optimized_query:
+                # CORRECCIÓN: Usar el método correcto buscar_por_palabras_clave
+                productos, total_records, pagina_vacia = ProductUtils.buscar_por_palabras_clave(
+                    optimized_query, vendor, page_number, page_size
+                )
+            else:
+                productos, total_records, pagina_vacia = ProductUtils.buscar_en_catalogo_general(
+                    optimized_query, vendor, page_number, page_size
+                )
+                
+        except Exception as e:
+            print(f"❌ Error en búsqueda API: {str(e)}")
+            # Si falla la API, intentar devolver resultados locales aunque sean pocos
+            if productos_locales and total_local > 0:
+                print("🔄 Fallback a resultados locales por error en API")
+                return productos_locales, total_local, False
+            # Si no hay resultados locales, devolver error
+            return [], 0, True
 
         # Guardar en caché para futuras consultas
-        search_cache.save(cache_key, {
-            'productos': productos,
-            'total_records': total_records,
-            'pagina_vacia': pagina_vacia
-        })
+        try:
+            search_cache.save(cache_key, {
+                'productos': productos,
+                'total_records': total_records,
+                'pagina_vacia': pagina_vacia
+            })
+        except Exception as e:
+            print(f"⚠️  Error guardando en caché: {str(e)}")
 
         end_time = time.time()
         
@@ -587,57 +645,101 @@ class ProductUtils:
         # Analizar patrones
         ProductUtils.analyze_search_patterns(optimized_query, total_records)
         
+        print(f"✅ Búsqueda API exitosa: {total_records} resultados")
         return productos, total_records, pagina_vacia
+    
+    @staticmethod
+    def _is_highly_relevant_product(producto, original_query, relevance_score):
+        """
+        Filtrado más estricto para determinar relevancia
+        """
+        if relevance_score < 15:  # Score mínimo más alto
+            return False
+            
+        if not isinstance(producto, dict):
+            return False
+            
+        original_normalized = ProductUtils.normalize_text(original_query)
+        description = ProductUtils.normalize_text(producto.get("description", ""))
+        category = ProductUtils.normalize_text(producto.get("category", ""))
+        
+        # Verificar que al menos un término de la consulta original esté presente
+        original_terms = original_normalized.split()
+        has_original_term = any(term in description or term in category for term in original_terms if len(term) > 2)
+        
+        if not has_original_term:
+            return False
+        
+        # Reglas de exclusión mejoradas
+        exclusion_patterns = {
+            'telefono': ['monitor', 'pantalla', 'impresora', 'laptop', 'computadora'],
+            'laptop': ['telefono', 'celular', 'audifonos', 'cable', 'cargador'],
+            'audifonos': ['computadora', 'laptop', 'monitor', 'teclado', 'mouse'],
+            'bocina': ['computadora', 'laptop', 'telefono', 'tablet', 'monitor']
+        }
+        
+        for search_category, exclude_terms in exclusion_patterns.items():
+            if search_category in original_normalized:
+                producto_text = f"{description} {category}"
+                for exclude_term in exclude_terms:
+                    if exclude_term in producto_text:
+                        return False
+        
+        return True
 
     @staticmethod
     def buscar_por_palabras_clave(query="", vendor="", page_number=1, page_size=25):
         """
-        Búsqueda por palabras clave mejorada con boost de productos populares
+        Búsqueda por palabras clave mejorada con filtrado más estricto
         """
         if not query.strip():
             return ProductUtils.buscar_en_catalogo_general(query, vendor, page_number, page_size)
         
-        # Obtener términos de búsqueda mejorados
+        # Obtener términos de búsqueda mejorados pero más específicos
         search_terms = ProductUtils.find_matching_search_terms(query)
         
-        # Realizar búsquedas individuales para cada término
+        # Priorizar la consulta original
+        original_query_terms = query.lower().split()
+        search_terms = list(set(original_query_terms + search_terms))[:6]  # Limitar a 6 términos máximo
+        
         productos_combinados = {}
+        relevancia_por_producto = {}
         
         for term in search_terms:
             try:
-                # Buscar más resultados por término
+                # Buscar resultados por término
                 productos_term, _, _ = ProductUtils.buscar_en_catalogo_general(
-                    term, vendor, 1, 100  # Aumentado a 100 resultados por término
+                    term, vendor, 1, 50  # Reducido a 50 resultados por término
                 )
                 
                 for producto in productos_term:
                     part_number = producto.get("ingramPartNumber")
                     if part_number:
-                        # Calcular score de relevancia
-                        score = ProductUtils.score_product_relevance(producto, search_terms)
+                        # Calcular score de relevancia específico para este término
+                        score = ProductUtils.score_product_relevance_specific(producto, term, query)
                         
-                        if part_number not in productos_combinados or score > productos_combinados[part_number].get('_relevance_score', 0):
-                            producto['_relevance_score'] = score
-                            productos_combinados[part_number] = producto
-                            
+                        # Solo considerar productos con score mínimo
+                        if score >= 10:  # Umbral mínimo de relevancia
+                            if part_number not in productos_combinados:
+                                productos_combinados[part_number] = producto
+                                relevancia_por_producto[part_number] = score
+                            elif score > relevancia_por_producto[part_number]:
+                                productos_combinados[part_number] = producto
+                                relevancia_por_producto[part_number] = score
+                                
             except Exception as e:
                 print(f"Error en búsqueda por término '{term}': {e}")
                 continue
         
-        # Filtrar productos irrelevantes
+        # Filtrar productos irrelevantes de manera más estricta
         productos_filtrados = {}
         for part_number, producto in productos_combinados.items():
-            if ProductUtils._is_relevant_product(producto, query):
+            if ProductUtils._is_highly_relevant_product(producto, query, relevancia_por_producto[part_number]):
+                producto['_relevance_score'] = relevancia_por_producto[part_number]
                 productos_filtrados[part_number] = producto
         
         # Convertir a lista y ordenar por relevancia
         productos_list = list(productos_filtrados.values())
-        productos_list.sort(key=lambda x: x.get('_relevance_score', 0), reverse=True)
-        
-        # Aplicar boost de productos populares
-        productos_list = ProductUtils.boost_popular_products(productos_list)
-        
-        # Re-ordenar después del boost
         productos_list.sort(key=lambda x: x.get('_relevance_score', 0), reverse=True)
         
         # Aplicar paginación
@@ -653,7 +755,7 @@ class ProductUtils:
         pagina_vacia = len(productos_paginated) == 0
         
         return productos_paginated, total_records, pagina_vacia
-
+    
     @staticmethod
     def _is_relevant_product(producto, original_query):
         """
@@ -809,6 +911,7 @@ class ProductUtils:
 
     @staticmethod
     def buscar_en_catalogo_general(query="", vendor="", page_number=1, page_size=25):
+        from app.models.product import Product
         """
         Búsqueda en el catálogo general usando el endpoint GET.
         """
@@ -915,3 +1018,128 @@ class ProductUtils:
         except Exception as e:
             print(f"Error obteniendo precio/disponibilidad para {part_number}: {e}")
             return None
+        
+    @staticmethod
+    def buscar_local_avanzado(query, vendor=None, category=None, page=1, page_size=25):
+        from app.models.product import Product
+        """
+        Búsqueda local avanzada con múltiples criterios
+        """
+        try:
+            offset = (page - 1) * page_size
+            
+            # Buscar en base de datos local
+            productos, total = Product.buscar_avanzado(
+                query=query,
+                vendor=vendor,
+                category=category,
+                limit=page_size,
+                offset=offset
+            )
+            
+            # Convertir a formato similar al de la API
+            resultados = []
+            for producto in productos:
+                metadata = json.loads(producto.metadata_json) if producto.metadata_json else {}
+                
+                resultados.append({
+                    'ingramPartNumber': producto.ingram_part_number,
+                    'description': producto.description,
+                    'vendorName': producto.vendor_name,
+                    'vendorPartNumber': producto.vendor_part_number,
+                    'category': producto.category,
+                    'subCategory': producto.subcategory,
+                    'upc': producto.upc,
+                    'pricing': {
+                        'customerPrice': producto.base_price,
+                        'currencyCode': producto.currency
+                    },
+                    'productImages': metadata.get('productImages', []),
+                    'availability': metadata.get('availability', {}),
+                    'es_local': True  # Flag para identificar que es de BD local
+                })
+            
+            return resultados, total, False
+            
+        except Exception as e:
+            print(f"Error en búsqueda local: {str(e)}")
+            return [], 0, True
+    
+    @staticmethod
+    def sugerir_palabras_clave_mejorado(query):
+        from app.models.product import Product
+        """
+        Sugerir palabras clave basado en búsquedas anteriores y productos populares
+        """
+        sugerencias = set()
+        
+        # 1. Buscar en descripciones de productos
+        productos = Product.query.filter(
+            Product.description.ilike(f'%{query}%'),
+            Product.is_active == True
+        ).limit(5).all()
+        
+        for producto in productos:
+            palabras = producto.description.split()
+            for palabra in palabras:
+                if palabra.lower().startswith(query.lower()) and len(palabra) > 3:
+                    sugerencias.add(palabra.capitalize())
+        
+        # 2. Buscar en categorías
+        categorias = Product.query.with_entities(Product.category).filter(
+            Product.category.ilike(f'%{query}%'),
+            Product.is_active == True
+        ).distinct().limit(5).all()
+        
+        for categoria in categorias:
+            if categoria[0]:
+                sugerencias.add(categoria[0])
+        
+        # 3. Buscar en vendors
+        vendors = Product.query.with_entities(Product.vendor_name).filter(
+            Product.vendor_name.ilike(f'%{query}%'),
+            Product.is_active == True
+        ).distinct().limit(5).all()
+        
+        for vendor in vendors:
+            if vendor[0]:
+                sugerencias.add(vendor[0])
+        
+        return list(sugerencias)[:10]  # Máximo 10 sugerencias
+    
+    @staticmethod
+    def buscar_con_ranking_local(query, limit=25):
+        from app.models.product import Product
+        """
+        Búsqueda local con ranking de relevancia
+        """
+        try:
+            resultados = Product.buscar_con_ranking(query, limit)
+            
+            productos_formateados = []
+            for producto, relevancia in resultados:
+                metadata = json.loads(producto.metadata_json) if producto.metadata_json else {}
+                
+                productos_formateados.append({
+                    'ingramPartNumber': producto.ingram_part_number,
+                    'description': producto.description,
+                    'vendorName': producto.vendor_name,
+                    'vendorPartNumber': producto.vendor_part_number,
+                    'category': producto.category,
+                    'subCategory': producto.subcategory,
+                    'upc': producto.upc,
+                    'pricing': {
+                        'customerPrice': producto.base_price,
+                        'currencyCode': producto.currency
+                    },
+                    'productImages': metadata.get('productImages', []),
+                    'availability': metadata.get('availability', {}),
+                    'es_local': True,
+                    '_relevance_score': relevancia
+                })
+            
+            return productos_formateados
+            
+        except Exception as e:
+            print(f"Error en búsqueda con ranking: {str(e)}")
+            return []
