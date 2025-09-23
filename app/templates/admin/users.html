@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios | IT Data Global</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #10B981;
+            --primary-dark: #059669;
+            --secondary-color: #1C2A2F;
+            --accent-color: #F15A29;
+            --surface-color: #FFFFFF;
+            --background-color: #F8FAFC;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header profesional */
+        .admin-header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.025em;
+            color: white !important;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .navbar-brand i {
+            font-size: 1.5rem;
+            color: var(--surface-color);
+        }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.25rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--primary-color);
+        }
+
+        /* Breadcrumb moderno */
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+        }
+
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-item a:hover {
+            color: var(--primary-dark);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-secondary);
+        }
+
+        /* Contenedor principal */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header de página */
+        .page-header {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 400;
+            margin: 0;
+        }
+
+        /* Tarjetas modernas */
+        .modern-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .modern-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header-modern {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem;
+        }
+
+        .card-body-modern {
+            padding: 1.5rem;
+        }
+
+        /* Filtros elegantes */
+        .filter-section {
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background: var(--surface-color);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            outline: none;
+        }
+
+        /* Estadísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-color);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(16, 185, 129, 0.15);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            color: var(--surface-color);
+        }
+
+        .stat-icon.primary { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); }
+        .stat-icon.success { background: linear-gradient(135deg, #10B981, #059669); }
+        .stat-icon.info { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
+        .stat-icon.warning { background: linear-gradient(135deg, var(--warning-color), #D97706); }
+
+        .stat-number {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            line-height: 1;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Tabla moderna */
+        .table-modern {
+            background: var(--surface-color);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .table {
+            margin: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            border: none;
+            padding: 1.25rem 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .table td {
+            border: none;
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #F1F5F9;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(16, 185, 129, 0.05);
+            transform: scale(1.001);
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Badges modernos */
+        .badge {
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            letter-spacing: 0.025em;
+        }
+
+        .badge-verified {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .badge-pending {
+            background: linear-gradient(135deg, var(--warning-color), #D97706);
+            color: white;
+        }
+
+        .badge-admin {
+            background: linear-gradient(135deg, var(--danger-color), #DC2626);
+            color: white;
+        }
+
+        .badge-business {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            color: white;
+        }
+
+        .badge-individual {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: white;
+        }
+
+        /* Botones modernos */
+        .btn {
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-group-modern .btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            margin: 0 2px;
+        }
+
+        .btn-action {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline-primary.btn-action {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline-warning.btn-action {
+            border-color: var(--warning-color);
+            color: var(--warning-color);
+        }
+
+        .btn-outline-success.btn-action {
+            border-color: var(--success-color);
+            color: var(--success-color);
+        }
+
+        .btn-action:hover {
+            transform: scale(1.1);
+        }
+
+        /* Estado vacío */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Paginación moderna */
+        .pagination {
+            --bs-pagination-border-radius: 12px;
+            --bs-pagination-border-color: var(--border-color);
+            --bs-pagination-hover-bg: rgba(16, 185, 129, 0.1);
+            --bs-pagination-hover-border-color: var(--primary-color);
+            --bs-pagination-active-bg: var(--primary-color);
+            --bs-pagination-active-border-color: var(--primary-color);
+            gap: 0.25rem;
+        }
+
+        .page-link {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 0 1rem;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+
+            .stat-card {
+                padding: 1.5rem;
+            }
+
+            .table-responsive {
+                border-radius: 16px;
+            }
+
+            .btn-group-modern {
+                display: flex;
+                gap: 0.25rem;
+            }
+        }
+
+        /* Animaciones */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideIn 0.4s ease-out;
+        }
+
+        /* Tooltips personalizados */
+        [data-bs-toggle="tooltip"] {
+            cursor: help;
+        }
+
+        /* Loading states */
+        .loading-overlay {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-overlay::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            transition: left 1s ease;
+        }
+
+        .loading-overlay.loading::before {
+            left: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark admin-header">
+        <div class="container-fluid main-container">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-microchip"></i>
+                <span>IT Data Global - Admin</span>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-cog me-2"></i>
+                        <span>{{ current_user.email }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/admin/dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <div class="main-container py-4">
+        <!-- Navegación -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Gestión de Usuarios</li>
+            </ol>
+        </nav>
+
+        <!-- Header de la página -->
+        <div class="page-header animate-in">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-users"></i>
+                        <span>Gestión de Usuarios</span>
+                    </h1>
+                    <p class="page-subtitle">Administra todos los usuarios registrados en el sistema</p>
+                </div>
+                <a href="/admin/dashboard" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="modern-card filter-section animate-in">
+            <div class="card-header-modern">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <i class="fas fa-filter me-2 text-primary"></i>
+                    Filtros de Búsqueda
+                </h5>
+            </div>
+            <div class="card-body-modern">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Buscar Usuario</label>
+                        <div class="position-relative">
+                            <input type="text" class="form-control ps-5" id="search" name="search" 
+                                   placeholder="Nombre, email o empresa..." value="{{ request.args.get('search', '') }}">
+                            <i class="fas fa-search position-absolute start-0 top-50 translate-middle-y ms-3 text-muted"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="type" class="form-label">Tipo de Usuario</label>
+                        <select class="form-select" id="type" name="type">
+                            <option value="">Todos los tipos</option>
+                            <option value="individual" {% if request.args.get('type') == 'individual' %}selected{% endif %}>Individual</option>
+                            <option value="business" {% if request.args.get('type') == 'business' %}selected{% endif %}>Empresarial</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Estado de Verificación</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos los estados</option>
+                            <option value="verified" {% if request.args.get('status') == 'verified' %}selected{% endif %}>Verificados</option>
+                            <option value="unverified" {% if request.args.get('status') == 'unverified' %}selected{% endif %}>No verificados</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100" id="filter-button">
+                            <i class="fas fa-search me-2"></i>Filtrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-grid animate-in">
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-number">{{ users|length }}</div>
+                <div class="stat-label">Total de Usuarios</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon info">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="stat-number">{{ users|selectattr('account_type', 'equalto', 'business')|list|length }}</div>
+                <div class="stat-label">Cuentas Empresariales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-number">{{ users|selectattr('is_verified', 'equalto', true)|list|length }}</div>
+                <div class="stat-label">Usuarios Verificados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon warning">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div class="stat-number">{{ users|selectattr('is_admin', 'equalto', true)|list|length }}</div>
+                <div class="stat-label">Administradores</div>
+            </div>
+        </div>
+
+        <!-- Tabla de usuarios -->
+        <div class="modern-card animate-in">
+            <div class="card-header-modern">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="fas fa-list me-2 text-primary"></i>
+                        Lista de Usuarios
+                    </h5>
+                    <span class="badge bg-primary">{{ users|length }} usuarios encontrados</span>
+                </div>
+            </div>
+            <div class="card-body-modern p-0">
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">Usuario</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Tipo de Cuenta</th>
+                                <th scope="col">Empresa</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col">Fecha de Registro</th>
+                                <th scope="col" class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-primary bg-gradient rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-user text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <strong class="d-block">{{ user.full_name or 'Sin nombre' }}</strong>
+                                            {% if user.is_admin %}
+                                                <span class="badge badge-admin mt-1">Administrador</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ user.email }}</span>
+                                </td>
+                                <td>
+                                    {% if user.account_type == 'business' %}
+                                        <span class="badge badge-business">
+                                            <i class="fas fa-building me-1"></i>Empresarial
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-individual">
+                                            <i class="fas fa-user me-1"></i>Individual
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.business_name %}
+                                        <span class="fw-medium">{{ user.business_name }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_verified %}
+                                        <span class="badge badge-verified">
+                                            <i class="fas fa-check-circle me-1"></i>Verificado
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-pending">
+                                            <i class="fas fa-clock me-1"></i>Pendiente
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-muted">
+                                        {{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '-' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-center gap-2 btn-group-modern">
+                                        <!-- Botón Ver Detalles -->
+                                        <a href="/admin/users/view/{{ user.id }}" class="btn btn-outline-primary btn-action" 
+                                           title="Ver detalles" data-bs-toggle="tooltip">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        
+                                        <!-- Botón Editar -->
+                                        <a href="/admin/users/edit/{{ user.id }}" class="btn btn-outline-warning btn-action" 
+                                           title="Editar usuario" data-bs-toggle="tooltip">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        <!-- Botones de Verificación -->
+                                        {% if not user.is_verified %}
+                                        <a href="/admin/users/verify/{{ user.id }}" class="btn btn-outline-success btn-action verify-btn" 
+                                           title="Verificar usuario" data-bs-toggle="tooltip"
+                                           data-user-id="{{ user.id }}" data-user-email="{{ user.email }}">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        {% else %}
+                                        <a href="/admin/users/unverify/{{ user.id }}" class="btn btn-outline-secondary btn-action verify-btn" 
+                                           title="Quitar verificación" data-bs-toggle="tooltip"
+                                           data-user-id="{{ user.id }}" data-user-email="{{ user.email }}">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <!-- Botones de Activación -->
+                                        {% if user.is_active %}
+                                        <a href="/admin/users/deactivate/{{ user.id }}" class="btn btn-outline-warning btn-action activate-btn" 
+                                           title="Desactivar usuario" data-bs-toggle="tooltip"
+                                           data-user-id="{{ user.id }}" data-user-email="{{ user.email }}">
+                                            <i class="fas fa-pause"></i>
+                                        </a>
+                                        {% else %}
+                                        <a href="/admin/users/activate/{{ user.id }}" class="btn btn-outline-success btn-action activate-btn" 
+                                           title="Activar usuario" data-bs-toggle="tooltip"
+                                           data-user-id="{{ user.id }}" data-user-email="{{ user.email }}">
+                                            <i class="fas fa-play"></i>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <!-- Botón Eliminar -->
+                                        {% if not user.is_admin and user.id != current_user.id %}
+                                        <a href="/admin/users/delete/{{ user.id }}" class="btn btn-outline-danger btn-action delete-btn" 
+                                           title="Eliminar usuario" data-bs-toggle="tooltip"
+                                           data-user-id="{{ user.id }}" data-user-email="{{ user.email }}">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <h4>No se encontraron usuarios</h4>
+                    <p class="mb-0">Intenta ajustar los filtros de búsqueda para encontrar usuarios específicos</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        {% if pagination %}
+        <nav aria-label="Navegación de páginas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.users', page=pagination.prev_num, **request.args) }}">
+                        <i class="fas fa-chevron-left me-1"></i>Anterior
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages() %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin.users', page=page_num, **request.args) }}">
+                        {{ page_num }}
+                    </a>
+                </li>
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.users', page=pagination.next_num, **request.args) }}">
+                        Siguiente<i class="fas fa-chevron-right ms-1"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Prevenir el estado de "cargando" en el botón de filtrar
+            const filterButton = document.getElementById('filter-button');
+            if (filterButton) {
+                filterButton.addEventListener('click', function(e) {
+                    // Permitir el comportamiento normal del formulario
+                    // No hacer nada especial aquí
+                });
+            }
+
+            // Manejar acciones de usuario con confirmación
+            function handleUserAction(event, actionType) {
+                event.preventDefault();
+                
+                const link = event.currentTarget;
+                const userId = link.getAttribute('data-user-id');
+                const userEmail = link.getAttribute('data-user-email');
+                
+                const actions = {
+                    'verify': { title: 'Verificar Usuario', text: 'verificar', icon: 'success', confirmText: 'Sí, verificar' },
+                    'unverify': { title: 'Quitar Verificación', text: 'quitar la verificación de', icon: 'warning', confirmText: 'Sí, quitar verificación' },
+                    'activate': { title: 'Activar Usuario', text: 'activar', icon: 'success', confirmText: 'Sí, activar' },
+                    'deactivate': { title: 'Desactivar Usuario', text: 'desactivar', icon: 'warning', confirmText: 'Sí, desactivar' },
+                    'delete': { title: 'Eliminar Usuario', text: 'eliminar permanentemente', icon: 'error', confirmText: 'Sí, eliminar' }
+                };
+
+                const action = actions[actionType];
+                
+                if (!action) return;
+
+                // Mostrar confirmación con SweetAlert2 si está disponible, sino con confirm nativo
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: action.title,
+                        html: `¿Estás seguro de que quieres <strong>${action.text}</strong> al usuario <br><strong>${userEmail}</strong>?`,
+                        icon: action.icon,
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: action.confirmText,
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Redirigir a la acción
+                            window.location.href = link.href;
+                        }
+                    });
+                } else {
+                    // Confirmación nativa como fallback
+                    if (confirm(`¿Estás seguro de que quieres ${action.text} al usuario ${userEmail}?`)) {
+                        window.location.href = link.href;
+                    }
+                }
+            }
+
+            // Asignar eventos a los botones de acción
+            document.querySelectorAll('.verify-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleUserAction(e, btn.classList.contains('btn-outline-success') ? 'verify' : 'unverify'));
+            });
+
+            document.querySelectorAll('.activate-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleUserAction(e, btn.classList.contains('btn-outline-success') ? 'activate' : 'deactivate'));
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleUserAction(e, 'delete'));
+            });
+
+            // Búsqueda en tiempo real (solo para UX, no reemplaza el filtro del servidor)
+            const searchInput = document.getElementById('search');
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        const searchTerm = this.value.toLowerCase();
+                        const tableRows = document.querySelectorAll('tbody tr');
+                        
+                        let visibleCount = 0;
+                        tableRows.forEach(row => {
+                            const text = row.textContent.toLowerCase();
+                            if (text.includes(searchTerm) || searchTerm === '') {
+                                row.style.display = '';
+                                visibleCount++;
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        });
+                        
+                        // Actualizar contador
+                        const badge = document.querySelector('.badge.bg-primary');
+                        if (badge) {
+                            badge.textContent = `${visibleCount} usuarios encontrados`;
+                        }
+                    }, 300);
+                });
+            }
+
+            // Efectos hover mejorados para tarjetas de estadísticas
+            const statCards = document.querySelectorAll('.stat-card');
+            statCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+
+            // Animación de entrada escalonada
+            const animatedElements = document.querySelectorAll('.animate-in');
+            animatedElements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Mejorar accesibilidad
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const openModal = document.querySelector('.modal.show');
+                    if (openModal) {
+                        bootstrap.Modal.getInstance(openModal).hide();
+                    }
+                }
+            });
+
+            // Mostrar notificaciones flash temporalmente
+            const flashMessages = document.querySelectorAll('.alert');
+            flashMessages.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    setTimeout(() => {
+                        if (alert.parentNode) {
+                            alert.parentNode.removeChild(alert);
+                        }
+                    }, 300);
+                }, 5000);
+            });
+        });
+
+        // Función simple de confirmación como fallback
+        function confirmAction(message) {
+            return confirm(message);
+        }
+    </script>
+</body>
+</html>

@@ -1,25 +1,45 @@
-# app/__init__.py
-from flask import Flask
+# app/__init__.py - VERSIÓN CORREGIDA
+from flask import Flask, request, session
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy 
 from config import Config
 import os
 from dotenv import load_dotenv
-
+from datetime import timedelta
+from flask_login import LoginManager, current_user 
+from flask_migrate import Migrate
 # Cargar variables de entorno
 load_dotenv()
 
 # Initialize extensions
 login_manager = LoginManager()
 mail = Mail()
-db = SQLAlchemy()  # Inicializado aquí
+db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
     
     # Cargar configuración
     app.config.from_object(Config)
+    
+    migrate = Migrate(app, db)
+
+    # CONFIGURACIÓN CRÍTICA DE SESIÓN Y SEGURIDAD
+    app.config.update(
+        # Sesiones y cookies seguras
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=False,  # True en producción con HTTPS
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_DURATION=timedelta(days=1),
+        PERMANENT_SESSION_LIFETIME=timedelta(days=1),
+        
+        # Protección CSRF
+        WTF_CSRF_ENABLED=True,
+        
+        # Configuración de reverse proxy si estás detrás de uno
+        PREFERRED_URL_SCHEME='http'
+    )
 
     INGRAM_LANGUAGE = os.getenv("INGRAM_LANGUAGE", "es")
     CACHE_EXPIRY_HOURS = int(os.getenv("CACHE_EXPIRY_HOURS", "2"))
@@ -31,15 +51,40 @@ def create_app():
     # Debug: verificar configuraciones
     print(f"🔧 SQLALCHEMY_DATABASE_URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
     print(f"🔧 INGRAM_API_BASE_URL: {app.config.get('INGRAM_API_BASE_URL')}")
+    print(f"🔧 SECRET_KEY configurada: {'SÍ' if app.config.get('SECRET_KEY') else 'NO'}")
     
     # Initialize extensions
     db.init_app(app)
+    
+    # CONFIGURAR LOGIN_MANAGER ANTES DE TODO
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
+    login_manager.login_message_category = 'danger'
+    login_manager.refresh_view = 'auth.login'
+    login_manager.needs_refresh_message = 'Por favor vuelve a iniciar sesión.'
+    login_manager.needs_refresh_message_category = 'warning'
+    
     mail.init_app(app)
     
-    # Importar modelos para que SQLAlchemy los detecte
+    # USER LOADER DEBE ESTAR ANTES DE LOS BLUEPRINTS
     from app.models.user import User
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        try:
+            print(f"🔍 User loader llamado para ID: {user_id}")
+            user = User.query.get(int(user_id))
+            if user:
+                print(f"✅ Usuario cargado: {user.email}")
+            else:
+                print("❌ Usuario no encontrado")
+            return user
+        except Exception as e:
+            print(f"❌ Error en user_loader: {e}")
+            return None
+
+    # Importar modelos para que SQLAlchemy los detecte
     from app.models.product import Product
     from app.models.favorite import Favorite
     from app.models.quote import Quote, QuoteItem
@@ -81,10 +126,11 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(api_bp, url_prefix='/api')
     
-    # User loader for Flask-Login
-    from app.models.user import User
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
+    # Middleware para debug de sesión
+    @app.before_request
+    def log_session_info():
+        if '/admin/' in request.path:
+            print(f"🔍 Sesión antes de request: {dict(session)}")
+            print(f"🔍 User authenticated: {current_user.is_authenticated if hasattr(current_user, 'is_authenticated') else 'N/A'}")
     
     return app

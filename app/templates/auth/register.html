@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - IT Data Global</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,199 +14,448 @@
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #F1F3F4 0%, #E8EAED 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Elementos decorativos de fondo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 70%, rgba(241, 90, 41, 0.03) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 30%, rgba(28, 42, 47, 0.02) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-20px, -20px) rotate(1deg); }
+            66% { transform: translate(20px, -10px) rotate(-1deg); }
         }
 
         .register-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 
+                0 32px 64px rgba(28, 42, 47, 0.08),
+                0 16px 32px rgba(28, 42, 47, 0.04),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
             width: 100%;
-            max-width: 500px;
+            max-width: 520px;
             overflow: hidden;
+            position: relative;
+            border-left: 5px solid #F15A29;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .register-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #F15A29, transparent);
+            border-radius: 24px 24px 0 0;
+        }
+
+        .register-container:hover {
+            transform: translateY(-2px);
         }
 
         .register-header {
-            background: #1C2A2F;
+            background: linear-gradient(135deg, #1C2A2F 0%, #2A3B42 100%);
             color: white;
-            padding: 2rem;
+            padding: 2.5rem 2rem;
             text-align: center;
-            border-bottom: 4px solid #F15A29;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .register-header::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #F15A29, #d14a1f);
         }
 
         .register-logo {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .logo-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #F15A29 0%, #d14a1f 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.6rem;
+            box-shadow: 0 8px 20px rgba(241, 90, 41, 0.3);
         }
 
         .register-title {
-            font-size: 1.8rem;
-            font-weight: 600;
+            font-size: 1.9rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
         }
 
         .register-subtitle {
-            opacity: 0.8;
+            opacity: 0.9;
             font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 0.01em;
         }
 
         .register-form {
-            padding: 2rem;
+            padding: 2.5rem;
         }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.75rem;
+            position: relative;
         }
 
         .form-label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             font-weight: 600;
             color: #1C2A2F;
             font-size: 0.9rem;
+            letter-spacing: 0.01em;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6C757D;
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
+            z-index: 1;
         }
 
         .form-input {
             width: 100%;
-            padding: 1rem;
-            border: 2px solid #DEE2E6;
-            border-radius: 12px;
+            padding: 1.1rem 1rem 1.1rem 3rem;
+            border: 2px solid #E9ECEF;
+            border-radius: 16px;
             font-size: 1rem;
-            transition: all 0.3s ease;
+            font-weight: 400;
+            color: #1C2A2F;
+            background: #FAFBFC;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-family: inherit;
+        }
+
+        .form-input.no-icon {
+            padding-left: 1rem;
         }
 
         .form-input:focus {
             outline: none;
             border-color: #F15A29;
-            box-shadow: 0 0 0 3px rgba(241, 90, 41, 0.1);
+            background: white;
+            box-shadow: 
+                0 0 0 4px rgba(241, 90, 41, 0.08),
+                0 8px 24px rgba(241, 90, 41, 0.1);
+            transform: translateY(-1px);
         }
 
-        .form-select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236C757D' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1rem;
+        .form-input:focus + .input-icon {
+            color: #F15A29;
+        }
+
+        .form-input::placeholder {
+            color: #ADB5BD;
+            font-weight: 400;
         }
 
         .btn-register {
             width: 100%;
-            padding: 1rem;
-            background: #F15A29;
+            padding: 1.2rem;
+            background: linear-gradient(135deg, #F15A29 0%, #d14a1f 100%);
             color: white;
             border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
+            border-radius: 16px;
+            font-size: 1.05rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 24px rgba(241, 90, 41, 0.2);
             font-family: inherit;
             margin-top: 1rem;
+            letter-spacing: 0.01em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-register::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-register:hover::before {
+            left: 100%;
         }
 
         .btn-register:hover {
-            background: #d14a1f;
+            background: linear-gradient(135deg, #d14a1f 0%, #b8401a 100%);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(241, 90, 41, 0.3);
+            box-shadow: 0 12px 32px rgba(241, 90, 41, 0.3);
+        }
+
+        .btn-register:active {
+            transform: translateY(0);
+            box-shadow: 0 6px 20px rgba(241, 90, 41, 0.25);
         }
 
         .register-links {
             text-align: center;
             margin-top: 2rem;
             padding-top: 2rem;
-            border-top: 1px solid #F1F3F4;
+            border-top: 1px solid #E9ECEF;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .register-links p {
+            margin: 0;
+            color: #6C757D;
+            font-size: 0.9rem;
+            font-weight: 400;
         }
 
         .register-links a {
             color: #F15A29;
             text-decoration: none;
             font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .register-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #F15A29;
+            transition: width 0.3s ease;
+        }
+
+        .register-links a:hover::after {
+            width: 100%;
         }
 
         .register-links a:hover {
-            text-decoration: underline;
+            color: #d14a1f;
         }
 
         .alert {
-            padding: 1rem;
+            padding: 1rem 1.25rem;
             border-radius: 12px;
             margin-bottom: 1.5rem;
             font-weight: 500;
+            font-size: 0.9rem;
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: #F0FDF4;
+            color: #16A34A;
+            border-left-color: #16A34A;
         }
 
         .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: #FEF2F2;
+            color: #DC2626;
+            border-left-color: #DC2626;
         }
 
         .alert-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
+            background: #FFFBEB;
+            color: #D97706;
+            border-left-color: #D97706;
+        }
+
+        .account-type-section {
+            margin-bottom: 2rem;
+        }
+
+        .account-type-label {
+            display: block;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: #1C2A2F;
+            font-size: 0.9rem;
+            letter-spacing: 0.01em;
         }
 
         .account-type-cards {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
-            margin-bottom: 1.5rem;
         }
 
         .account-type-card {
-            border: 2px solid #DEE2E6;
-            border-radius: 12px;
-            padding: 1rem;
+            border: 2px solid #E9ECEF;
+            border-radius: 16px;
+            padding: 1.5rem 1rem;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #FAFBFC;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .account-type-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(241, 90, 41, 0.05), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .account-type-card:hover::before {
+            left: 100%;
         }
 
         .account-type-card:hover {
             border-color: #F15A29;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(241, 90, 41, 0.1);
+            background: white;
         }
 
         .account-type-card.selected {
             border-color: #F15A29;
-            background: rgba(241, 90, 41, 0.1);
+            background: rgba(241, 90, 41, 0.05);
+            box-shadow: 0 8px 24px rgba(241, 90, 41, 0.15);
+            transform: translateY(-2px);
         }
 
         .account-type-card i {
-            font-size: 2rem;
+            font-size: 2.2rem;
             color: #6C757D;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
         }
 
-        .account-type-card.selected i {
+        .account-type-card.selected i,
+        .account-type-card:hover i {
             color: #F15A29;
+            transform: scale(1.1);
         }
 
         .account-type-card h4 {
             font-size: 1rem;
             margin-bottom: 0.5rem;
             color: #1C2A2F;
+            font-weight: 600;
+            letter-spacing: -0.01em;
         }
 
         .account-type-card p {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: #6C757D;
+            font-weight: 400;
+            line-height: 1.4;
         }
 
         input[type="radio"] {
             display: none;
+        }
+
+        #business-fields {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(241, 90, 41, 0.02);
+            border-radius: 16px;
+            border: 1px solid rgba(241, 90, 41, 0.1);
+            animation: expandFields 0.3s ease-out;
+        }
+
+        @keyframes expandFields {
+            from {
+                opacity: 0;
+                max-height: 0;
+                padding: 0 1.5rem;
+            }
+            to {
+                opacity: 1;
+                max-height: 200px;
+                padding: 1.5rem;
+            }
+        }
+
+        .business-fields-title {
+            color: #1C2A2F;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .business-fields-title i {
+            color: #F15A29;
         }
 
         @media (max-width: 768px) {
@@ -218,7 +468,44 @@
             }
             
             .register-container {
-                margin: 1rem;
+                margin: 0;
+            }
+
+            .register-form {
+                padding: 2rem;
+            }
+
+            .register-header {
+                padding: 2rem;
+            }
+
+            .form-input {
+                padding: 1rem 0.875rem 1rem 2.75rem;
+            }
+
+            .form-input.no-icon {
+                padding-left: 0.875rem;
+            }
+
+            .btn-register {
+                padding: 1.1rem;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .register-title {
+                font-size: 1.6rem;
+            }
+
+            .logo-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 1.4rem;
+            }
+
+            .account-type-card {
+                padding: 1.25rem 0.875rem;
             }
         }
     </style>
@@ -227,10 +514,14 @@
     <div class="register-container">
         <div class="register-header">
             <div class="register-logo">
-                <i class="fas fa-microchip"></i>
+                <div class="logo-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div>
+                    <h1 class="register-title">IT Data Global</h1>
+                    <p class="register-subtitle">Crea tu cuenta para acceder a precios especiales</p>
+                </div>
             </div>
-            <h1 class="register-title">IT Data Global</h1>
-            <p class="register-subtitle">Crea tu cuenta para acceder a precios especiales</p>
         </div>
 
         <div class="register-form">
@@ -247,72 +538,97 @@
 
             <form method="POST">
                 <div class="form-group">
-                    <label class="form-label">Nombre completo *</label>
-                    <input type="text" name="full_name" class="form-input" required 
-                           placeholder="Tu nombre completo" value="{{ request.form.full_name or '' }}">
+                    <label class="form-label" for="full_name">Nombre Completo *</label>
+                    <div class="input-wrapper">
+                        <input type="text" name="full_name" id="full_name" class="form-input" required 
+                               placeholder="Ingresa tu nombre completo" value="{{ request.form.full_name or '' }}" autocomplete="name">
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Email *</label>
-                    <input type="email" name="email" class="form-input" required 
-                           placeholder="tu.email@ejemplo.com" value="{{ request.form.email or '' }}">
+                    <label class="form-label" for="email">Correo Electrónico *</label>
+                    <div class="input-wrapper">
+                        <input type="email" name="email" id="email" class="form-input" required 
+                               placeholder="tu@email.com" value="{{ request.form.email or '' }}" autocomplete="email">
+                        <i class="fas fa-envelope input-icon"></i>
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Contraseña *</label>
-                    <input type="password" name="password" class="form-input" required 
-                           placeholder="Mínimo 8 caracteres" minlength="8">
+                    <label class="form-label" for="password">Contraseña *</label>
+                    <div class="input-wrapper">
+                        <input type="password" name="password" id="password" class="form-input" required 
+                               placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password">
+                        <i class="fas fa-lock input-icon"></i>
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Confirmar contraseña *</label>
-                    <input type="password" name="confirm_password" class="form-input" required 
-                           placeholder="Repite tu contraseña">
+                    <label class="form-label" for="confirm_password">Confirmar Contraseña *</label>
+                    <div class="input-wrapper">
+                        <input type="password" name="confirm_password" id="confirm_password" class="form-input" required 
+                               placeholder="Repite tu contraseña" autocomplete="new-password">
+                        <i class="fas fa-shield-alt input-icon"></i>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Tipo de cuenta *</label>
+                <div class="account-type-section">
+                    <label class="account-type-label">Tipo de Cuenta *</label>
                     <div class="account-type-cards">
                         <label class="account-type-card {% if request.form.account_type == 'public' %}selected{% endif %}">
                             <input type="radio" name="account_type" value="public" {% if request.form.account_type == 'public' %}checked{% endif %} required>
                             <i class="fas fa-user"></i>
                             <h4>Público General</h4>
-                            <p>Acceso básico al catálogo</p>
+                            <p>Acceso básico al catálogo con precios estándar</p>
                         </label>
                         
                         <label class="account-type-card {% if request.form.account_type == 'client' %}selected{% endif %}">
                             <input type="radio" name="account_type" value="client" {% if request.form.account_type == 'client' %}checked{% endif %}>
                             <i class="fas fa-building"></i>
                             <h4>Cliente Empresarial</h4>
-                            <p>Precios especiales y cotizaciones</p>
+                            <p>Precios especiales, cotizaciones y descuentos</p>
                         </label>
                     </div>
                 </div>
 
                 <!-- Campos adicionales para clientes empresariales -->
                 <div id="business-fields" style="display: none;">
+                    <div class="business-fields-title">
+                        <i class="fas fa-briefcase"></i>
+                        Información Empresarial
+                    </div>
                     <div class="form-group">
-                        <label class="form-label">RFC</label>
-                        <input type="text" name="rfc" class="form-input" 
-                               placeholder="RFC de la empresa" value="{{ request.form.rfc or '' }}">
+                        <label class="form-label" for="rfc">RFC de la Empresa</label>
+                        <div class="input-wrapper">
+                            <input type="text" name="rfc" id="rfc" class="form-input" 
+                                   placeholder="Ej: ABC123456789" value="{{ request.form.rfc or '' }}">
+                            <i class="fas fa-file-alt input-icon"></i>
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Razón Social</label>
-                        <input type="text" name="business_name" class="form-input" 
-                               placeholder="Nombre de la empresa" value="{{ request.form.business_name or '' }}">
+                        <label class="form-label" for="business_name">Razón Social</label>
+                        <div class="input-wrapper">
+                            <input type="text" name="business_name" id="business_name" class="form-input" 
+                                   placeholder="Nombre completo de la empresa" value="{{ request.form.business_name or '' }}">
+                            <i class="fas fa-building input-icon"></i>
+                        </div>
                     </div>
                 </div>
 
                 <button type="submit" class="btn-register">
-                    <i class="fas fa-user-plus"></i>
+                    <i class="fas fa-user-plus" style="margin-right: 0.5rem;"></i>
                     Crear Cuenta
                 </button>
             </form>
 
             <div class="register-links">
-                <p>¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión aquí</a></p>
-                <p><a href="{{ url_for('products.catalogo_completo_cards') }}">Continuar como invitado</a></p>
+                <p>¿Ya tienes una cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión aquí</a></p>
+                <p><a href="{{ url_for('products.catalogo_completo_cards') }}">
+                    <i class="fas fa-user-friends" style="margin-right: 0.25rem;"></i>
+                    Continuar como invitado
+                </a></p>
             </div>
         </div>
     </div>
@@ -322,6 +638,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const accountTypeRadios = document.querySelectorAll('input[name="account_type"]');
             const businessFields = document.getElementById('business-fields');
+            const accountTypeCards = document.querySelectorAll('.account-type-card');
             
             function toggleBusinessFields() {
                 const selectedValue = document.querySelector('input[name="account_type"]:checked').value;
@@ -334,23 +651,61 @@
                 });
             }
             
+            function updateCardSelection() {
+                accountTypeCards.forEach(card => {
+                    const radio = card.querySelector('input[type="radio"]');
+                    if (radio.checked) {
+                        card.classList.add('selected');
+                    } else {
+                        card.classList.remove('selected');
+                    }
+                });
+            }
+            
             accountTypeRadios.forEach(radio => {
-                radio.addEventListener('change', toggleBusinessFields);
+                radio.addEventListener('change', function() {
+                    toggleBusinessFields();
+                    updateCardSelection();
+                });
             });
             
             // Ejecutar al cargar la página
             toggleBusinessFields();
+            updateCardSelection();
             
-            // Validación de contraseña
+            // Validación de contraseña en tiempo real
             const form = document.querySelector('form');
+            const password = document.querySelector('input[name="password"]');
+            const confirmPassword = document.querySelector('input[name="confirm_password"]');
+            
+            function validatePasswords() {
+                if (confirmPassword.value && password.value !== confirmPassword.value) {
+                    confirmPassword.setCustomValidity('Las contraseñas no coinciden');
+                    confirmPassword.style.borderColor = '#DC2626';
+                } else {
+                    confirmPassword.setCustomValidity('');
+                    if (confirmPassword.value) {
+                        confirmPassword.style.borderColor = '#16A34A';
+                    }
+                }
+            }
+            
+            confirmPassword.addEventListener('input', validatePasswords);
+            password.addEventListener('input', validatePasswords);
+            
             form.addEventListener('submit', function(e) {
-                const password = document.querySelector('input[name="password"]');
-                const confirmPassword = document.querySelector('input[name="confirm_password"]');
-                
                 if (password.value !== confirmPassword.value) {
                     e.preventDefault();
-                    alert('Las contraseñas no coinciden');
                     confirmPassword.focus();
+                    confirmPassword.style.borderColor = '#DC2626';
+                    
+                    // Mostrar mensaje temporal
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-danger';
+                    alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> Las contraseñas no coinciden';
+                    form.insertBefore(alert, form.firstChild);
+                    
+                    setTimeout(() => alert.remove(), 3000);
                 }
             });
         });

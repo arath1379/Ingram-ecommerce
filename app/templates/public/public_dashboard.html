@@ -121,7 +121,7 @@
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
             margin-bottom: 2rem;
         }
@@ -129,8 +129,17 @@
         .dashboard-card {
             background: #FFFFFF;
             border-radius: 16px;
-            padding: 1.5rem;
+            padding: 2rem;
             box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(28, 42, 47, 0.15);
         }
 
         .card-header {
@@ -141,33 +150,81 @@
         }
 
         .card-title {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 600;
             color: #1C2A2F;
         }
 
         .card-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
             background: rgba(241, 90, 41, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #F15A29;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .stat-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .stat-main {
+            margin-bottom: 1.5rem;
         }
 
         .stat-number {
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: 700;
             color: #1C2A2F;
             margin-bottom: 0.5rem;
+            line-height: 1;
         }
 
         .stat-label {
             color: #6C757D;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-details {
+            background: #F8F9FA;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #E9ECEF;
+        }
+
+        .stat-detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #6C757D;
             font-size: 0.9rem;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #1C2A2F;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: auto;
         }
 
         .btn {
@@ -183,6 +240,8 @@
             justify-content: center;
             gap: 0.5rem;
             font-size: 0.9rem;
+            flex: 1;
+            text-align: center;
         }
 
         .btn-primary {
@@ -198,10 +257,21 @@
         .btn-secondary {
             background: #F1F3F4;
             color: #6C757D;
+            border: 2px solid #E9ECEF;
         }
 
         .btn-secondary:hover {
             background: #E9ECEF;
+            border-color: #DEE2E6;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
         }
 
         .recent-activity {
@@ -211,6 +281,19 @@
             box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
         }
 
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1C2A2F;
+        }
+
         .activity-list {
             list-style: none;
         }
@@ -218,8 +301,13 @@
         .activity-item {
             display: flex;
             gap: 1rem;
-            padding: 1rem 0;
+            padding: 1.5rem;
             border-bottom: 1px solid #F1F3F4;
+            transition: background-color 0.3s ease;
+        }
+
+        .activity-item:hover {
+            background-color: #F8F9FA;
         }
 
         .activity-item:last-child {
@@ -227,14 +315,16 @@
         }
 
         .activity-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
             background: rgba(241, 90, 41, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #F15A29;
+            font-size: 1.2rem;
+            flex-shrink: 0;
         }
 
         .activity-content {
@@ -244,11 +334,33 @@
         .activity-title {
             font-weight: 600;
             margin-bottom: 0.25rem;
+            color: #1C2A2F;
+        }
+
+        .activity-desc {
+            color: #6C757D;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
         }
 
         .activity-time {
             font-size: 0.8rem;
+            color: #8D9AA6;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
             color: #6C757D;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
         }
 
         @media (max-width: 768px) {
@@ -259,10 +371,27 @@
             .user-header {
                 flex-direction: column;
                 text-align: center;
+                gap: 1rem;
             }
             
             .dashboard-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .btn-container {
+                flex-direction: column;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .activity-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
             }
         }
     </style>
@@ -295,10 +424,12 @@
             <div class="user-info">
                 <h1>{{ user_name }}</h1>
                 <span class="user-role">Usuario Público</span>
+                <p style="margin-top: 0.5rem; color: #6C757D;">{{ user_email }}</p>
             </div>
         </div>
 
         <div class="dashboard-grid">
+            <!-- Tarjeta de Favoritos -->
             <div class="dashboard-card">
                 <div class="card-header">
                     <h3 class="card-title">Productos Favoritos</h3>
@@ -306,73 +437,189 @@
                         <i class="fas fa-heart"></i>
                     </div>
                 </div>
-                <div class="stat-number">{{ favorites_count }}</div>
-                <p class="stat-label">Productos en tu lista de favoritos</p>
-                <a href="/products/favoritos" class="btn btn-primary">Ver Favoritos</a>
-            </div>
-
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <h3 class="card-title">Cotización Actual</h3>
-                    <div class="card-icon">
-                        <i class="fas fa-shopping-cart"></i>
+                <div class="stat-content">
+                    <div class="stat-main">
+                        <div class="stat-number">{{ favorites_count }}</div>
+                        <p class="stat-label">Productos en tu lista de favoritos</p>
+                        
+                        {% if recent_favorites %}
+                        <div class="stat-details">
+                            <div class="stat-detail-item">
+                                <span class="detail-label">Agregado recientemente:</span>
+                                <span class="detail-value">{{ recent_favorites|length }}</span>
+                            </div>
+                            <div class="stat-detail-item">
+                                <span class="detail-label">Categorías:</span>
+                                <span class="detail-value">{{ favorite_categories|length }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="btn-container">
+                        <a href="/products/favorites" class="btn btn-primary">
+                            <i class="fas fa-heart"></i> Ver Favoritos
+                        </a>
+                        <a href="/products/catalog" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Agregar Más
+                        </a>
                     </div>
                 </div>
-                <div class="stat-number">{{ quote_items }}</div>
-                <p class="stat-label">Productos en tu cotización</p>
-                <a href="/products/mi-cotizacion" class="btn btn-primary">Ver Cotización</a>
             </div>
 
+            <!-- Tarjeta de Cotizaciones -->
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h3 class="card-title">Acceso Limitado</h3>
+                    <h3 class="card-title">Mis Cotizaciones</h3>
                     <div class="card-icon">
-                        <i class="fas fa-star"></i>
+                        <i class="fas fa-file-invoice-dollar"></i>
                     </div>
                 </div>
-                <p class="stat-label">Como usuario público, tienes acceso básico a nuestro catálogo.</p>
-                <p style="margin-top: 1rem; color: #6C757D; font-size: 0.9rem;">
-                    <i class="fas fa-info-circle"></i> Regístrate como cliente empresarial para obtener precios especiales y descuentos.
-                </p>
-                <a href="/upgrade-account" class="btn btn-secondary">Mejorar Cuenta</a>
+                <div class="stat-content">
+                    <div class="stat-main">
+                        <div class="stat-number">{{ active_quotes }}</div>
+                        <p class="stat-label">Cotizaciones activas</p>
+                        
+                        {% if quote_stats %}
+                        <div class="stat-details">
+                            <div class="stat-detail-item">
+                                <span class="detail-label">Productos en cotización:</span>
+                                <span class="detail-value">{{ quote_stats.total_items }}</span>
+                            </div>
+                            <div class="stat-detail-item">
+                                <span class="detail-label">Valor total:</span>
+                                <span class="detail-value">${{ "%.2f"|format(quote_stats.total_value) }}</span>
+                            </div>
+                            <div class="stat-detail-item">
+                                <span class="detail-label">Última actualización:</span>
+                                <span class="detail-value">{{ quote_stats.last_update }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="btn-container">
+                        <a href="/products/mi-cotizacion" class="btn btn-primary">
+                            <i class="fas fa-shopping-cart"></i> Ver Cotización
+                        </a>
+                        <a href="/products/catalog" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Nuevos Productos
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Cuenta -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3 class="card-title">Mi Cuenta</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-main">
+                        <div class="stat-number" style="font-size: 2rem;">{{ account_type|title }}</div>
+                        <p class="stat-label">Tipo de cuenta actual</p>
+                        
+                        <div class="stat-details">
+                            <div class="stat-detail-item">
+                                <span class="detail-label">Miembro desde:</span>
+                                <span class="detail-value">{{ member_since }}</span>
+                            </div>
+                            <div class="stat-detail-item">
+                                <span class="detail-label">Estado:</span>
+                                <span class="detail-value" style="color: #28a745;">
+                                    <i class="fas fa-check-circle"></i> Activo
+                                </span>
+                            </div>
+                            <div class="stat-detail-item">
+                                <span class="detail-label">Último acceso:</span>
+                                <span class="detail-value">{{ last_login }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-container">
+                        <a href="/profile" class="btn btn-primary">
+                            <i class="fas fa-user-edit"></i> Editar Perfil
+                        </a>
+                        <a href="/upgrade-account" class="btn btn-secondary">
+                            <i class="fas fa-star"></i> Mejorar Cuenta
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
+        <!-- Actividad Reciente -->
         <div class="recent-activity">
-            <h2 style="margin-bottom: 1.5rem;">Actividad Reciente</h2>
+            <div class="section-header">
+                <h2 class="section-title">Actividad Reciente</h2>
+                <a href="/activity" class="btn btn-secondary" style="flex: none;">
+                    <i class="fas fa-history"></i> Ver Todo
+                </a>
+            </div>
+            
+            {% if recent_activity %}
             <ul class="activity-list">
+                {% for activity in recent_activity %}
                 <li class="activity-item">
                     <div class="activity-icon">
-                        <i class="fas fa-search"></i>
+                        <i class="{{ activity.icon }}"></i>
                     </div>
                     <div class="activity-content">
-                        <div class="activity-title">Búsqueda de productos</div>
-                        <div class="activity-desc">Buscaste "laptops gaming" en el catálogo</div>
-                        <div class="activity-time">Hace 2 horas</div>
+                        <div class="activity-title">{{ activity.title }}</div>
+                        <div class="activity-desc">{{ activity.description }}</div>
+                        <div class="activity-time">
+                            <i class="fas fa-clock"></i> {{ activity.time }}
+                        </div>
                     </div>
                 </li>
-                <li class="activity-item">
-                    <div class="activity-icon">
-                        <i class="fas fa-heart"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">Producto agregado a favoritos</div>
-                        <div class="activity-desc">Agregaste "Laptop Dell XPS 13" a tus favoritos</div>
-                        <div class="activity-time">Ayer a las 15:30</div>
-                    </div>
-                </li>
-                <li class="activity-item">
-                    <div class="activity-icon">
-                        <i class="fas fa-cart-plus"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">Producto agregado a cotización</div>
-                        <div class="activity-desc">Agregaste "Monitor Samsung 24"" a tu cotización</div>
-                        <div class="activity-time">Ayer a las 14:15</div>
-                    </div>
-                </li>
+                {% endfor %}
             </ul>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <h3>No hay actividad reciente</h3>
+                <p>Tu actividad aparecerá aquí cuando comiences a usar el sistema</p>
+                <a href="/products/catalog" class="btn btn-primary" style="margin-top: 1rem;">
+                    <i class="fas fa-boxes"></i> Explorar Catálogo
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
+
+    <script>
+        // Animaciones y funcionalidades adicionales
+        document.addEventListener('DOMContentLoaded', function() {
+            // Actualizar la hora de "Último acceso" en tiempo real
+            function updateLastAccess() {
+                const lastAccessElements = document.querySelectorAll('.detail-value:contains("hace")');
+                lastAccessElements.forEach(element => {
+                    // Lógica para actualizar tiempos relativos
+                    console.log('Actualizando tiempos de acceso...');
+                });
+            }
+            
+            // Efectos de hover mejorados para las tarjetas
+            const cards = document.querySelectorAll('.dashboard-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+            
+            // Actualizar cada minuto
+            setInterval(updateLastAccess, 60000);
+        });
+    </script>
 </body>
 </html>

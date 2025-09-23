@@ -1,4 +1,5 @@
 from app import create_app, db  # ← IMPORTAR db DESDE app
+from flask_migrate import Migrate
 import secrets
 
 # Crear la aplicación primero

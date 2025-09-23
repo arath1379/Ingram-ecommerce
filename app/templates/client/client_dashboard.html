@@ -7,6 +7,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #F15A29;
+            --primary-dark: #d14a1f;
+            --secondary-color: #1C2A2F;
+            --surface-color: #FFFFFF;
+            --background-color: #F1F3F4;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+            --info-color: #3B82F6;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -15,18 +30,42 @@
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #F1F3F4;
+            background: linear-gradient(135deg, var(--background-color) 0%, #E8EAED 100%);
             min-height: 100vh;
-            color: #1C2A2F;
+            color: var(--text-primary);
             line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Elementos decorativos de fondo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 70%, rgba(241, 90, 41, 0.03) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 30%, rgba(28, 42, 47, 0.02) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-20px, -20px) rotate(1deg); }
+            66% { transform: translate(20px, -10px) rotate(-1deg); }
         }
 
         .header {
-            background: #1C2A2F;
-            color: #FFFFFF;
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            color: var(--surface-color);
             padding: 1rem 0;
-            box-shadow: 0 4px 20px rgba(28, 42, 47, 0.3);
-            border-bottom: 3px solid #4F46E5;
+            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.15);
+            border-bottom: 3px solid var(--primary-color);
+            position: relative;
+            z-index: 100;
         }
 
         .header-content {
@@ -39,98 +78,164 @@
         }
 
         .logo {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 700;
             text-decoration: none;
-            color: #FFFFFF;
+            color: var(--surface-color);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
+            letter-spacing: -0.025em;
         }
 
         .logo i {
-            color: #4F46E5;
+            color: var(--surface-color);
+            font-size: 1.75rem;
         }
 
         .nav-links {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         .nav-link {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.8rem 1.5rem;
-            background: #4F46E5;
-            color: #FFFFFF;
+            padding: 0.75rem 1.25rem;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--surface-color);
             text-decoration: none;
             border-radius: 12px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 500;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .nav-link:hover {
-            background: #4338CA;
+            background: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
+            color: var(--surface-color);
         }
 
         .main-container {
             max-width: 1400px;
             margin: 2rem auto;
             padding: 0 2rem;
+            position: relative;
+            z-index: 1;
         }
 
         .user-header {
-            background: #FFFFFF;
-            border-radius: 16px;
-            padding: 2rem;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
             margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
+            box-shadow: 
+                0 20px 40px rgba(28, 42, 47, 0.08),
+                0 8px 16px rgba(28, 42, 47, 0.04);
             display: flex;
             align-items: center;
             gap: 2rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
         }
 
         .user-avatar {
             width: 100px;
             height: 100px;
-            border-radius: 50%;
-            background: #4F46E5;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2.5rem;
             color: white;
+            box-shadow: 0 8px 24px rgba(241, 90, 41, 0.3);
         }
 
         .user-info h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+            font-size: 2.25rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
         }
 
         .user-role {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
             padding: 0.5rem 1rem;
-            background: #4F46E5;
+            background: linear-gradient(135deg, var(--success-color), #059669);
             color: white;
-            border-radius: 20px;
+            border-radius: 12px;
             font-size: 0.9rem;
             font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .user-details {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 500;
         }
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
         .dashboard-card {
-            background: #FFFFFF;
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 
+                0 20px 40px rgba(28, 42, 47, 0.08),
+                0 8px 16px rgba(28, 42, 47, 0.04);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-color);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 
+                0 32px 64px rgba(28, 42, 47, 0.12),
+                0 16px 32px rgba(28, 42, 47, 0.08);
         }
 
         .card-header {
@@ -141,121 +246,263 @@
         }
 
         .card-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 600;
-            color: #1C2A2F;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
         }
 
         .card-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            background: rgba(79, 70, 229, 0.1);
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #4F46E5;
+            color: white;
             font-size: 1.5rem;
         }
 
+        .card-icon.primary { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); }
+        .card-icon.success { background: linear-gradient(135deg, var(--success-color), #059669); }
+        .card-icon.warning { background: linear-gradient(135deg, var(--warning-color), #D97706); }
+        .card-icon.info { background: linear-gradient(135deg, var(--info-color), #1D4ED8); }
+        .card-icon.danger { background: linear-gradient(135deg, var(--danger-color), #DC2626); }
+
         .stat-number {
-            font-size: 2.5rem;
+            font-size: 2.75rem;
             font-weight: 700;
-            color: #1C2A2F;
+            color: var(--text-primary);
             margin-bottom: 0.5rem;
+            line-height: 1;
         }
 
         .stat-label {
-            color: #6C757D;
-            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
         }
 
         .btn {
-            padding: 0.8rem 1.5rem;
+            padding: 0.875rem 1.5rem;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
             font-size: 0.9rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn-primary {
-            background: #4F46E5;
-            color: #FFFFFF;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--surface-color);
+            box-shadow: 0 4px 12px rgba(241, 90, 41, 0.3);
         }
 
         .btn-primary:hover {
-            background: #4338CA;
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, var(--primary-dark), #b8401a);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(241, 90, 41, 0.4);
+            color: var(--surface-color);
         }
 
         .btn-secondary {
-            background: #F1F3F4;
-            color: #6C757D;
+            background: var(--background-color);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-color);
         }
 
         .btn-secondary:hover {
-            background: #E9ECEF;
+            background: var(--surface-color);
+            color: var(--text-primary);
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
 
         .recent-activity {
-            background: #FFFFFF;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 
+                0 20px 40px rgba(28, 42, 47, 0.08),
+                0 8px 16px rgba(28, 42, 47, 0.04);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .recent-activity::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            letter-spacing: -0.025em;
         }
 
         .data-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             margin-top: 1rem;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .data-table th,
         .data-table td {
-            padding: 1rem;
+            padding: 1.25rem 1rem;
             text-align: left;
-            border-bottom: 1px solid #F1F3F4;
         }
 
         .data-table th {
-            background: #F8F9FA;
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
             font-weight: 600;
-            color: #1C2A2F;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--border-color);
         }
 
-        .data-table tr:hover {
-            background: #F8F9FA;
+        .data-table td {
+            border-bottom: 1px solid #F1F5F9;
+            font-weight: 500;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(241, 90, 41, 0.05);
+            transform: scale(1.001);
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
         }
 
         .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
             font-size: 0.8rem;
             font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
         }
 
-        .status-active {
-            background: #D4EDDA;
-            color: #155724;
+        .status-sent {
+            background: linear-gradient(135deg, var(--info-color), #1D4ED8);
+            color: white;
         }
 
         .status-pending {
-            background: #FFF3CD;
-            color: #856404;
+            background: linear-gradient(135deg, var(--warning-color), #D97706);
+            color: white;
         }
 
-        .status-inactive {
-            background: #F8D7DA;
-            color: #721C24;
+        .status-approved {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
         }
 
+        .status-rejected {
+            background: linear-gradient(135deg, var(--danger-color), #DC2626);
+            color: white;
+        }
+
+        .status-processing {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            opacity: 0.7;
+        }
+
+        .empty-state h3 {
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
             .main-container {
                 padding: 0 1rem;
@@ -264,16 +511,79 @@
             .user-header {
                 flex-direction: column;
                 text-align: center;
+                padding: 2rem;
             }
             
             .dashboard-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .dashboard-card {
+                padding: 1.5rem;
             }
             
             .data-table {
-                font-size: 0.8rem;
+                font-size: 0.875rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .stat-number {
+                font-size: 2.25rem;
             }
         }
+
+        @media (max-width: 480px) {
+            .user-header {
+                padding: 1.5rem;
+            }
+
+            .user-info h1 {
+                font-size: 1.75rem;
+            }
+
+            .dashboard-card {
+                padding: 1.25rem;
+            }
+
+            .recent-activity {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Animaciones */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
     </style>
 </head>
 <body>
@@ -286,7 +596,7 @@
             <div class="nav-links">
                 <a href="/products/catalogo-completo-cards" class="nav-link">
                     <i class="fas fa-boxes"></i>
-                    Catálogo
+                    Ver Catálogo
                 </a>
                 <a href="/logout" class="nav-link">
                     <i class="fas fa-sign-out-alt"></i>
@@ -297,98 +607,482 @@
     </header>
 
     <div class="main-container">
-        <div class="user-header">
+        <div class="user-header animate-in">
             <div class="user-avatar">
                 <i class="fas fa-building"></i>
             </div>
             <div class="user-info">
                 <h1>{{ business_name }}</h1>
-                <div style="margin-bottom: 0.5rem;">
-                    <span class="user-role">Cliente Empresarial</span>
+                <div class="user-role">
+                    <i class="fas fa-shield-check"></i>
+                    Cliente Empresarial Verificado
                 </div>
-                <p style="color: #6C757D;">{{ user_name }} • RFC: {{ rfc }}</p>
+                <p class="user-details">{{ user_name }} • RFC: {{ rfc }} • {{ user_email }}</p>
             </div>
         </div>
 
+        <!-- Primera fila de estadísticas principales -->
         <div class="dashboard-grid">
-            <div class="dashboard-card">
+            <div class="dashboard-card animate-in animate-delay-1">
                 <div class="card-header">
-                    <h3 class="card-title">Cotización Actual</h3>
-                    <div class="card-icon">
-                        <i class="fas fa-file-invoice-dollar"></i>
+                    <h3 class="card-title">Cotizaciones Enviadas</h3>
+                    <div class="card-icon info">
+                        <i class="fas fa-paper-plane"></i>
                     </div>
                 </div>
-                <div class="stat-number">${{ quote_total|number_format(2) }}</div>
-                <p class="stat-label">{{ quote_items }} productos en cotización</p>
-                <a href="/products/mi-cotizacion" class="btn btn-primary">Ver Cotización</a>
+                <div class="stat-number">{{ total_quotes }}</div>
+                <p class="stat-label">Total de solicitudes de cotización enviadas</p>
+                <a href="/quote/history" class="btn btn-primary">
+                    <i class="fas fa-history"></i>
+                    Ver Historial
+                </a>
             </div>
 
-            <div class="dashboard-card">
+            <div class="dashboard-card animate-in animate-delay-2">
                 <div class="card-header">
-                    <h3 class="card-title">Descuento Especial</h3>
-                    <div class="card-icon">
+                    <h3 class="card-title">En Revisión</h3>
+                    <div class="card-icon warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ pending_quotes }}</div>
+                <p class="stat-label">Cotizaciones pendientes de revisión del admin</p>
+                <a href="/quote/history?status=pending" class="btn btn-primary">
+                    <i class="fas fa-eye"></i>
+                    Ver Pendientes
+                </a>
+            </div>
+
+            <div class="dashboard-card animate-in animate-delay-3">
+                <div class="card-header">
+                    <h3 class="card-title">Aprobadas</h3>
+                    <div class="card-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="stat-number">{{ approved_quotes }}</div>
+                <p class="stat-label">Cotizaciones aprobadas listas para comprar</p>
+                <a href="/quote/history?status=approved" class="btn btn-success">
+                    <i class="fas fa-shopping-cart"></i>
+                    Ver Disponibles
+                </a>
+            </div>
+        </div>
+
+        <!-- Segunda fila de información financiera -->
+        <div class="dashboard-grid">
+            <div class="dashboard-card animate-in">
+                <div class="card-header">
+                    <h3 class="card-title">Descuento Corporativo</h3>
+                    <div class="card-icon primary">
                         <i class="fas fa-percent"></i>
                     </div>
                 </div>
                 <div class="stat-number">{{ discount }}%</div>
-                <p class="stat-label">Descuento corporativo aplicado</p>
-                <a href="/business-benefits" class="btn btn-primary">Ver Beneficios</a>
+                <p class="stat-label">Descuento especial aplicado a tus cotizaciones</p>
+                <a href="/profile" class="btn btn-primary">
+                    <i class="fas fa-user-cog"></i>
+                    Ver Perfil
+                </a>
             </div>
 
-            <div class="dashboard-card">
+            <div class="dashboard-card animate-in">
                 <div class="card-header">
-                    <h3 class="card-title">Historial de Pedidos</h3>
-                    <div class="card-icon">
-                        <i class="fas fa-history"></i>
+                    <h3 class="card-title">Límite de Crédito</h3>
+                    <div class="card-icon success">
+                        <i class="fas fa-credit-card"></i>
                     </div>
                 </div>
-                <div class="stat-number">{{ orders_count }}</div>
-                <p class="stat-label">Pedidos realizados en los últimos 30 días</p>
-                <a href="/order-history" class="btn btn-primary">Ver Historial</a>
+                <div class="stat-number">${{ "%.0f"|format(credit_limit) }}</div>
+                <p class="stat-label">Límite de crédito corporativo disponible</p>
+                <a href="/profile" class="btn btn-primary">
+                    <i class="fas fa-edit"></i>
+                    Actualizar Datos
+                </a>
+            </div>
+
+            <div class="dashboard-card animate-in">
+                <div class="card-header">
+                    <h3 class="card-title">Acciones Rápidas</h3>
+                    <div class="card-icon primary">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <a href="/products/catalogo-completo-cards" class="btn btn-success">
+                        <i class="fas fa-plus-circle"></i>
+                        Nueva Cotización
+                    </a>
+                    <a href="/quote/history" class="btn btn-primary">
+                        <i class="fas fa-list-alt"></i>
+                        Mis Cotizaciones
+                    </a>
+                    <a href="/products/favorites" class="btn btn-secondary">
+                        <i class="fas fa-heart"></i>
+                        Productos Favoritos
+                    </a>
+                </div>
             </div>
         </div>
 
-        <div class="recent-activity">
-            <h2 style="margin-bottom: 1.5rem;">Cotizaciones Recientes</h2>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Número de Cotización</th>
-                        <th>Fecha</th>
-                        <th>Productos</th>
-                        <th>Total</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>COT-2023-00125</td>
-                        <td>05/12/2023</td>
-                        <td>8 productos</td>
-                        <td>$45,678.90</td>
-                        <td><span class="status-badge status-pending">Pendiente</span></td>
-                        <td><a href="#" class="btn btn-secondary">Ver Detalles</a></td>
-                    </tr>
-                    <tr>
-                        <td>COT-2023-00118</td>
-                        <td>02/12/2023</td>
-                        <td>12 productos</td>
-                        <td>$62,345.60</td>
-                        <td><span class="status-badge status-active">Aprobada</span></td>
-                        <td><a href="#" class="btn btn-secondary">Ver Detalles</a></td>
-                    </tr>
-                    <tr>
-                        <td>COT-2023-00105</td>
-                        <td>28/11/2023</td>
-                        <td>5 productos</td>
-                        <td>$23,456.75</td>
-                        <td><span class="status-badge status-active">Completada</span></td>
-                        <td><a href="#" class="btn btn-secondary">Ver Detalles</a></td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Sección de cotizaciones recientes -->
+        <div class="recent-activity animate-in">
+            <div class="section-header">
+                <h2 class="section-title">Mis Cotizaciones Recientes</h2>
+                <a href="/quote/history" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt"></i>
+                    Ver Todas
+                </a>
+            </div>
+            
+            {% if total_quotes > 0 %}
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID Cotización</th>
+                            <th>Fecha Envío</th>
+                            <th>Estado</th>
+                            <th>Total Estimado</th>
+                            <th>Productos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>COT-2024-001</strong></td>
+                            <td>{{ now.strftime('%d/%m/%Y') if now else '15/01/2024' }}</td>
+                            <td>
+                                <span class="status-badge status-pending">
+                                    <i class="fas fa-clock"></i>
+                                    En Revisión
+                                </span>
+                            </td>
+                            <td><strong>$45,750.00</strong></td>
+                            <td>12 productos</td>
+                            <td>
+                                <a href="/quote/detail/COT-2024-001" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+                                    <i class="fas fa-eye"></i>
+                                    Ver Detalles
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>COT-2024-002</strong></td>
+                            <td>10/01/2024</td>
+                            <td>
+                                <span class="status-badge status-approved">
+                                    <i class="fas fa-check-circle"></i>
+                                    Aprobada
+                                </span>
+                            </td>
+                            <td><strong>$28,500.00</strong></td>
+                            <td>8 productos</td>
+                            <td>
+                                <a href="/quote/purchase/COT-2024-002" class="btn btn-success" style="padding: 0.5rem 1rem;">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    Comprar
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>COT-2023-156</strong></td>
+                            <td>28/12/2023</td>
+                            <td>
+                                <span class="status-badge status-processing">
+                                    <i class="fas fa-cog fa-spin"></i>
+                                    Procesando
+                                </span>
+                            </td>
+                            <td><strong>$63,200.00</strong></td>
+                            <td>15 productos</td>
+                            <td>
+                                <a href="/quote/track/COT-2023-156" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+                                    <i class="fas fa-truck"></i>
+                                    Rastrear
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-file-invoice"></i>
+                <h3>¡Comienza tu primera cotización!</h3>
+                <p>Explora nuestro catálogo y solicita precios especiales para tu empresa</p>
+                <a href="/products/catalogo-completo-cards" class="btn btn-success">
+                    <i class="fas fa-plus-circle"></i>
+                    Crear Primera Cotización
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animaciones de entrada escalonada
+            const animatedElements = document.querySelectorAll('.animate-in');
+            animatedElements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                setTimeout(() => {
+                    el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 150);
+            });
+
+            // Efectos hover mejorados para las tarjetas
+            const dashboardCards = document.querySelectorAll('.dashboard-card');
+            dashboardCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-12px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+
+            // Contador animado para estadísticas
+            const animateCounter = (counter) => {
+                const target = parseInt(counter.textContent);
+                const duration = 1500;
+                const step = target / (duration / 16);
+                let current = 0;
+                
+                const timer = setInterval(() => {
+                    current += step;
+                    if (current >= target) {
+                        counter.textContent = target;
+                        clearInterval(timer);
+                    } else {
+                        counter.textContent = Math.floor(current);
+                    }
+                }, 16);
+            };
+
+            // Observador de intersección para las animaciones de contadores
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const counter = entry.target.querySelector('.stat-number');
+                        if (counter && !counter.dataset.animated) {
+                            counter.dataset.animated = 'true';
+                            setTimeout(() => animateCounter(counter), 500);
+                        }
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            dashboardCards.forEach(card => {
+                observer.observe(card);
+            });
+
+            // Actualización de fecha y hora en tiempo real
+            function updateDateTime() {
+                const now = new Date();
+                const timeElements = document.querySelectorAll('.current-time');
+                timeElements.forEach(el => {
+                    el.textContent = now.toLocaleDateString('es-MX', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+                });
+            }
+            
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+
+            // Notificaciones toast para acciones
+            function showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `toast-notification toast-${type}`;
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 2rem;
+                    right: 2rem;
+                    background: ${type === 'success' ? 'var(--success-color)' : 
+                                type === 'error' ? 'var(--danger-color)' : 
+                                'var(--info-color)'};
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+                    z-index: 1000;
+                    transform: translateX(100%);
+                    transition: transform 0.3s ease;
+                    font-weight: 500;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                `;
+                
+                const icon = type === 'success' ? 'check-circle' : 
+                           type === 'error' ? 'exclamation-triangle' : 
+                           'info-circle';
+                           
+                toast.innerHTML = `<i class="fas fa-${icon}"></i>${message}`;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(0)';
+                }, 100);
+                
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(100%)';
+                    setTimeout(() => document.body.removeChild(toast), 300);
+                }, 4000);
+            }
+
+            // Manejar clics en botones de acción
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const text = this.textContent.trim();
+                    
+                    if (text.includes('Nueva Cotización')) {
+                        showToast('Redirigiendo al catálogo...', 'info');
+                    } else if (text.includes('Ver Historial')) {
+                        showToast('Cargando historial de cotizaciones...', 'info');
+                    } else if (text.includes('Comprar')) {
+                        e.preventDefault();
+                        showToast('Procesando solicitud de compra...', 'success');
+                    }
+                });
+            });
+
+            // Simulación de actualizaciones en tiempo real del estado
+            function simulateStatusUpdates() {
+                const statusBadges = document.querySelectorAll('.status-badge');
+                
+                setInterval(() => {
+                    statusBadges.forEach(badge => {
+                        if (badge.textContent.includes('En Revisión')) {
+                            const random = Math.random();
+                            if (random > 0.98) {
+                                badge.className = 'status-badge status-approved';
+                                badge.innerHTML = '<i class="fas fa-check-circle"></i>Aprobada';
+                                showToast('¡Cotización aprobada! Ya puedes proceder con la compra.', 'success');
+                            }
+                        }
+                    });
+                }, 30000); // Cada 30 segundos
+            }
+
+            simulateStatusUpdates();
+
+            // Mejorar accesibilidad con navegación por teclado
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    document.body.classList.add('keyboard-navigation');
+                }
+            });
+
+            document.addEventListener('mousedown', function() {
+                document.body.classList.remove('keyboard-navigation');
+            });
+
+            // Preloader para botones con estado de carga
+            document.querySelectorAll('a[href]').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (!this.classList.contains('btn-secondary')) {
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Cargando...';
+                        this.style.pointerEvents = 'none';
+                        
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.style.pointerEvents = '';
+                        }, 2000);
+                    }
+                });
+            });
+
+            // Mensaje de bienvenida personalizado
+            setTimeout(() => {
+                const businessName = document.querySelector('.user-info h1').textContent;
+                showToast(`¡Bienvenido ${businessName}!`, 'success');
+            }, 1500);
+
+            // Lazy loading para tablas grandes
+            const tableRows = document.querySelectorAll('.data-table tbody tr');
+            if (tableRows.length > 10) {
+                tableRows.forEach((row, index) => {
+                    if (index > 9) {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                const showMoreBtn = document.createElement('button');
+                showMoreBtn.className = 'btn btn-secondary';
+                showMoreBtn.innerHTML = '<i class="fas fa-chevron-down"></i>Mostrar más';
+                showMoreBtn.style.margin = '1rem auto';
+                showMoreBtn.style.display = 'block';
+                
+                document.querySelector('.data-table').after(showMoreBtn);
+                
+                showMoreBtn.addEventListener('click', function() {
+                    tableRows.forEach(row => row.style.display = '');
+                    this.remove();
+                });
+            }
+
+            // Función de búsqueda en tabla
+            function addTableSearch() {
+                const searchInput = document.createElement('input');
+                searchInput.type = 'text';
+                searchInput.placeholder = 'Buscar en mis cotizaciones...';
+                searchInput.className = 'form-control';
+                searchInput.style.cssText = `
+                    margin-bottom: 1rem;
+                    padding: 0.75rem 1rem;
+                    border: 2px solid var(--border-color);
+                    border-radius: 12px;
+                    font-size: 0.9rem;
+                `;
+                
+                const table = document.querySelector('.data-table');
+                if (table) {
+                    table.parentNode.insertBefore(searchInput, table);
+                    
+                    searchInput.addEventListener('input', function() {
+                        const searchTerm = this.value.toLowerCase();
+                        const rows = table.querySelectorAll('tbody tr');
+                        
+                        rows.forEach(row => {
+                            const text = row.textContent.toLowerCase();
+                            row.style.display = text.includes(searchTerm) ? '' : 'none';
+                        });
+                    });
+                }
+            }
+
+            if (document.querySelector('.data-table')) {
+                addTableSearch();
+            }
+
+            console.log('Dashboard de cliente empresarial iniciado correctamente');
+        });
+
+        // CSS adicional para estados de focus y navegación por teclado
+        const additionalStyles = `
+            .keyboard-navigation *:focus {
+                outline: 2px solid var(--primary-color);
+                outline-offset: 2px;
+            }
+            
+            .form-control:focus {
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 3px rgba(241, 90, 41, 0.1);
+            }
+        `;
+        
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = additionalStyles;
+        document.head.appendChild(styleSheet);
+    </script>
 </body>
 </html>
