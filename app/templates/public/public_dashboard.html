@@ -7,6 +7,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #F15A29;
+            --primary-dark: #d14a1f;
+            --secondary-color: #1C2A2F;
+            --surface-color: #FFFFFF;
+            --background-color: #F1F3F4;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+            --info-color: #3B82F6;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -15,18 +30,42 @@
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #F1F3F4;
+            background: linear-gradient(135deg, var(--background-color) 0%, #E8EAED 100%);
             min-height: 100vh;
-            color: #1C2A2F;
+            color: var(--text-primary);
             line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Elementos decorativos de fondo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 70%, rgba(241, 90, 41, 0.03) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 30%, rgba(28, 42, 47, 0.02) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-20px, -20px) rotate(1deg); }
+            66% { transform: translate(20px, -10px) rotate(-1deg); }
         }
 
         .header {
-            background: #1C2A2F;
-            color: #FFFFFF;
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            color: var(--surface-color);
             padding: 1rem 0;
-            box-shadow: 0 4px 20px rgba(28, 42, 47, 0.3);
-            border-bottom: 3px solid #F15A29;
+            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.15);
+            border-bottom: 3px solid var(--primary-color);
+            position: relative;
+            z-index: 100;
         }
 
         .header-content {
@@ -39,107 +78,167 @@
         }
 
         .logo {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 700;
             text-decoration: none;
-            color: #FFFFFF;
+            color: var(--surface-color);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
+            letter-spacing: -0.025em;
         }
 
         .logo i {
-            color: #F15A29;
+            color: var(--surface-color);
+            font-size: 1.75rem;
         }
 
         .nav-links {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         .nav-link {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.8rem 1.5rem;
-            background: #F15A29;
-            color: #FFFFFF;
+            padding: 0.75rem 1.25rem;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--surface-color);
             text-decoration: none;
             border-radius: 12px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 500;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .nav-link:hover {
-            background: #d14a1f;
+            background: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
+            color: var(--surface-color);
         }
 
         .main-container {
             max-width: 1400px;
             margin: 2rem auto;
             padding: 0 2rem;
+            position: relative;
+            z-index: 1;
         }
 
         .user-header {
-            background: #FFFFFF;
-            border-radius: 16px;
-            padding: 2rem;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
             margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
+            box-shadow: 
+                0 20px 40px rgba(28, 42, 47, 0.08),
+                0 8px 16px rgba(28, 42, 47, 0.04);
             display: flex;
             align-items: center;
             gap: 2rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
         }
 
         .user-avatar {
             width: 100px;
             height: 100px;
-            border-radius: 50%;
-            background: #F15A29;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2.5rem;
             color: white;
+            box-shadow: 0 8px 24px rgba(241, 90, 41, 0.3);
         }
 
         .user-info h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+            font-size: 2.25rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
         }
 
         .user-role {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
             padding: 0.5rem 1rem;
-            background: #F15A29;
+            background: linear-gradient(135deg, var(--info-color), #1D4ED8);
             color: white;
-            border-radius: 20px;
+            border-radius: 12px;
             font-size: 0.9rem;
             font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .user-details {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 500;
         }
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
         .dashboard-card {
-            background: #FFFFFF;
-            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
             padding: 2rem;
-            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
+            box-shadow: 
+                0 20px 40px rgba(28, 42, 47, 0.08),
+                0 8px 16px rgba(28, 42, 47, 0.04);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             height: 100%;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .dashboard-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-color);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-card:hover::before {
+            transform: scaleX(1);
         }
 
         .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(28, 42, 47, 0.15);
+            transform: translateY(-8px);
+            box-shadow: 
+                0 32px 64px rgba(28, 42, 47, 0.12),
+                0 16px 32px rgba(28, 42, 47, 0.08);
         }
 
         .card-header {
@@ -150,22 +249,27 @@
         }
 
         .card-title {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 600;
-            color: #1C2A2F;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
         }
 
         .card-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 15px;
-            background: rgba(241, 90, 41, 0.1);
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #F15A29;
-            font-size: 1.8rem;
+            color: white;
+            font-size: 1.5rem;
         }
+
+        .card-icon.primary { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); }
+        .card-icon.success { background: linear-gradient(135deg, var(--success-color), #059669); }
+        .card-icon.warning { background: linear-gradient(135deg, var(--warning-color), #D97706); }
+        .card-icon.info { background: linear-gradient(135deg, var(--info-color), #1D4ED8); }
 
         .stat-content {
             flex: 1;
@@ -179,61 +283,66 @@
         }
 
         .stat-number {
-            font-size: 3rem;
+            font-size: 2.75rem;
             font-weight: 700;
-            color: #1C2A2F;
+            color: var(--text-primary);
             margin-bottom: 0.5rem;
             line-height: 1;
         }
 
         .stat-label {
-            color: #6C757D;
-            font-size: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
             margin-bottom: 1rem;
+            font-weight: 500;
         }
 
         .stat-details {
-            background: #F8F9FA;
-            padding: 1rem;
-            border-radius: 10px;
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            padding: 1.25rem;
+            border-radius: 12px;
             margin-bottom: 1.5rem;
+            border: 1px solid rgba(241, 90, 41, 0.08);
         }
 
         .stat-detail-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.5rem 0;
+            padding: 0.75rem 0;
             border-bottom: 1px solid #E9ECEF;
         }
 
         .stat-detail-item:last-child {
             border-bottom: none;
+            padding-bottom: 0;
         }
 
         .detail-label {
-            color: #6C757D;
+            color: var(--text-secondary);
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .detail-value {
             font-weight: 600;
-            color: #1C2A2F;
+            color: var(--text-primary);
+            font-size: 0.9rem;
         }
 
         .btn-container {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             margin-top: auto;
         }
 
         .btn {
-            padding: 0.8rem 1.5rem;
+            padding: 0.875rem 1.5rem;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -242,56 +351,99 @@
             font-size: 0.9rem;
             flex: 1;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn-primary {
-            background: #F15A29;
-            color: #FFFFFF;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--surface-color);
+            box-shadow: 0 4px 12px rgba(241, 90, 41, 0.3);
         }
 
         .btn-primary:hover {
-            background: #d14a1f;
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, var(--primary-dark), #b8401a);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(241, 90, 41, 0.4);
+            color: var(--surface-color);
         }
 
         .btn-secondary {
-            background: #F1F3F4;
-            color: #6C757D;
-            border: 2px solid #E9ECEF;
+            background: var(--background-color);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-color);
         }
 
         .btn-secondary:hover {
-            background: #E9ECEF;
-            border-color: #DEE2E6;
+            background: var(--surface-color);
+            color: var(--text-primary);
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
         }
 
         .btn-success {
-            background: #28a745;
+            background: linear-gradient(135deg, var(--success-color), #059669);
             color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .btn-success:hover {
-            background: #218838;
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
         }
 
         .recent-activity {
-            background: #FFFFFF;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 
+                0 20px 40px rgba(28, 42, 47, 0.08),
+                0 8px 16px rgba(28, 42, 47, 0.04);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .recent-activity::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
         }
 
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .section-title {
             font-size: 1.5rem;
-            font-weight: 600;
-            color: #1C2A2F;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            letter-spacing: -0.025em;
         }
 
         .activity-list {
@@ -300,14 +452,18 @@
 
         .activity-item {
             display: flex;
-            gap: 1rem;
+            align-items: center;
+            gap: 1.5rem;
             padding: 1.5rem;
-            border-bottom: 1px solid #F1F3F4;
-            transition: background-color 0.3s ease;
+            border-bottom: 1px solid #F1F5F9;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
         }
 
         .activity-item:hover {
-            background-color: #F8F9FA;
+            background: rgba(241, 90, 41, 0.05);
+            transform: translateX(4px);
         }
 
         .activity-item:last-child {
@@ -317,15 +473,19 @@
         .activity-icon {
             width: 50px;
             height: 50px;
-            border-radius: 12px;
-            background: rgba(241, 90, 41, 0.1);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #F15A29;
+            color: white;
             font-size: 1.2rem;
             flex-shrink: 0;
         }
+
+        .activity-icon.heart { background: linear-gradient(135deg, #EC4899, #BE185D); }
+        .activity-icon.cart { background: linear-gradient(135deg, var(--info-color), #1D4ED8); }
+        .activity-icon.user { background: linear-gradient(135deg, var(--success-color), #059669); }
+        .activity-icon.search { background: linear-gradient(135deg, var(--warning-color), #D97706); }
 
         .activity-content {
             flex: 1;
@@ -334,35 +494,57 @@
         .activity-title {
             font-weight: 600;
             margin-bottom: 0.25rem;
-            color: #1C2A2F;
+            color: var(--text-primary);
+            font-size: 1rem;
         }
 
         .activity-desc {
-            color: #6C757D;
+            color: var(--text-secondary);
             margin-bottom: 0.5rem;
             font-size: 0.9rem;
         }
 
         .activity-time {
-            font-size: 0.8rem;
-            color: #8D9AA6;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            font-weight: 500;
         }
 
         .empty-state {
             text-align: center;
-            padding: 3rem 2rem;
-            color: #6C757D;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
         }
 
-        .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            opacity: 0.7;
         }
 
+        .empty-state h3 {
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .status-active {
+            color: var(--success-color);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
             .main-container {
                 padding: 0 1rem;
@@ -371,11 +553,16 @@
             .user-header {
                 flex-direction: column;
                 text-align: center;
-                gap: 1rem;
+                padding: 2rem;
             }
             
             .dashboard-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .dashboard-card {
+                padding: 1.5rem;
             }
             
             .btn-container {
@@ -393,7 +580,59 @@
                 text-align: center;
                 gap: 1rem;
             }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .stat-number {
+                font-size: 2.25rem;
+            }
         }
+
+        @media (max-width: 480px) {
+            .user-header {
+                padding: 1.5rem;
+            }
+
+            .user-info h1 {
+                font-size: 1.75rem;
+            }
+
+            .dashboard-card {
+                padding: 1.25rem;
+            }
+
+            .recent-activity {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Animaciones */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
     </style>
 </head>
 <body>
@@ -417,40 +656,47 @@
     </header>
 
     <div class="main-container">
-        <div class="user-header">
+        <div class="user-header animate-in">
             <div class="user-avatar">
                 <i class="fas fa-user"></i>
             </div>
             <div class="user-info">
                 <h1>{{ user_name }}</h1>
-                <span class="user-role">Usuario Público</span>
-                <p style="margin-top: 0.5rem; color: #6C757D;">{{ user_email }}</p>
+                <div class="user-role">
+                    <i class="fas fa-user-circle"></i>
+                    Usuario Público
+                </div>
+                <p class="user-details">{{ user_email }}</p>
             </div>
         </div>
 
         <div class="dashboard-grid">
             <!-- Tarjeta de Favoritos -->
-            <div class="dashboard-card">
+            <div class="dashboard-card animate-in animate-delay-1">
                 <div class="card-header">
                     <h3 class="card-title">Productos Favoritos</h3>
-                    <div class="card-icon">
+                    <div class="card-icon primary">
                         <i class="fas fa-heart"></i>
                     </div>
                 </div>
                 <div class="stat-content">
                     <div class="stat-main">
                         <div class="stat-number">{{ favorites_count }}</div>
-                        <p class="stat-label">Productos en tu lista de favoritos</p>
+                        <p class="stat-label">Productos guardados en tu lista de favoritos</p>
                         
                         {% if recent_favorites %}
                         <div class="stat-details">
                             <div class="stat-detail-item">
-                                <span class="detail-label">Agregado recientemente:</span>
+                                <span class="detail-label">Agregados recientemente:</span>
                                 <span class="detail-value">{{ recent_favorites|length }}</span>
                             </div>
                             <div class="stat-detail-item">
-                                <span class="detail-label">Categorías:</span>
+                                <span class="detail-label">Categorías diferentes:</span>
                                 <span class="detail-value">{{ favorite_categories|length }}</span>
+                            </div>
+                            <div class="stat-detail-item">
+                                <span class="detail-label">Última actualización:</span>
+                                <span class="detail-value">Hoy</span>
                             </div>
                         </div>
                         {% endif %}
@@ -458,40 +704,42 @@
                     
                     <div class="btn-container">
                         <a href="/products/favorites" class="btn btn-primary">
-                            <i class="fas fa-heart"></i> Ver Favoritos
+                            <i class="fas fa-heart"></i>
+                            Ver Favoritos
                         </a>
-                        <a href="/products/catalog" class="btn btn-secondary">
-                            <i class="fas fa-plus"></i> Agregar Más
+                        <a href="/products/catalogo-completo-cards" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i>
+                            Agregar Más
                         </a>
                     </div>
                 </div>
             </div>
 
             <!-- Tarjeta de Cotizaciones -->
-            <div class="dashboard-card">
+            <div class="dashboard-card animate-in animate-delay-2">
                 <div class="card-header">
-                    <h3 class="card-title">Mis Cotizaciones</h3>
-                    <div class="card-icon">
-                        <i class="fas fa-file-invoice-dollar"></i>
+                    <h3 class="card-title">Mi Cotización Actual</h3>
+                    <div class="card-icon info">
+                        <i class="fas fa-shopping-cart"></i>
                     </div>
                 </div>
                 <div class="stat-content">
                     <div class="stat-main">
                         <div class="stat-number">{{ active_quotes }}</div>
-                        <p class="stat-label">Cotizaciones activas</p>
+                        <p class="stat-label">Productos en tu cotización activa</p>
                         
                         {% if quote_stats %}
                         <div class="stat-details">
                             <div class="stat-detail-item">
-                                <span class="detail-label">Productos en cotización:</span>
+                                <span class="detail-label">Productos seleccionados:</span>
                                 <span class="detail-value">{{ quote_stats.total_items }}</span>
                             </div>
                             <div class="stat-detail-item">
-                                <span class="detail-label">Valor total:</span>
+                                <span class="detail-label">Valor total estimado:</span>
                                 <span class="detail-value">${{ "%.2f"|format(quote_stats.total_value) }}</span>
                             </div>
                             <div class="stat-detail-item">
-                                <span class="detail-label">Última actualización:</span>
+                                <span class="detail-label">Última modificación:</span>
                                 <span class="detail-value">{{ quote_stats.last_update }}</span>
                             </div>
                         </div>
@@ -500,27 +748,29 @@
                     
                     <div class="btn-container">
                         <a href="/products/mi-cotizacion" class="btn btn-primary">
-                            <i class="fas fa-shopping-cart"></i> Ver Cotización
+                            <i class="fas fa-eye"></i>
+                            Ver Cotización
                         </a>
-                        <a href="/products/catalog" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Nuevos Productos
+                        <a href="/products/catalogo-completo-cards" class="btn btn-success">
+                            <i class="fas fa-plus-circle"></i>
+                            Agregar Productos
                         </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Tarjeta de Cuenta -->
-            <div class="dashboard-card">
+            <!-- Tarjeta de Mi Cuenta -->
+            <div class="dashboard-card animate-in animate-delay-3">
                 <div class="card-header">
                     <h3 class="card-title">Mi Cuenta</h3>
-                    <div class="card-icon">
+                    <div class="card-icon success">
                         <i class="fas fa-user-cog"></i>
                     </div>
                 </div>
                 <div class="stat-content">
                     <div class="stat-main">
-                        <div class="stat-number" style="font-size: 2rem;">{{ account_type|title }}</div>
-                        <p class="stat-label">Tipo de cuenta actual</p>
+                        <div class="stat-number" style="font-size: 1.8rem;">Público</div>
+                        <p class="stat-label">Tu tipo de cuenta actual</p>
                         
                         <div class="stat-details">
                             <div class="stat-detail-item">
@@ -528,9 +778,10 @@
                                 <span class="detail-value">{{ member_since }}</span>
                             </div>
                             <div class="stat-detail-item">
-                                <span class="detail-label">Estado:</span>
-                                <span class="detail-value" style="color: #28a745;">
-                                    <i class="fas fa-check-circle"></i> Activo
+                                <span class="detail-label">Estado de cuenta:</span>
+                                <span class="detail-value status-active">
+                                    <i class="fas fa-check-circle"></i>
+                                    Activa
                                 </span>
                             </div>
                             <div class="stat-detail-item">
@@ -542,10 +793,12 @@
                     
                     <div class="btn-container">
                         <a href="/profile" class="btn btn-primary">
-                            <i class="fas fa-user-edit"></i> Editar Perfil
+                            <i class="fas fa-user-edit"></i>
+                            Editar Perfil
                         </a>
-                        <a href="/upgrade-account" class="btn btn-secondary">
-                            <i class="fas fa-star"></i> Mejorar Cuenta
+                        <a href="/auth/register" class="btn btn-secondary">
+                            <i class="fas fa-star"></i>
+                            Cuenta Empresarial
                         </a>
                     </div>
                 </div>
@@ -553,11 +806,12 @@
         </div>
 
         <!-- Actividad Reciente -->
-        <div class="recent-activity">
+        <div class="recent-activity animate-in">
             <div class="section-header">
                 <h2 class="section-title">Actividad Reciente</h2>
                 <a href="/activity" class="btn btn-secondary" style="flex: none;">
-                    <i class="fas fa-history"></i> Ver Todo
+                    <i class="fas fa-history"></i>
+                    Ver Historial Completo
                 </a>
             </div>
             
@@ -565,14 +819,15 @@
             <ul class="activity-list">
                 {% for activity in recent_activity %}
                 <li class="activity-item">
-                    <div class="activity-icon">
+                    <div class="activity-icon {{ activity.type }}">
                         <i class="{{ activity.icon }}"></i>
                     </div>
                     <div class="activity-content">
                         <div class="activity-title">{{ activity.title }}</div>
                         <div class="activity-desc">{{ activity.description }}</div>
                         <div class="activity-time">
-                            <i class="fas fa-clock"></i> {{ activity.time }}
+                            <i class="fas fa-clock"></i>
+                            {{ activity.time }}
                         </div>
                     </div>
                 </li>
@@ -580,13 +835,12 @@
             </ul>
             {% else %}
             <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="fas fa-inbox"></i>
-                </div>
-                <h3>No hay actividad reciente</h3>
-                <p>Tu actividad aparecerá aquí cuando comiences a usar el sistema</p>
-                <a href="/products/catalog" class="btn btn-primary" style="margin-top: 1rem;">
-                    <i class="fas fa-boxes"></i> Explorar Catálogo
+                <i class="fas fa-history"></i>
+                <h3>¡Comienza tu experiencia!</h3>
+                <p>Tu actividad y productos favoritos aparecerán aquí cuando comiences a explorar nuestro catálogo</p>
+                <a href="/products/catalogo-completo-cards" class="btn btn-success">
+                    <i class="fas fa-rocket"></i>
+                    Explorar Catálogo
                 </a>
             </div>
             {% endif %}
@@ -594,32 +848,312 @@
     </div>
 
     <script>
-        // Animaciones y funcionalidades adicionales
         document.addEventListener('DOMContentLoaded', function() {
-            // Actualizar la hora de "Último acceso" en tiempo real
-            function updateLastAccess() {
-                const lastAccessElements = document.querySelectorAll('.detail-value:contains("hace")');
-                lastAccessElements.forEach(element => {
-                    // Lógica para actualizar tiempos relativos
-                    console.log('Actualizando tiempos de acceso...');
-                });
-            }
-            
-            // Efectos de hover mejorados para las tarjetas
-            const cards = document.querySelectorAll('.dashboard-card');
-            cards.forEach(card => {
+            // Animaciones de entrada escalonada
+            const animatedElements = document.querySelectorAll('.animate-in');
+            animatedElements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                setTimeout(() => {
+                    el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 150);
+            });
+
+            // Efectos hover mejorados para las tarjetas
+            const dashboardCards = document.querySelectorAll('.dashboard-card');
+            dashboardCards.forEach(card => {
                 card.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-5px)';
+                    this.style.transform = 'translateY(-12px) scale(1.02)';
                 });
                 
                 card.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
+                    this.style.transform = '';
                 });
             });
+
+            // Contador animado para estadísticas
+            const animateCounter = (counter) => {
+                const target = parseInt(counter.textContent);
+                const duration = 1500;
+                const step = target / (duration / 16);
+                let current = 0;
+                
+                const timer = setInterval(() => {
+                    current += step;
+                    if (current >= target) {
+                        counter.textContent = target;
+                        clearInterval(timer);
+                    } else {
+                        counter.textContent = Math.floor(current);
+                    }
+                }, 16);
+            };
+
+            // Observador de intersección para las animaciones de contadores
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const counter = entry.target.querySelector('.stat-number');
+                        if (counter && !counter.dataset.animated) {
+                            counter.dataset.animated = 'true';
+                            setTimeout(() => animateCounter(counter), 500);
+                        }
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            dashboardCards.forEach(card => {
+                observer.observe(card);
+            });
+
+            // Notificaciones toast para acciones
+            function showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `toast-notification toast-${type}`;
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 2rem;
+                    right: 2rem;
+                    background: ${type === 'success' ? 'var(--success-color)' : 
+                                type === 'error' ? 'var(--danger-color)' : 
+                                'var(--info-color)'};
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+                    z-index: 1000;
+                    transform: translateX(100%);
+                    transition: transform 0.3s ease;
+                    font-weight: 500;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                `;
+                
+                const icon = type === 'success' ? 'check-circle' : 
+                           type === 'error' ? 'exclamation-triangle' : 
+                           'info-circle';
+                           
+                toast.innerHTML = `<i class="fas fa-${icon}"></i>${message}`;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(0)';
+                }, 100);
+                
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(100%)';
+                    setTimeout(() => document.body.removeChild(toast), 300);
+                }, 4000);
+            }
+
+            // Manejar clics en botones de acción
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const text = this.textContent.trim();
+                    
+                    if (text.includes('Ver Favoritos')) {
+                        showToast('Cargando tus productos favoritos...', 'info');
+                    } else if (text.includes('Ver Cotización')) {
+                        showToast('Accediendo a tu cotización actual...', 'info');
+                    } else if (text.includes('Explorar Catálogo')) {
+                        showToast('Redirigiendo al catálogo de productos...', 'info');
+                    } else if (text.includes('Cuenta Empresarial')) {
+                        showToast('Te ayudamos a crear tu cuenta empresarial...', 'success');
+                    }
+                });
+            });
+
+            // Actualización de tiempo en tiempo real
+            function updateDateTime() {
+                const now = new Date();
+                const timeElements = document.querySelectorAll('.current-time');
+                timeElements.forEach(el => {
+                    el.textContent = now.toLocaleDateString('es-MX', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+                });
+            }
             
-            // Actualizar cada minuto
-            setInterval(updateLastAccess, 60000);
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+
+            // Simulación de actividad reciente si no hay datos
+            function addSampleActivity() {
+                const activityList = document.querySelector('.activity-list');
+                if (activityList && activityList.children.length === 0) {
+                    const sampleActivities = [
+                        {
+                            icon: 'fas fa-eye',
+                            type: 'search',
+                            title: 'Exploraste el catálogo',
+                            description: 'Navegaste por productos de tecnología',
+                            time: 'hace 2 horas'
+                        },
+                        {
+                            icon: 'fas fa-user-plus',
+                            type: 'user',
+                            title: 'Cuenta creada',
+                            description: 'Te registraste como usuario público',
+                            time: 'hace 1 día'
+                        }
+                    ];
+
+                    // Remover empty state si existe
+                    const emptyState = document.querySelector('.empty-state');
+                    if (emptyState) {
+                        emptyState.remove();
+                    }
+
+                    sampleActivities.forEach(activity => {
+                        const li = document.createElement('li');
+                        li.className = 'activity-item';
+                        li.innerHTML = `
+                            <div class="activity-icon ${activity.type}">
+                                <i class="${activity.icon}"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">${activity.title}</div>
+                                <div class="activity-desc">${activity.description}</div>
+                                <div class="activity-time">
+                                    <i class="fas fa-clock"></i>
+                                    ${activity.time}
+                                </div>
+                            </div>
+                        `;
+                        activityList.appendChild(li);
+                    });
+                }
+            }
+
+            // Ejecutar después de 2 segundos para simular carga
+            setTimeout(addSampleActivity, 2000);
+
+            // Preloader para botones con estado de carga
+            document.querySelectorAll('a[href]').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (!this.classList.contains('btn-secondary')) {
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Cargando...';
+                        this.style.pointerEvents = 'none';
+                        
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.style.pointerEvents = '';
+                        }, 2000);
+                    }
+                });
+            });
+
+            // Mensaje de bienvenida personalizado
+            setTimeout(() => {
+                const userName = document.querySelector('.user-info h1').textContent;
+                showToast(`¡Bienvenido ${userName}!`, 'success');
+            }, 1500);
+
+            // Funcionalidad de búsqueda rápida en actividades
+            function addActivitySearch() {
+                const activitySection = document.querySelector('.recent-activity');
+                const sectionHeader = activitySection.querySelector('.section-header');
+                
+                const searchInput = document.createElement('input');
+                searchInput.type = 'text';
+                searchInput.placeholder = 'Buscar en actividad...';
+                searchInput.style.cssText = `
+                    padding: 0.5rem 1rem;
+                    border: 2px solid var(--border-color);
+                    border-radius: 8px;
+                    font-size: 0.875rem;
+                    width: 200px;
+                    margin-left: 1rem;
+                `;
+                
+                sectionHeader.appendChild(searchInput);
+                
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const activities = document.querySelectorAll('.activity-item');
+                    
+                    activities.forEach(activity => {
+                        const text = activity.textContent.toLowerCase();
+                        activity.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+                    });
+                });
+            }
+
+            setTimeout(addActivitySearch, 3000);
+
+            // Mejorar accesibilidad con navegación por teclado
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    document.body.classList.add('keyboard-navigation');
+                }
+            });
+
+            document.addEventListener('mousedown', function() {
+                document.body.classList.remove('keyboard-navigation');
+            });
+
+            // Efecto de partículas sutil en el fondo
+            function createParticle() {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+                    position: fixed;
+                    width: 4px;
+                    height: 4px;
+                    background: var(--primary-color);
+                    border-radius: 50%;
+                    opacity: 0.1;
+                    pointer-events: none;
+                    z-index: -1;
+                `;
+                
+                particle.style.left = Math.random() * window.innerWidth + 'px';
+                particle.style.top = window.innerHeight + 'px';
+                
+                document.body.appendChild(particle);
+                
+                const animation = particle.animate([
+                    { transform: 'translateY(0)', opacity: 0.1 },
+                    { transform: `translateY(-${window.innerHeight + 100}px)`, opacity: 0 }
+                ], {
+                    duration: 15000 + Math.random() * 10000,
+                    easing: 'linear'
+                });
+                
+                animation.onfinish = () => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                };
+            }
+
+            // Crear partículas ocasionalmente
+            setInterval(createParticle, 5000);
+
+            console.log('Dashboard público iniciado correctamente');
         });
+
+        // CSS adicional para estados de focus y navegación por teclado
+        const additionalStyles = `
+            .keyboard-navigation *:focus {
+                outline: 2px solid var(--primary-color);
+                outline-offset: 2px;
+            }
+            
+            .activity-item:focus-within {
+                background: rgba(241, 90, 41, 0.05);
+                transform: translateX(4px);
+            }
+        `;
+        
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = additionalStyles;
+        document.head.appendChild(styleSheet);
     </script>
 </body>
 </html>
