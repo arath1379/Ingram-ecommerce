@@ -23,7 +23,7 @@ def index():
     """Página principal - Redirige al dashboard si está logueado, sino al catálogo"""
     if 'user_id' in session:
         return redirect(url_for('main.dashboard'))
-    return redirect(url_for('products.catalogo_completo_cards'))
+    return redirect(url_for('main.post_login'))
 
 @main_bp.route('/home')
 def home():
@@ -84,86 +84,182 @@ def public_dashboard():
         flash('Acceso redirigido al dashboard de cliente', 'info')
         return redirect(url_for('main.client_dashboard'))
     
-    # Obtener datos reales para el dashboard público
-    from app.models import Favorite, Quote
+    # Obtener datos REALES para el dashboard público
+    from app.models import Favorite, Quote, Cart, CartItem
+    from sqlalchemy import func
+    
+    # Contador de favoritos
     favorites_count = Favorite.query.filter_by(user_id=user_id).count()
     
-    # ✅ CORREGIDO: Usar estados correctos de Quote
+    # Obtener datos REALES del carrito - CORREGIDO
+    cart = Cart.query.filter_by(user_id=user_id, status='active').first()
+    
+    # Calcular total_items sumando las cantidades de todos los items
+    total_items = 0
+    item_count = 0
+    total_value = 0.0
+    
+    if cart and cart.items:
+        for item in cart.items:
+            total_items += item.quantity  # Sumar cantidad de cada item
+            item_count += 1  # Contar productos distintos
+            if item.unit_price:
+                total_value += float(item.unit_price) * item.quantity
+    
+    cart_stats = {
+        'total_items': total_items,
+        'item_count': item_count,
+        'total_value': total_value,
+        'last_update': cart.updated_at.strftime('%d/%m/%Y %H:%M') if cart and cart.updated_at else 'Hoy'
+    }
+    
+    # Cotizaciones activas
     active_quotes = Quote.query.filter_by(user_id=user_id).filter(
         Quote.status.in_(['draft', 'sent', 'pending'])
     ).count()
     
+    # Favoritos recientes (últimos 5)
+    recent_favorites = Favorite.query.filter_by(user_id=user_id).order_by(
+        Favorite.created_at.desc()
+    ).limit(5).all()
+    
+    # Categorías de favoritos (simplificado)
+    favorite_categories = []
+    if recent_favorites:
+        # Obtener categorías únicas de los favoritos recientes
+        categories_set = set()
+        for fav in recent_favorites:
+            if hasattr(fav, 'product') and fav.product and fav.product.category:
+                categories_set.add(fav.product.category)
+        favorite_categories = list(categories_set)
+    
+    # Actividad reciente
+    recent_activity = [
+        {
+            'type': 'user',
+            'icon': 'fas fa-user-plus',
+            'title': 'Cuenta activa',
+            'description': f'Bienvenido/a {user.full_name or user.email}',
+            'time': 'Hoy'
+        }
+    ]
+    
+    # Agregar actividad basada en datos reales
+    if favorites_count > 0:
+        recent_activity.append({
+            'type': 'heart',
+            'icon': 'fas fa-heart',
+            'title': 'Favoritos guardados',
+            'description': f'Tienes {favorites_count} productos en favoritos',
+            'time': 'Reciente'
+        })
+    
+    if total_items > 0:
+        recent_activity.append({
+            'type': 'cart',
+            'icon': 'fas fa-shopping-cart',
+            'title': 'Carrito activo',
+            'description': f'Tienes {total_items} productos en el carrito',
+            'time': 'Reciente'
+        })
+    
     public_data = {
-        'user_name': user.full_name or user.email,
+        'user_name': user.full_name or user.email.split('@')[0],
         'user_email': user.email,
         'favorites_count': favorites_count,
         'active_quotes': active_quotes,
         'user_type': 'public',
-        'account_type': user.account_type
+        'account_type': user.account_type,
+        'member_since': user.created_at.strftime('%d/%m/%Y') if user.created_at else 'Reciente',
+        'last_login': 'Hoy',
+        'cart_stats': cart_stats,
+        'recent_favorites': recent_favorites,
+        'favorite_categories': favorite_categories,
+        'recent_activity': recent_activity
     }
     
+    # DEBUG: Verificar datos
+    print(f"🔍 Datos para template público:")
+    print(f"   - User: {public_data['user_name']}")
+    print(f"   - Favoritos: {public_data['favorites_count']}")
+    print(f"   - Carrito total_items: {public_data['cart_stats']['total_items']}")
+    print(f"   - Carrito item_count: {public_data['cart_stats']['item_count']}")
+    print(f"   - Carrito total_value: {public_data['cart_stats']['total_value']}")
+    
     try:
-        return render_template('public/public_dashboard.html', **public_data)
-    except:
-        # Fallback si no existe el template
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Mi Cuenta - Usuario Público</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-            <style>
-                .dashboard-card {{ background: white; padding: 20px; margin: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }}
-                .nav-dashboard {{ background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; }}
-            </style>
-        </head>
-        <body>
-            <div class="container mt-4">
-                <div class="nav-dashboard">
-                    <h3>👤 Mi Cuenta - Usuario Público</h3>
-                    <div class="d-flex gap-2">
-                        <a href="/products/catalog" class="btn btn-primary">🛒 Seguir Comprando</a>
-                        <a href="/dashboard" class="btn btn-outline-secondary">📊 Mi Dashboard</a>
-                        <a href="/logout" class="btn btn-outline-danger">🚪 Cerrar Sesión</a>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="dashboard-card text-center">
-                            <h4>❤️ Favoritos</h4>
-                            <h2 class="text-primary">{public_data['favorites_count']}</h2>
-                            <p>Productos en tu lista de deseos</p>
+        # PRIMERO: Intentar con template normal
+        return render_template('public_dashboard.html', **public_data)
+    except Exception as e:
+        print(f"❌ Error con template: {e}")
+        try:
+            # SEGUNDO: Intentar con ruta alternativa
+            return render_template('public/public_dashboard.html', **public_data)
+        except Exception as e2:
+            print(f"❌ Error con template alternativo: {e2}")
+            # TERCERO: Fallback básico
+            return f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Panel Público - IT Data Global</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+                <style>
+                    body {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }}
+                    .dashboard-card {{ background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }}
+                </style>
+            </head>
+            <body>
+                <div class="container py-5">
+                    <div class="row">
+                        <div class="col-12 text-center mb-4">
+                            <h1 class="text-white">👋 ¡Hola {public_data['user_name']}!</h1>
+                            <p class="text-white">Panel de Usuario Público</p>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="dashboard-card text-center">
-                            <h4>📋 Cotizaciones</h4>
-                            <h2 class="text-warning">{public_data['active_quotes']}</h2>
-                            <p>Cotizaciones activas</p>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="dashboard-card p-4 text-center">
+                                <h3>❤️ Favoritos</h3>
+                                <h2 class="text-primary">{public_data['favorites_count']}</h2>
+                                <p>Productos guardados</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="dashboard-card p-4 text-center">
+                                <h3>🛒 Carrito</h3>
+                                <h2 class="text-success">{public_data['cart_stats']['total_items']}</h2>
+                                <p>Productos en carrito</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="dashboard-card p-4 text-center">
+                                <h3>📋 Cotizaciones</h3>
+                                <h2 class="text-warning">{public_data['active_quotes']}</h2>
+                                <p>Activas</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="dashboard-card text-center">
-                            <h4>👤 Perfil</h4>
-                            <h2 class="text-success">{public_data['user_name']}</h2>
-                            <p>Usuario {public_data['account_type']}</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="dashboard-card p-4">
+                                <h4>🚀 Acciones Rápidas</h4>
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <a href="/catalog" class="btn btn-primary me-md-2">📦 Ver Catálogo</a>
+                                    <a href="/cart" class="btn btn-success me-md-2">🛒 Ver Carrito</a>
+                                    <a href="/favorites" class="btn btn-warning me-md-2">❤️ Mis Favoritos</a>
+                                    <a href="/logout" class="btn btn-outline-danger">🚪 Cerrar Sesión</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="dashboard-card mt-3">
-                    <h5>📝 Acciones Rápidas</h5>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="/products/catalog" class="btn btn-outline-primary">Ver Catálogo Completo</a>
-                        <a href="/products/favorites" class="btn btn-outline-success">Mis Favoritos</a>
-                        <a href="/quote/history" class="btn btn-outline-info">Historial de Cotizaciones</a>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
+            </body>
+            </html>
+            """
 
 @main_bp.route('/dashboard/client')
 @login_required_sessions
@@ -366,19 +462,14 @@ def api_health_check():
 
 # ==================== RUTAS DE COMPATIBILIDAD ====================
 
-@main_bp.route('/catalogo')
+@main_bp.route('/catalog')
 def catalogo_redirect():
     """Redirección de compatibilidad para /catalogo"""
-    return redirect(url_for('products.catalog'))
+    return redirect(url_for('public.public_catalog'))
 
 @main_bp.route('/productos')
 def productos_redirect():
     """Redirección de compatibilidad para /productos"""
-    return redirect(url_for('products.catalog'))
-
-@main_bp.route('/tienda')
-def tienda_redirect():
-    """Redirección de compatibilidad para /tienda"""
     return redirect(url_for('products.catalog'))
 
 # ==================== MANEJO DE ERRORES ====================

@@ -167,7 +167,7 @@ def catalogo_completo_cards():
         print(f"DEBUG - Páginas: {total_pages}, Rango: {start_record}-{end_record}/{total_records}")
         
         return render_template(
-            "products/catalog.html",
+            "client/catalog/catalog.html",
             productos=productos,
             page_number=page_number,
             total_records=total_records,
@@ -192,7 +192,7 @@ def catalogo_completo_cards():
         import traceback
         traceback.print_exc()
         
-        return render_template("products/catalog.html", 
+        return render_template("client/catalog/catalog.html", 
                              query=query,
                              vendor=vendor,
                              page_number=1,
@@ -288,7 +288,7 @@ def producto_detalle(part_number=None, sku=None):
         descripcion_completa = detalle.get("description") or detalle.get("productDescription") or ""
         
         return render_template(
-            "products/product_detail.html",
+            "client/catalog/product_detail.html",
             detalle=detalle,
             producto=detalle,  # Compatibilidad
             p=detalle,         # Alias adicional

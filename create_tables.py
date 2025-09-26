@@ -1,21 +1,12 @@
 # create_tables.py
 from app import create_app, db
+from app.models.user import User
+from app.models.product import Product
+from app.models.favorite import Favorite
+from app.models.cart import Cart, CartItem
 
-def create_database_tables():
-    """Crear todas las tablas de la base de datos"""
-    app = create_app()
-    
-    with app.app_context():
-        try:
-            db.create_all()
-            print("✅ Tablas creadas exitosamente:")
-            print("   - users")
-            print("   - products")
-            print("   - quotes")
-            print("   - quote_items")
-            print("   - favorites")
-        except Exception as e:
-            print(f"❌ Error al crear tablas: {e}")
+app = create_app()
 
-if __name__ == "__main__":
-    create_database_tables()
+with app.app_context():
+    db.create_all()
+    print("✅ Todas las tablas han sido creadas")
