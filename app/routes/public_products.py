@@ -17,9 +17,18 @@ def get_current_user_id():
     """Obtener ID del usuario actual de la sesión"""
     return session.get('user_id', 'anonymous_user')
 
-# ==================== FUNCIONES DE CARRITO (NUEVAS) ====================
+def get_product_image(product_data):
+    """Obtener imagen del producto de forma segura"""
+    images = product_data.get('productImages', [])
+    if images and isinstance(images, list) and len(images) > 0:
+        return images[0]
+    
+    # Usar un servicio de placeholder online
+    return "https://via.placeholder.com/300x300/cccccc/969696?text=Imagen+No+Disponible"
+
+# ==================== FUNCIONES DE CARRITO MEJORADAS ====================
 def get_user_cart(user_id):
-    """Obtener carrito del usuario - VERSIÓN MEJORADA"""
+    """Obtener carrito del usuario - VERSIÓN MEJORADA Y CORREGIDA"""
     try:
         cart = Cart.query.filter_by(user_id=user_id, status='active').first()
         if not cart:
@@ -29,7 +38,15 @@ def get_user_cart(user_id):
         for item in cart.items:
             product = item.product
             
-            # Asegurarse de que tenemos todos los datos necesarios
+            # Manejar imágenes de forma segura
+            product_images = []
+            if product.metadata_json:
+                try:
+                    metadata = json.loads(product.metadata_json)
+                    product_images = metadata.get('productImages', [])
+                except:
+                    product_images = []
+            
             product_data = {
                 'ingramPartNumber': product.ingram_part_number,
                 'description': product.description,
@@ -39,12 +56,21 @@ def get_user_cart(user_id):
                 'pricing': {
                     'customerPrice': product.base_price if product.base_price else 0
                 },
-                'productImages': json.loads(product.metadata_json).get('productImages', []) if product.metadata_json else []
+                'productImages': product_images
             }
+            
+            # Calcular precios con markup del 15%
+            base_price = product.base_price or 0
+            unit_price = round(base_price * 1.15, 2)
+            total_price = round(unit_price * item.quantity, 2)
             
             items_with_details.append({
                 'product': product_data,
                 'quantity': item.quantity,
+                'unit_price': unit_price,
+                'total_price': total_price,
+                'formatted_unit_price': f"${unit_price:,.2f} MXN",
+                'formatted_total_price': f"${total_price:,.2f} MXN",
                 'added_date': item.created_at.isoformat() if item.created_at else 'Desconocida'
             })
         
@@ -106,8 +132,8 @@ def add_to_cart(user_id, product_data, quantity=1):
             existing_item.calculate_total()
             print(f"DEBUG - Item existente actualizado, cantidad: {existing_item.quantity}")
         else:
-            # Calcular precio unitario con markup del 10%
-            unit_price = product.base_price * 1.15 if product.base_price else 0
+            # Calcular precio unitario con markup del 15%
+            unit_price = round(product.base_price * 1.15, 2) if product.base_price else 0
             new_item = CartItem(
                 cart_id=cart.id,
                 product_id=product.id,
@@ -131,7 +157,257 @@ def add_to_cart(user_id, product_data, quantity=1):
         traceback.print_exc()
         raise
 
-# ==================== RUTAS PRINCIPALES DEL CATÁLOGO PÚBLICO ====================
+# ==================== RUTAS DEL CARRITO ====================
+@public_bp.route("/cart/add", methods=["POST"])
+def add_to_cart_route():
+    """Añadir producto al carrito"""
+    try:
+        # Obtener datos de la solicitud
+        if request.is_json:
+            data = request.get_json()
+            part_number = data.get('part_number')
+            quantity = int(data.get('quantity', 1))
+        else:
+            part_number = request.form.get('part_number')
+            quantity = int(request.form.get('quantity', 1))
+        
+        # Validar part_number
+        if not part_number or part_number == 'None':
+            print(f"ERROR - part_number inválido: {part_number}")
+            return jsonify({'success': False, 'error': 'Número de parte inválido'}), 400
+        
+        print(f"DEBUG - Agregando al carrito: {part_number}, cantidad: {quantity}")
+        
+        # Obtener detalles del producto
+        detail_url = f"https://api.ingrammicro.com/resellers/v6/catalog/details/{part_number}"
+        detalle_res = APIClient.make_request("GET", detail_url)
+        
+        if detalle_res.status_code != 200:
+            print(f"ERROR - Producto no encontrado: {part_number}")
+            return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
+        
+        detalle = detalle_res.json()
+        
+        # Obtener precio
+        real_price = 0
+        try:
+            price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
+            body = {"products": [{"ingramPartNumber": part_number}]}
+            params = {
+                "includeAvailability": "true",
+                "includePricing": "true",
+                "includeProductAttributes": "true"
+            }
+            
+            precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
+            
+            if precio_res and precio_res.status_code == 200:
+                precio_data = precio_res.json()
+                if precio_data and isinstance(precio_data, list) and len(precio_data) > 0:
+                    first_product = precio_data[0]
+                    if first_product.get('productStatusCode') != 'E':
+                        pricing = first_product.get('pricing', {})
+                        if pricing:
+                            customer_price = pricing.get('customerPrice')
+                            if customer_price is not None:
+                                real_price = float(customer_price)
+        except Exception as api_error:
+            print(f"DEBUG - Excepción en API de precios: {api_error}")
+        
+        # Preparar datos del producto
+        product_data = {
+            'ingramPartNumber': part_number,
+            'description': detalle.get('description', f"Producto {part_number}"),
+            'pricing': {'customerPrice': real_price},
+            'vendorName': detalle.get('vendorName', 'N/A'),
+            'upc': detalle.get('upc', ''),
+            'category': detalle.get('category', ''),
+            'productImages': detalle.get('productImages', [])
+        }
+        
+        user_id = get_current_user_id()
+        
+        # Intentar agregar al carrito
+        try:
+            add_to_cart(user_id, product_data, quantity)
+            
+            cart_count = len(get_user_cart(user_id))
+            print(f"DEBUG - Producto agregado exitosamente. Carrito tiene {cart_count} items")
+            
+            if request.is_json:
+                return jsonify({
+                    'success': True,
+                    'message': f'Producto agregado al carrito (Cantidad: {quantity})',
+                    'cart_count': cart_count
+                })
+            else:
+                session['flash_message'] = "Producto agregado al carrito"
+                return redirect('/cart')
+                
+        except Exception as e:
+            print(f"ERROR al agregar al carrito: {str(e)}")
+            if request.is_json:
+                return jsonify({'success': False, 'error': f'Error interno: {str(e)}'}), 500
+            else:
+                session['flash_message'] = f"Error al agregar producto: {str(e)}"
+                return redirect(request.referrer or '/catalog')
+        
+    except Exception as e:
+        print(f"ERROR en add_to_cart_route: {str(e)}")
+        if request.is_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        else:
+            session['flash_message'] = f"Error al agregar producto: {str(e)}"
+            return redirect(request.referrer or '/catalog')
+
+@public_bp.route('/cart', methods=["GET"])
+def view_cart():
+    """Ver carrito de compras"""
+    try:
+        user_id = get_current_user_id()
+        cart_items = get_user_cart(user_id)
+        
+        total = 0
+        items_with_totals = []
+        
+        for item in cart_items:
+            total += item['total_price']
+            items_with_totals.append(item)
+        
+        flash_message = session.pop('flash_message', None)
+        
+        return render_template(
+            "public/catalog/cart.html",
+            items=items_with_totals,
+            total=round(total, 2),
+            formatted_total=f"${total:,.2f} MXN",
+            count=len(cart_items),
+            flash_message=flash_message,
+            get_product_image=get_product_image,
+            user_type='public'
+        )
+        
+    except Exception as e:
+        print(f"Error al cargar carrito: {str(e)}")
+        return render_template("errors/500.html", error=f"Error al cargar carrito: {str(e)}")
+
+@public_bp.route('/cart/update', methods=['POST'])
+def update_cart_item():
+    """Actualizar cantidad de un producto en el carrito"""
+    try:
+        data = request.get_json()
+        part_number = data.get('part_number')
+        quantity = int(data.get('quantity', 1))
+        
+        if not part_number:
+            return jsonify({'success': False, 'error': 'Part number requerido'}), 400
+        
+        if quantity < 1:
+            quantity = 1
+        if quantity > 999:
+            quantity = 999
+        
+        user_id = get_current_user_id()
+        
+        # Buscar el carrito activo del usuario
+        cart = Cart.query.filter_by(user_id=user_id, status='active').first()
+        if not cart:
+            return jsonify({'success': False, 'error': 'Carrito no encontrado'}), 404
+        
+        # Buscar el producto
+        product = Product.query.filter_by(ingram_part_number=part_number).first()
+        if not product:
+            return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
+        
+        # Buscar el item en el carrito
+        cart_item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
+        if not cart_item:
+            return jsonify({'success': False, 'error': 'Producto no encontrado en el carrito'}), 404
+        
+        # Actualizar cantidad
+        cart_item.quantity = quantity
+        cart_item.calculate_total()
+        
+        # Recalcular total del carrito
+        cart.calculate_total()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Cantidad actualizada correctamente',
+            'new_quantity': quantity,
+            'item_total': float(cart_item.total_price)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR en update_cart_item: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@public_bp.route('/cart/remove', methods=['POST'])
+def remove_cart_item():
+    """Eliminar producto del carrito"""
+    try:
+        data = request.get_json()
+        part_number = data.get('part_number')
+        
+        if not part_number:
+            return jsonify({'success': False, 'error': 'Part number requerido'}), 400
+        
+        user_id = get_current_user_id()
+        
+        # Buscar el carrito activo del usuario
+        cart = Cart.query.filter_by(user_id=user_id, status='active').first()
+        if not cart:
+            return jsonify({'success': False, 'error': 'Carrito no encontrado'}), 404
+        
+        # Buscar el producto
+        product = Product.query.filter_by(ingram_part_number=part_number).first()
+        if not product:
+            return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
+        
+        # Buscar y eliminar el item del carrito
+        cart_item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
+        if cart_item:
+            db.session.delete(cart_item)
+            
+            # Recalcular total del carrito
+            cart.calculate_total()
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Producto eliminado del carrito'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Producto no encontrado en el carrito'}), 404
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR en remove_cart_item: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ==================== RUTAS ADICIONALES DEL CARRITO ====================
+@public_bp.route("/cart/count", methods=["GET"])
+def api_get_cart_count():
+    """API para obtener cantidad de items en carrito"""
+    try:
+        user_id = get_current_user_id()
+        cart_items = get_user_cart(user_id)
+        
+        return jsonify({
+            'success': True,
+            'count': len(cart_items)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'count': 0
+        }), 500
+
+# ==================== RUTAS DEL CATÁLOGO ====================
 @public_bp.route("/catalog", methods=["GET"])
 @public_bp.route("/tienda", methods=["GET"])
 def public_catalog():
@@ -175,7 +451,7 @@ def public_catalog():
                 return redirect(redirect_url)
         
         return render_template(
-            "public/catalog/catalog.html",  # NUEVA RUTA DE TEMPLATE
+            "public/catalog/catalog.html",
             productos=productos,
             page_number=page_number,
             total_records=total_records,
@@ -190,7 +466,7 @@ def public_catalog():
             local_vendors=ProductUtils.get_local_vendors(),
             get_image_url_enhanced=ImageHandler.get_image_url_enhanced,
             get_availability_text=ProductUtils.get_availability_text,
-            user_type='public'  # IMPORTANTE: Indicar que es usuario público
+            user_type='public'
         )
     
     except Exception as e:
@@ -213,7 +489,6 @@ def public_catalog():
                              error_message=f"Error al cargar productos: {str(e)}",
                              user_type='public')
 
-# ==================== DETALLE DE PRODUCTO PÚBLICO ====================
 @public_bp.route("/product/<part_number>", methods=["GET"])
 def public_product_detail(part_number):
     """Detalle de producto para público general"""
@@ -238,7 +513,7 @@ def public_product_detail(part_number):
         precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
         precio_info = precio_res.json()[0] if precio_res.status_code == 200 else {}
 
-        # Calcular precio final con markup del 10% (precio público)
+        # Calcular precio final con markup del 15% (precio público)
         pricing = precio_info.get("pricing") or {}
         base_price = pricing.get("customerPrice")
         currency = pricing.get("currencyCode") or pricing.get("currency") or ""
@@ -266,285 +541,32 @@ def public_product_detail(part_number):
         imagen_url = ImageHandler.get_image_url_enhanced(detalle)
         
         return render_template(
-            "public/catalog/product_detail.html",  # NUEVA RUTA DE TEMPLATE
+            "public/catalog/product_detail.html",
             detalle=detalle,
             precio_final=precio_final,
             disponibilidad=disponibilidad,
             atributos=atributos,
             imagen_url=imagen_url,
             part_number=part_number,
-            user_type='public'  # IMPORTANTE: Indicar que es usuario público
+            user_type='public'
         )
     
     except Exception as e:
         print(f"Error obteniendo detalle del producto {part_number}: {str(e)}")
         return render_template("errors/500.html", message="Error al cargar el detalle del producto"), 500
 
-# ==================== CORREGIR LA RUTA CART/ADD ====================
-@public_bp.route("/cart/add", methods=["POST"], endpoint='public_cart_add')
-def add_to_cart_route():
-    """Añadir producto al carrito - VERSIÓN CORREGIDA"""
-    try:
-        # Obtener datos de la solicitud
-        if request.is_json:
-            data = request.get_json()
-            part_number = data.get('part_number')
-            quantity = int(data.get('quantity', 1))
-        else:
-            part_number = request.form.get('part_number')
-            quantity = int(request.form.get('quantity', 1))
-        
-        # Validar part_number
-        if not part_number or part_number == 'None':
-            print(f"ERROR - part_number inválido: {part_number}")
-            return jsonify({'success': False, 'error': 'Número de parte inválido'}), 400
-        
-        print(f"DEBUG - Agregando al carrito: {part_number}, cantidad: {quantity}")
-        
-        # Obtener detalles del producto
-        detail_url = f"https://api.ingrammicro.com/resellers/v6/catalog/details/{part_number}"
-        detalle_res = APIClient.make_request("GET", detail_url)
-        
-        if detalle_res.status_code != 200:
-            print(f"ERROR - Producto no encontrado: {part_number}")
-            return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
-        
-        detalle = detalle_res.json()
-        print(f"DEBUG - Detalle del producto obtenido: {detalle.get('description', 'Sin descripción')}")
-        
-        # Obtener precio y disponibilidad con manejo robusto de errores
-        real_price = 0
-        availability_data = {}
-        
-        try:
-            price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-            body = {"products": [{"ingramPartNumber": part_number}]}
-            params = {
-                "includeAvailability": "true",
-                "includePricing": "true",
-                "includeProductAttributes": "true"
-            }
-            
-            precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
-            
-            if precio_res and precio_res.status_code == 200:
-                precio_data = precio_res.json()
-                print(f"DEBUG - Respuesta precio: {precio_data}")
-                
-                if precio_data and isinstance(precio_data, list) and len(precio_data) > 0:
-                    first_product = precio_data[0]
-                    
-                    # Verificar si hay error en la respuesta
-                    if first_product.get('productStatusCode') == 'E':
-                        error_msg = first_product.get('productStatusMessage', 'Error en API de precios')
-                        print(f"DEBUG - Error en API de precios: {error_msg}")
-                        # Continuar con precio 0 pero permitir agregar al carrito
-                    else:
-                        pricing = first_product.get('pricing', {})
-                        if pricing:  # Verificar que pricing no sea None
-                            customer_price = pricing.get('customerPrice')
-                            
-                            if customer_price is not None:
-                                try:
-                                    real_price = float(customer_price)
-                                    print(f"DEBUG - Precio obtenido: {real_price}")
-                                except (ValueError, TypeError) as e:
-                                    print(f"DEBUG - Error convirtiendo precio: {e}")
-                                    real_price = 0
-                        
-                        availability_data = first_product.get('availability', {})
-            else:
-                print(f"DEBUG - Error en API de precios: {precio_res.status_code if precio_res else 'No response'}")
-                
-        except Exception as api_error:
-            print(f"DEBUG - Excepción en API de precios: {api_error}")
-            # Continuar con precio 0
-        
-        # Preparar datos del producto
-        product_data = {
-            'ingramPartNumber': part_number,
-            'description': detalle.get('description', f"Producto {part_number}"),
-            'pricing': {'customerPrice': real_price},
-            'vendorName': detalle.get('vendorName', 'N/A'),
-            'upc': detalle.get('upc', ''),
-            'category': detalle.get('category', ''),
-            'availability': availability_data,
-            'productImages': detalle.get('productImages', [])
-        }
-        
-        user_id = get_current_user_id()
-        
-        # Intentar agregar al carrito
-        try:
-            add_to_cart(user_id, product_data, quantity)
-            
-            cart_count = len(get_user_cart(user_id))
-            print(f"DEBUG - Producto agregado exitosamente. Carrito tiene {cart_count} items")
-            
-            if request.is_json:
-                return jsonify({
-                    'success': True,
-                    'message': f'Producto agregado al carrito (Cantidad: {quantity})',
-                    'cart_count': cart_count
-                })
-            else:
-                session['flash_message'] = "Producto agregado al carrito"
-                return redirect('/cart')
-                
-        except Exception as e:
-            print(f"ERROR al agregar al carrito (función add_to_cart): {str(e)}")
-            import traceback
-            traceback.print_exc()
-            
-            if request.is_json:
-                return jsonify({'success': False, 'error': f'Error interno: {str(e)}'}), 500
-            else:
-                session['flash_message'] = f"Error al agregar producto: {str(e)}"
-                return redirect(request.referrer or '/catalog')
-        
-    except Exception as e:
-        print(f"ERROR en add_to_cart_route: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
-        if request.is_json:
-            return jsonify({'success': False, 'error': str(e)}), 500
-        else:
-            session['flash_message'] = f"Error al agregar producto: {str(e)}"
-            return redirect(request.referrer or '/catalog')
-
-@public_bp.route('/cart', methods=["GET"])
-def view_cart():
-    """Ver carrito de compras"""
-    try:
-        user_id = get_current_user_id()
-        cart_items = get_user_cart(user_id)
-        
-        total = 0
-        items_with_totals = []
-        
-        for item in cart_items:
-            pricing_info = item['product'].get('pricing', {})
-            base_price = pricing_info.get('customerPrice', 0)
-            quantity = item['quantity']
-            
-            try:
-                if isinstance(base_price, str):
-                    base_price_float = float(base_price.replace(',', '').replace('$', ''))
-                elif isinstance(base_price, (int, float)):
-                    base_price_float = float(base_price)
-                else:
-                    base_price_float = 0.0
-                
-                # Aplicar markup del 10% (precio público)
-                unit_price_with_markup = round(base_price_float * 1.15, 2)
-                item_total = unit_price_with_markup * quantity
-                total += item_total
-                
-                item_data = {
-                    **item,
-                    'unit_price': unit_price_with_markup,
-                    'total_price': item_total,
-                    'formatted_unit_price': f"${unit_price_with_markup:,.2f} MXN",
-                    'formatted_total_price': f"${item_total:,.2f} MXN"
-                }
-                    
-            except (ValueError, TypeError):
-                item_data = {
-                    **item,
-                    'unit_price': 0,
-                    'total_price': 0,
-                    'formatted_unit_price': 'No disponible',
-                    'formatted_total_price': 'No disponible'
-                }
-            
-            items_with_totals.append(item_data)
-        
-        flash_message = session.pop('flash_message', None)
-        
-        return render_template(
-            "public/catalog/cart.html",  # NUEVA RUTA DE TEMPLATE
-            items=items_with_totals,
-            total=round(total, 2),
-            formatted_total=f"${total:,.2f} MXN",
-            count=len(cart_items),
-            flash_message=flash_message,
-            user_type='public'
-        )
-        
-    except Exception as e:
-        print(f"Error al cargar carrito: {str(e)}")
-        return render_template("errors/500.html", error=f"Error al cargar carrito: {str(e)}")
-
-@public_bp.route('/api/cart/remove', methods=['POST'])
-def api_remove_from_cart():
-    """API para eliminar producto del carrito"""
-    try:
-        data = request.get_json()
-        part_number = data.get('part_number')
-        
-        if not part_number:
-            return jsonify({'success': False, 'error': 'part_number requerido'}), 400
-        
-        user_id = get_current_user_id()
-        result = remove_from_cart(user_id, part_number)
-        
-        if result:
-            return jsonify({
-                'success': True, 
-                'message': 'Producto eliminado del carrito',
-                'cart_count': len(get_user_cart(user_id))
-            })
-        else:
-            return jsonify({'success': False, 'error': 'Producto no encontrado en carrito'})
-        
-    except Exception as e:
-        print(f"ERROR en api_remove_from_cart: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ==================== FUNCIONES DE CARRITO FALTANTES ====================
-def remove_from_cart(user_id, part_number):
-    """Eliminar producto del carrito"""
-    from app.models.cart import Cart, CartItem
-    from app.models.product import Product
-    
-    try:
-        cart = Cart.query.filter_by(user_id=user_id, status='active').first()
-        if not cart:
-            return False
-        
-        product = Product.query.filter_by(ingram_part_number=part_number).first()
-        if not product:
-            return False
-        
-        item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
-        if not item:
-            return False
-        
-        db.session.delete(item)
-        cart.calculate_total()
-        db.session.commit()
-        return True
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error removing from cart: {e}")
-        return False
-
-# ==================== RUTAS DE FAVORITOS (COMPARTIDAS) ====================
-# (Mantener las mismas funciones de favoritos, ya que son compartidas)
-
+# ==================== RUTAS DE FAVORITOS ====================
 @public_bp.route('/favorites', methods=["GET"])
 def public_favorites():
     """Favoritos para público general"""
     try:
         user_id = get_current_user_id()
-        favorites = get_user_favorites(user_id)  # Función compartida
+        favorites = get_user_favorites(user_id)
         
         flash_message = session.pop('flash_message', None)
         
         return render_template(
-            "public/favorites/favorites.html",  # NUEVA RUTA DE TEMPLATE
+            "public/catalog/favorites.html",
             favorites=favorites,
             count=len(favorites),
             flash_message=flash_message,
@@ -556,11 +578,93 @@ def public_favorites():
         print(f"Error al cargar favoritos: {str(e)}")
         return render_template("errors/500.html", error=f"Error al cargar favoritos: {str(e)}")
 
-# ==================== FUNCIONES COMPARTIDAS (COPIAR DE products_bp) ====================
-# Copiar las funciones compartidas como get_user_favorites, toggle_favorite, etc.
+@public_bp.route('/favorites/toggle', methods=['POST'])
+def toggle_favorite_route():
+    """Agregar/eliminar favorito - VERSIÓN CORREGIDA para form data"""
+    try:
+        # Determinar si es JSON o form data
+        if request.is_json:
+            data = request.get_json()
+            part_number = data.get('part_number')
+        else:
+            # Para form data tradicional
+            part_number = request.form.get('part_number')
+        
+        if not part_number:
+            return jsonify({'success': False, 'error': 'Part number requerido'}), 400
+        
+        print(f"DEBUG - Eliminando favorito: {part_number}")
+        
+        user_id = get_current_user_id()
+        
+        # Buscar producto en la base de datos local
+        product = Product.query.filter_by(ingram_part_number=part_number).first()
+        if not product:
+            # Si no existe en la BD, crear un producto básico
+            product = Product(
+                ingram_part_number=part_number,
+                description=request.form.get('description', 'Producto sin descripción'),
+                vendor_name=request.form.get('vendor', 'N/A')
+            )
+            db.session.add(product)
+            db.session.flush()
+        
+        # Buscar el favorito
+        favorite = Favorite.query.filter_by(user_id=user_id, product_id=product.id).first()
+        
+        if favorite:
+            # Eliminar favorito
+            db.session.delete(favorite)
+            action = 'removed'
+            message = 'Producto eliminado de favoritos'
+        else:
+            # Agregar favorito
+            new_favorite = Favorite(user_id=user_id, product_id=product.id)
+            db.session.add(new_favorite)
+            action = 'added'
+            message = 'Producto agregado a favoritos'
+        
+        db.session.commit()
+        
+        # Redirigir de vuelta a favoritos
+        flash(message, 'success')
+        return redirect('/favorites')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR en toggle_favorite_route: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        flash('Error al actualizar favoritos', 'error')
+        return redirect('/favorites')
 
+@public_bp.route('/favorites/check/<part_number>', methods=['GET'])
+def check_favorite_route(part_number):
+    """API para verificar si un producto es favorito"""
+    try:
+        user_id = get_current_user_id()
+        
+        # Buscar producto
+        product = Product.query.filter_by(ingram_part_number=part_number).first()
+        if not product:
+            return jsonify({'success': True, 'is_favorite': False})
+        
+        # Verificar si es favorito
+        favorite = Favorite.query.filter_by(user_id=user_id, product_id=product.id).first()
+        
+        return jsonify({
+            'success': True,
+            'is_favorite': favorite is not None
+        })
+        
+    except Exception as e:
+        print(f"Error checking favorite: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ==================== FUNCIONES AUXILIARES ====================
 def get_user_favorites(user_id):
-    """Obtener favoritos del usuario (función compartida)"""
+    """Obtener favoritos del usuario"""
     from app.models.favorite import Favorite
     from app.models.product import Product
     
@@ -573,13 +677,13 @@ def get_user_favorites(user_id):
             'ingramPartNumber': product.ingram_part_number,
             'description': product.description,
             'vendorName': product.vendor_name,
-            'favorited_date': fav.created_at.isoformat()
+            'favorited_date': fav.created_at.isoformat() if fav.created_at else 'Desconocida'
         })
     
     return favorite_list
 
 def toggle_favorite(user_id, product_data):
-    """Agregar/eliminar favorito (función compartida)"""
+    """Agregar/eliminar favorito"""
     from app.models.favorite import Favorite
     from app.models.product import Product
     
@@ -608,49 +712,6 @@ def toggle_favorite(user_id, product_data):
     db.session.commit()
     return action
 
-# ==================== RUTA CART/COUNT FALTANTE ====================
-@public_bp.route("/cart/count", methods=["GET"])
-def api_get_cart_count():
-    """API para obtener cantidad de items en carrito"""
-    try:
-        user_id = get_current_user_id()
-        cart_items = get_user_cart(user_id)
-        
-        return jsonify({
-            'success': True,
-            'count': len(cart_items)
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'count': 0
-        }), 500
-    
-@public_bp.route('/favorites/check/<part_number>', methods=['GET'])
-def check_favorite_route(part_number):
-    """API para verificar si un producto es favorito"""
-    try:
-        user_id = get_current_user_id()
-        
-        # Buscar producto
-        product = Product.query.filter_by(ingram_part_number=part_number).first()
-        if not product:
-            return jsonify({'success': True, 'is_favorite': False})
-        
-        # Verificar si es favorito
-        favorite = Favorite.query.filter_by(user_id=user_id, product_id=product.id).first()
-        
-        return jsonify({
-            'success': True,
-            'is_favorite': favorite is not None
-        })
-        
-    except Exception as e:
-        print(f"Error checking favorite: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-    
 def get_cart_stats(user_id):
     """Obtener estadísticas REALES del carrito desde la BD"""
     try:
@@ -669,40 +730,19 @@ def get_cart_stats(user_id):
         total_value = 0.0
         
         for item in cart_items:
-            pricing_info = item['product'].get('pricing', {})
-            base_price = pricing_info.get('customerPrice', 0)
-            quantity = item['quantity']
-            
-            try:
-                if isinstance(base_price, str):
-                    base_price_float = float(base_price.replace(',', '').replace('$', ''))
-                elif isinstance(base_price, (int, float)):
-                    base_price_float = float(base_price)
-                else:
-                    base_price_float = 0.0
-                
-                # Aplicar markup del 10% (precio público)
-                unit_price_with_markup = round(base_price_float * 1.10, 2)
-                item_total = unit_price_with_markup * quantity
-                total_value += item_total
-                    
-            except (ValueError, TypeError):
-                continue
+            total_value += item['total_price']
         
         # Obtener fecha de última actualización
         last_update = "Reciente"
-        if cart_items:
-            # Buscar la fecha más reciente en el carrito
-            from app.models.cart import Cart
-            cart = Cart.query.filter_by(user_id=user_id, status='active').first()
-            if cart and cart.updated_at:
-                last_update = cart.updated_at.strftime("%d/%m/%Y %H:%M")
+        cart = Cart.query.filter_by(user_id=user_id, status='active').first()
+        if cart and cart.updated_at:
+            last_update = cart.updated_at.strftime("%d/%m/%Y %H:%M")
         
         return {
             'total_items': total_items,
             'total_value': round(total_value, 2),
             'last_update': last_update,
-            'item_count': len(cart_items)  # Número de productos distintos
+            'item_count': len(cart_items)
         }
         
     except Exception as e:
@@ -737,3 +777,55 @@ def get_recent_activity(user_id):
     except Exception as e:
         print(f"Error obteniendo actividad reciente: {str(e)}")
         return []
+
+# ==================== RUTAS DE COMPATIBILIDAD ====================
+@public_bp.route('/api/cart/remove', methods=['POST'])
+def api_remove_from_cart():
+    """API para eliminar producto del carrito (compatibilidad)"""
+    try:
+        data = request.get_json()
+        part_number = data.get('part_number')
+        
+        if not part_number:
+            return jsonify({'success': False, 'error': 'part_number requerido'}), 400
+        
+        user_id = get_current_user_id()
+        result = remove_from_cart_legacy(user_id, part_number)
+        
+        if result:
+            return jsonify({
+                'success': True, 
+                'message': 'Producto eliminado del carrito',
+                'cart_count': len(get_user_cart(user_id))
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Producto no encontrado en carrito'})
+        
+    except Exception as e:
+        print(f"ERROR en api_remove_from_cart: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def remove_from_cart_legacy(user_id, part_number):
+    """Eliminar producto del carrito (función legacy)"""
+    try:
+        cart = Cart.query.filter_by(user_id=user_id, status='active').first()
+        if not cart:
+            return False
+        
+        product = Product.query.filter_by(ingram_part_number=part_number).first()
+        if not product:
+            return False
+        
+        item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
+        if not item:
+            return False
+        
+        db.session.delete(item)
+        cart.calculate_total()
+        db.session.commit()
+        return True
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error removing from cart: {e}")
+        return False

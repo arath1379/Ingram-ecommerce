@@ -647,11 +647,11 @@
                             <input type="number" id="quantity" value="1" min="1" max="999">
                         </div>
                         <div class="action-buttons">
-                            <button type="button" class="btn btn-primary" onclick="addToQuoteFromButton('{{ part_number }}')">
-                                <i class="fas fa-shopping-cart"></i>
-                                Comprar Ahora
+                            <button type="button" class="btn btn-primary" onclick="addToCartFromButton('{{ part_number }}')">
+                                <i class="fas fa-cart-plus"></i> <!-- Cambiar icono -->
+                                Agregar al Carrito <!-- Cambiar texto -->
                             </button>
-                            <button type="button" class="btn btn-secondary" id="favorite-btn" onclick="toggleFavorite('{{ detalle.get(ingramPartNumber, part_number) }}')">
+                            <button type="button" class="btn btn-secondary" id="favorite-btn" onclick="toggleFavorite('{{ detalle.get("ingramPartNumber", part_number) }}')">
                                 <i class="fas fa-heart"></i>
                                 <span id="favorite-text">Agregar a favoritos</span>
                             </button>
@@ -768,7 +768,7 @@
                 }
             }
 
-            async function addToQuote(partNumber) {
+            async function addToCart(partNumber) {
                 const quantityInput = document.getElementById('quantity');
                 let quantity = 1;
                 
@@ -778,7 +778,7 @@
                     if (quantity > 999) quantity = 999;
                 }
                 
-                const btn = document.querySelector('[onclick*="addToQuote"]');
+                const btn = document.querySelector('[onclick*="addToCart"]');
                 
                 if (btn) {
                     const originalText = btn.innerHTML;
@@ -786,7 +786,7 @@
                     btn.disabled = true;
                     
                     try {
-                        // RUTA CORREGIDA - usa /cart/add en lugar de /products/api/add-to-quote
+                        // RUTA CORREGIDA - usa /cart/add
                         const response = await fetch('/cart/add', {
                             method: 'POST',
                             headers: {
@@ -801,7 +801,7 @@
                         const result = await response.json();
                         
                         if (result.success) {
-                            showNotification(`Agregado ${quantity} unidad(es) al carrito`, 'success');
+                            showNotification(`✅ ${quantity} producto(s) agregado(s) al carrito`, 'success');
                             
                             // Redirigir al carrito después de 1.5 segundos
                             setTimeout(() => {
@@ -809,10 +809,10 @@
                             }, 1500);
                             
                         } else {
-                            showNotification('Error: ' + result.error, 'error');
+                            showNotification('❌ Error: ' + (result.error || 'No se pudo agregar al carrito'), 'error');
                         }
                     } catch (error) {
-                        showNotification('Error de conexión: ' + error.message, 'error');
+                        showNotification('❌ Error de conexión: ' + error.message, 'error');
                     } finally {
                         btn.innerHTML = originalText;
                         btn.disabled = false;
@@ -820,9 +820,9 @@
                 }
             }
 
-            // Función auxiliar para el botón
-            function addToQuoteFromButton(partNumber) {
-                addToQuote(partNumber);
+            // Función auxiliar para el botón (actualizada)
+            function addToCartFromButton(partNumber) {
+                addToCart(partNumber);
             }
 
             async function toggleFavorite(partNumber) {

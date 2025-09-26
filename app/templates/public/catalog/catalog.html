@@ -999,6 +999,99 @@
             0% { left: -100%; }
             100% { left: 100%; }
         }
+        /* Icono de favoritos */
+        .heart-icon {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            border-radius: 50%;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
+        .heart-icon:hover {
+            transform: translateY(-2px) scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+            background: linear-gradient(135deg, #ff5252, #e53935);
+        }
+
+        .heart-icon i {
+            font-size: 1.2rem;
+        }
+
+        .favorites-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: linear-gradient(135deg, #F15A29, #d14a1f);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(241, 90, 41, 0.4);
+        }
+
+        /* Efecto de latido */
+        .heart-icon:hover i {
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Para usar junto con el icono del carrito */
+        .cart-icon {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4ECDC4, #44A08D);
+            border-radius: 50%;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+        }
+
+        .cart-icon:hover {
+            transform: translateY(-2px) scale(1.1);
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+            background: linear-gradient(135deg, #26A69A, #00897B);
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: linear-gradient(135deg, #F15A29, #d14a1f);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(241, 90, 41, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -1017,6 +1110,10 @@
                 <a href="/dashboard/public" class="nav-link">
                     <i class="fas fa-tachometer-alt"></i>
                     Dashboard
+                </a>
+                <a href="/favorites" class="heart-icon" title="Mis Favoritos">
+                    <i class="fas fa-heart"></i>
+                    <span class="favorites-count" id="favorites-count">0</span>
                 </a>
                 <div class="stat-item">
                     <i class="fas fa-boxes"></i>
