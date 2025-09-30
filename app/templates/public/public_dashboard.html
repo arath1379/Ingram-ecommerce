@@ -779,9 +779,6 @@
                 </div>
                 <div class="stat-content">
                     <div class="stat-main">
-                        <div class="stat-number" style="font-size: 1.8rem;">Público</div>
-                        <p class="stat-label">Tu tipo de cuenta actual</p>
-                        
                         <div class="stat-details">
                             <div class="stat-detail-item">
                                 <span class="detail-label">Miembro desde:</span>
@@ -789,9 +786,9 @@
                             </div>
                             <div class="stat-detail-item">
                                 <span class="detail-label">Estado de cuenta:</span>
-                                <span class="detail-value status-active">
-                                    <i class="fas fa-check-circle"></i>
-                                    Activa
+                                <span class="detail-value {% if is_active %}status-active{% else %}status-inactive{% endif %}">
+                                    <i class="fas {% if is_active %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+                                    {% if is_active %}Activa{% else %}Inactiva{% endif %}
                                 </span>
                             </div>
                             <div class="stat-detail-item">
@@ -810,7 +807,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Actividad Reciente -->
         <div class="recent-activity animate-in">
             <div class="section-header">

@@ -1,29 +1,36 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, flash
+from flask import Blueprint, render_template, request, session, flash, redirect, jsonify
 from datetime import datetime
 import json
-from app import db 
-from app.models.product import Product
-from app.models.favorite import Favorite
-from app.models.quote import Quote, QuoteItem
+from app import db
 from app.models.user import User
+from app.models.quote import Quote, QuoteItem
+from app.models.favorite import Favorite
+from app.models.product import Product
 from app.models.product_utils import ProductUtils
 from app.models.api_client import APIClient
 from app.models.image_handler import ImageHandler
 from functools import wraps
-from flask import session, redirect, url_for, flash
 
-# Crear Blueprint para las rutas de productos
-products_bp = Blueprint('products', __name__, url_prefix='/products')
+# Crear Blueprint para rutas de clientes SIN prefijo
+client_routes_bp = Blueprint('client_routes', __name__)
+
+def login_required_sessions(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Por favor inicia sesión para acceder a esta página', 'warning')
+            return redirect('/auth/login')
+        return f(*args, **kwargs)
+    return decorated_function
 
 def get_current_user_id():
     """Obtener ID del usuario actual de la sesión"""
     return session.get('user_id', 'anonymous_user')
 
-# ==================== FUNCIONES DE BASE DE DATOS ACTUALIZADAS ====================
+# ==================== FUNCIONES AUXILIARES ====================
+
 def get_user_quotes(user_id):
     """Obtener cotización del usuario usando los nuevos modelos"""
-    from app.models.quote import Quote, QuoteItem
-    
     try:
         quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
         if not quote:
@@ -50,21 +57,9 @@ def get_user_quotes(user_id):
     except Exception as e:
         print(f"Error en get_user_quotes: {str(e)}")
         return []
-    
-def login_required_sessions(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            flash('Por favor inicia sesión para acceder a esta página', 'warning')
-            return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
-    return decorated_function
-    
+
 def add_to_quote(user_id, product_data, quantity=1):
     """Agregar producto a cotización usando nuevos modelos"""
-    from app.models.quote import Quote, QuoteItem
-    from app.models.product import Product
-    
     try:
         print(f"DEBUG - add_to_quote iniciado para: {product_data['ingramPartNumber']}")
         
@@ -130,20 +125,211 @@ def add_to_quote(user_id, product_data, quantity=1):
         import traceback
         traceback.print_exc()
         raise
-# ==================== RUTAS PRINCIPALES DEL CATÁLOGO ====================
-# (Mantener el mismo código que ya tienes para catalogo_completo_cards)
-@products_bp.route("/catalogo-completo-cards", methods=["GET"])
-@products_bp.route("/catalog", methods=["GET"])
+
+def toggle_favorite(user_id, product_data):
+    """Agregar/eliminar producto de favoritos usando nuevos modelos"""
+    # Buscar o crear producto
+    product = Product.query.filter_by(ingram_part_number=product_data['ingramPartNumber']).first()
+    if not product:
+        product = Product(
+            ingram_part_number=product_data['ingramPartNumber'],
+            description=product_data.get('description', ''),
+            vendor_name=product_data.get('vendorName', 'N/A')
+        )
+        db.session.add(product)
+        db.session.flush()
+    
+    # Verificar si ya es favorito
+    existing_fav = Favorite.query.filter_by(user_id=user_id, product_id=product.id).first()
+    
+    if existing_fav:
+        db.session.delete(existing_fav)
+        action = 'removed'
+    else:
+        new_fav = Favorite(user_id=user_id, product_id=product.id)
+        db.session.add(new_fav)
+        action = 'added'
+    
+    db.session.commit()
+    return action
+
+def is_product_favorite(user_id, part_number):
+    """Verificar si un producto está en favoritos usando nuevos modelos"""
+    # Para usuarios anónimos, siempre retornar false
+    if user_id == 'anonymous_user':
+        return False
+    
+    try:
+        product = Product.query.filter_by(ingram_part_number=part_number).first()
+        if not product:
+            return False
+        
+        return Favorite.query.filter_by(user_id=user_id, product_id=product.id).first() is not None
+    except Exception as e:
+        print(f"Error en is_product_favorite: {str(e)}")
+        return False
+
+def remove_from_quote(user_id, part_number):
+    """Eliminar producto de cotización usando nuevos modelos"""
+    try:
+        print(f"DEBUG: remove_from_quote - User: {user_id}, Part: {part_number}")
+        
+        # Obtener la cotización del usuario
+        quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
+        if not quote:
+            print("DEBUG: No quote found for user")
+            return False
+        print(f"DEBUG: Quote found: {quote.id}")
+        
+        # Buscar el producto en la base de datos local
+        product = Product.query.filter_by(ingram_part_number=part_number).first()
+        if not product:
+            print(f"DEBUG: Product {part_number} not found in database")
+            return False
+        print(f"DEBUG: Product found: {product.id}")
+        
+        # Buscar el item en la cotización
+        item = QuoteItem.query.filter_by(quote_id=quote.id, product_id=product.id).first()
+        if not item:
+            print(f"DEBUG: Product {part_number} not found in quote")
+            return False
+        print(f"DEBUG: Quote item found: {item.id}")
+        
+        # Eliminar el item
+        db.session.delete(item)
+        print("DEBUG: Item deleted from session")
+        
+        # Recalcular el total de la cotización
+        quote.calculate_total()
+        print("DEBUG: Total recalculated")
+        
+        # Guardar cambios
+        db.session.commit()
+        print("DEBUG: Changes committed to database")
+        
+        print(f"DEBUG: Product {part_number} removed successfully")
+        return True
+        
+    except Exception as e:
+        print(f"ERROR in remove_from_quote: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        return False
+
+def update_quote_quantity(user_id, part_number, quantity):
+    """Actualizar cantidad en cotización usando nuevos modelos"""
+    quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
+    if not quote:
+        return
+    
+    product = Product.query.filter_by(ingram_part_number=part_number).first()
+    if not product:
+        return
+    
+    item = QuoteItem.query.filter_by(quote_id=quote.id, product_id=product.id).first()
+    if item:
+        item.quantity = max(1, quantity)
+        item.calculate_total()
+        quote.calculate_total()
+        db.session.commit()
+
+def clear_user_quote(user_id):
+    """Limpiar toda la cotización del usuario usando nuevos modelos"""
+    quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
+    if quote:
+        # Eliminar todos los items de la cotización
+        for item in quote.items:
+            db.session.delete(item)
+        quote.total_amount = 0
+        db.session.commit()
+
+def get_user_favorites(user_id):
+    """Obtener favoritos del usuario usando los nuevos modelos"""
+    favorites = Favorite.query.filter_by(user_id=user_id).all()
+    
+    favorite_list = []
+    for fav in favorites:
+        product = fav.product
+        favorite_list.append({
+            'ingramPartNumber': product.ingram_part_number,
+            'description': product.description,
+            'vendorName': product.vendor_name,
+            'favorited_date': fav.created_at.isoformat()
+        })
+    
+    return favorite_list
+
+def remove_from_favorites(user_id, part_number):
+    """Eliminar producto de favoritos"""
+    product = Product.query.filter_by(ingram_part_number=part_number).first()
+    if not product:
+        return
+    
+    favorite = Favorite.query.filter_by(user_id=user_id, product_id=product.id).first()
+    if favorite:
+        db.session.delete(favorite)
+        db.session.commit()
+
+# ==================== DASHBOARD CLIENTE ====================
+
+@client_routes_bp.route('/dashboard/client')
+@login_required_sessions
+def client_dashboard():
+    """Dashboard para clientes empresariales"""
+    try:
+        user_id = session.get('user_id')
+        user = User.query.get(user_id)
+        
+        # Verificar que sea cliente
+        if user.account_type != 'client':
+            flash('Acceso no autorizado', 'error')
+            return redirect('/dashboard')
+        
+        # Obtener estadísticas de cotizaciones
+        total_quotes = Quote.query.filter_by(user_id=user_id).count()
+        pending_quotes = Quote.query.filter_by(user_id=user_id).filter(
+            Quote.status.in_(['draft', 'sent', 'pending'])
+        ).count()
+        approved_quotes = Quote.query.filter_by(user_id=user_id, status='approved').count()
+        
+        # Obtener favoritos
+        favorites_count = Favorite.query.filter_by(user_id=user_id).count()
+        
+        # Datos para el template
+        dashboard_data = {
+            'user_name': user.full_name or user.email.split('@')[0],
+            'user_email': user.email,
+            'business_name': user.business_name or 'Tu Empresa',
+            'rfc': user.rfc or 'No especificado',
+            'total_quotes': total_quotes,
+            'pending_quotes': pending_quotes,
+            'approved_quotes': approved_quotes,
+            'favorites_count': favorites_count,
+            'discount': 15,  # Ejemplo de descuento
+            'credit_limit': 50000,  # Ejemplo de límite de crédito
+            'now': datetime.now(),
+            'user_type': 'client'
+        }
+        
+        return render_template('client/dashboard.html', **dashboard_data)
+        
+    except Exception as e:
+        print(f"Error cargando dashboard cliente: {str(e)}")
+        flash('Error al cargar el dashboard', 'error')
+        return redirect('/')
+
+# ==================== RUTAS DE CATÁLOGO ====================
+
+@client_routes_bp.route("/catalogo-completo-cards", methods=["GET"])
+@client_routes_bp.route("/catalog", methods=["GET"])
 def catalogo_completo_cards():
     """Catálogo principal con búsqueda híbrida mejorada"""
     # Parámetros de búsqueda
     page_number = int(request.args.get("page", 1))
-    page_size = int(request.args.get("page_size", 25))  # Permitir configurar tamaño de página
+    page_size = int(request.args.get("page_size", 25))
     query = request.args.get("q", "").strip()
     vendor = request.args.get("vendor", "").strip()
-    
-    # DEBUG: Log de parámetros
-    print(f"DEBUG - Page: {page_number}, Size: {page_size}, Query: '{query}', Vendor: '{vendor}'")
     
     try:
         # Realizar la búsqueda
@@ -152,30 +338,22 @@ def catalogo_completo_cards():
             vendor=vendor, 
             page_number=page_number, 
             page_size=page_size, 
-            use_keywords=bool(query)  # Solo usar keywords cuando hay query
+            use_keywords=bool(query)
         )
-        
-        print(f"DEBUG - Resultados: {len(productos)}/{total_records}, Página vacía: {pagina_vacia}")
         
         # Si la página está vacía pero debería tener datos, corregir
         if pagina_vacia and page_number > 1 and total_records > 0:
-            # Intentar con la página anterior
             page_number = max(1, page_number - 1)
             productos, total_records, pagina_vacia = ProductUtils.buscar_productos_hibrido(
                 query=query, vendor=vendor, page_number=page_number, page_size=page_size, use_keywords=bool(query)
             )
         
-        # Cálculos de paginación corregidos
+        # Cálculos de paginación
         total_pages = max(1, (total_records + page_size - 1) // page_size) if total_records > 0 else 1
-        
-        # Asegurar que page_number esté dentro del rango válido
         page_number = max(1, min(page_number, total_pages))
         
         start_record = (page_number - 1) * page_size + 1 if total_records > 0 else 0
         end_record = min(page_number * page_size, total_records)
-        
-        # DEBUG: Información de paginación
-        print(f"DEBUG - Páginas: {total_pages}, Rango: {start_record}-{end_record}/{total_records}")
         
         return render_template(
             "client/catalog/catalog.html",
@@ -200,9 +378,6 @@ def catalogo_completo_cards():
     
     except Exception as e:
         print(f"ERROR en catálogo: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
         return render_template("client/catalog/catalog.html", 
                              query=query,
                              vendor=vendor,
@@ -216,12 +391,10 @@ def catalogo_completo_cards():
                              pagina_vacia=True,
                              welcome_message=False,
                              error_message=f"Error al cargar productos: {str(e)}")
-    
-# ==================== DETALLE DE PRODUCTO ====================
-@products_bp.route("/producto/<part_number>", methods=["GET"])
+
+@client_routes_bp.route("/producto/<part_number>", methods=["GET"])
 def producto_detalle(part_number=None, sku=None):
     """Detalle de producto unificado"""
-    # Usar el parámetro que esté disponible
     product_id = part_number or sku
     
     if not product_id:
@@ -301,8 +474,8 @@ def producto_detalle(part_number=None, sku=None):
         return render_template(
             "client/catalog/product_detail.html",
             detalle=detalle,
-            producto=detalle,  # Compatibilidad
-            p=detalle,         # Alias adicional
+            producto=detalle,
+            p=detalle,
             precio_final=precio_final,
             disponibilidad=disponibilidad,
             atributos=atributos,
@@ -316,9 +489,9 @@ def producto_detalle(part_number=None, sku=None):
         print(f"Error obteniendo detalle del producto {product_id}: {str(e)}")
         return render_template("errors/500.html", message="Error al cargar el detalle del producto"), 500
 
-# ==================== GESTIÓN DE COTIZACIONES (ACTUALIZADO PARA BD) ====================
+# ==================== RUTAS DE COTIZACIONES ====================
 
-@products_bp.route("/agregar-cotizacion", methods=["GET", "POST"])
+@client_routes_bp.route("/agregar-cotizacion", methods=["GET", "POST"])
 def agregar_cotizacion():
     """Añadir producto a cotización - CON BASE DE DATOS"""
     try:
@@ -396,13 +569,13 @@ def agregar_cotizacion():
         add_to_quote(user_id, product_data, quantity)
         
         session['flash_message'] = "Producto agregado a cotización"
-        return redirect('/products/mi-cotizacion')
+        return redirect('/mi-cotizacion')
         
     except Exception as e:
         print(f"Error al agregar a cotización: {str(e)}")
         return render_template("error.html", error=f"Error al agregar producto: {str(e)}")
 
-@products_bp.route('/mi-cotizacion', methods=["GET"])
+@client_routes_bp.route('/mi-cotizacion', methods=["GET"])
 def mi_cotizacion():
     """Página de cotización con formato mexicano - CON BASE DE DATOS"""
     try:
@@ -452,7 +625,7 @@ def mi_cotizacion():
         flash_message = session.pop('flash_message', None)
         
         return render_template(
-            "products/quote.html",
+            "client/catalog/quote.html",
             items=items_with_totals,
             total=round(total, 2),
             formatted_total=f"${total:,.2f} MXN",
@@ -464,9 +637,9 @@ def mi_cotizacion():
         print(f"Error al cargar cotización: {str(e)}")
         return render_template("error.html", error=f"Error al cargar cotización: {str(e)}")
 
-# ==================== GESTIÓN DE FAVORITOS (ACTUALIZADO PARA BD) ====================
+# ==================== RUTAS DE FAVORITOS ====================
 
-@products_bp.route('/agregar-favorito', methods=["POST"])
+@client_routes_bp.route('/agregar-favorito', methods=["POST"])
 def agregar_favorito():
     """Añadir/eliminar producto de favoritos - CON BASE DE DATOS"""
     try:
@@ -510,8 +683,8 @@ def agregar_favorito():
         print(f"Error con favoritos: {str(e)}")
         return render_template("error.html", error=f"Error con favoritos: {str(e)}")
 
-@products_bp.route('/mis-favoritos', methods=["GET"])
-@products_bp.route('/favorites', methods=["GET"])
+@client_routes_bp.route('/mis-favoritos', methods=["GET"])
+@client_routes_bp.route('/favorites', methods=["GET"])
 def mis_favoritos():
     """Página de favoritos del usuario - CON BASE DE DATOS"""
     try:
@@ -521,7 +694,7 @@ def mis_favoritos():
         flash_message = session.pop('flash_message', None)
         
         return render_template(
-            "products/favorites.html",
+            "client/catalog/favorites.html",
             favorites=favorites,
             count=len(favorites),
             flash_message=flash_message,
@@ -532,7 +705,7 @@ def mis_favoritos():
         print(f"Error al cargar favoritos: {str(e)}")
         return render_template("error.html", error=f"Error al cargar favoritos: {str(e)}")
     
-@products_bp.route('/eliminar-favorito', methods=["POST"])
+@client_routes_bp.route('/eliminar-favorito', methods=["POST"])
 def eliminar_favorito():
     """Eliminar producto de favoritos (ruta HTML)"""
     try:
@@ -542,29 +715,232 @@ def eliminar_favorito():
         remove_from_favorites(user_id, part_number)
         
         session['flash_message'] = "Producto eliminado de favoritos"
-        return redirect('/products/mis-favoritos')
+        return redirect('/mis-favoritos')
         
     except Exception as e:
         session['flash_message'] = f"Error al eliminar favorito: {str(e)}"
-        return redirect('/products/mis-favoritos')
+        return redirect('/mis-favoritos')
 
-def remove_from_favorites(user_id, part_number):
-    """Eliminar producto de favoritos"""
-    from app.models.favorite import Favorite
-    from app.models.product import Product
-    
-    product = Product.query.filter_by(ingram_part_number=part_number).first()
-    if not product:
-        return
-    
-    favorite = Favorite.query.filter_by(user_id=user_id, product_id=product.id).first()
-    if favorite:
-        db.session.delete(favorite)
+# ==================== RUTAS DE HISTORIAL DE COTIZACIONES ====================
+
+@client_routes_bp.route('/quote/history')
+@login_required_sessions
+def quote_history():
+    """Historial de cotizaciones del cliente"""
+    try:
+        user_id = session.get('user_id')
+        user = User.query.get(user_id)
+        
+        # Verificar que sea cliente
+        if user.account_type != 'client':
+            flash('Acceso no autorizado', 'error')
+            return redirect('/dashboard')
+        
+        # Obtener parámetros de filtro
+        status = request.args.get('status', 'all')
+        page = request.args.get('page', 1, type=int)
+        per_page = 10
+        
+        # Base query
+        query = Quote.query.filter_by(user_id=user_id)
+        
+        # Aplicar filtro de estado
+        if status == 'pending':
+            query = query.filter(Quote.status.in_(['draft', 'sent', 'pending']))
+        elif status == 'approved':
+            query = query.filter(Quote.status == 'approved')
+        elif status == 'rejected':
+            query = query.filter(Quote.status == 'rejected')
+        # 'all' muestra todas
+        
+        # Ordenar y paginar
+        quotes = query.order_by(Quote.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        # Estadísticas
+        stats = {
+            'total': Quote.query.filter_by(user_id=user_id).count(),
+            'pending': Quote.query.filter_by(user_id=user_id).filter(
+                Quote.status.in_(['draft', 'sent', 'pending'])
+            ).count(),
+            'approved': Quote.query.filter_by(user_id=user_id, status='approved').count(),
+            'rejected': Quote.query.filter_by(user_id=user_id, status='rejected').count()
+        }
+        
+        return render_template('client/catalog/quote_history.html',
+                            quotes=quotes,
+                            stats=stats,
+                            current_status=status,
+                            user_type='client')
+        
+    except Exception as e:
+        print(f"Error cargando historial de cotizaciones: {str(e)}")
+        flash('Error al cargar el historial de cotizaciones', 'error')
+        return redirect('/dashboard/client')
+
+@client_routes_bp.route('/quote/<int:quote_id>')
+@login_required_sessions
+def quote_detail(quote_id):
+    """Detalle de una cotización específica"""
+    try:
+        user_id = session.get('user_id')
+        quote = Quote.query.filter_by(id=quote_id, user_id=user_id).first()
+        
+        if not quote:
+            flash('Cotización no encontrada', 'error')
+            return redirect('/quote/history')
+        
+        # Obtener items de la cotización
+        quote_items = QuoteItem.query.filter_by(quote_id=quote_id).all()
+        
+        # Calcular totales
+        total_amount = sum(item.quantity * (item.unit_price or 0) for item in quote_items)
+        
+        return render_template('client/catalog/quote_detail.html',
+                            quote=quote,
+                            quote_items=quote_items,
+                            total_amount=total_amount,
+                            user_type='client')
+        
+    except Exception as e:
+        print(f"Error cargando detalle de cotización: {str(e)}")
+        flash('Error al cargar la cotización', 'error')
+        return redirect('/quote/history')
+
+@client_routes_bp.route('/quote/request-approval/<int:quote_id>', methods=['POST'])
+@login_required_sessions
+def request_quote_approval(quote_id):
+    """Solicitar aprobación de una cotización"""
+    try:
+        user_id = session.get('user_id')
+        quote = Quote.query.filter_by(id=quote_id, user_id=user_id).first()
+        
+        if not quote:
+            flash('Cotización no encontrada', 'error')
+            return redirect('/quote/history')
+        
+        # Cambiar estado a pendiente de aprobación
+        quote.status = 'pending'
         db.session.commit()
+        
+        flash('Solicitud de aprobación enviada correctamente', 'success')
+        return redirect('/quote/history')
+        
+    except Exception as e:
+        print(f"Error solicitando aprobación: {str(e)}")
+        flash('Error al solicitar aprobación', 'error')
+        return redirect('/quote/history')
 
-# ==================== APIs JSON (ACTUALIZADAS PARA BD) ====================
+# ==================== RUTAS ADICIONALES DE COTIZACIONES ====================
 
-@products_bp.route("/api/get-quote", methods=["GET"])
+@client_routes_bp.route('/quote/create', methods=['POST'])
+@login_required_sessions
+def create_quote_from_cart():
+    """Crear una cotización formal desde el carrito/cotización actual"""
+    try:
+        user_id = session.get('user_id')
+        user = User.query.get(user_id)
+        
+        # Obtener la cotización en borrador actual
+        draft_quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
+        
+        if not draft_quote or not draft_quote.items:
+            flash('No hay productos en tu cotización actual', 'warning')
+            return redirect('/mi-cotizacion')
+        
+        # Crear una nueva cotización formal
+        quote_number = f"QT{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        formal_quote = Quote(
+            user_id=user_id,
+            quote_number=quote_number,
+            status='sent',
+            total_amount=draft_quote.total_amount,
+            business_name=user.business_name,
+            contact_name=user.full_name,
+            contact_email=user.email
+        )
+        db.session.add(formal_quote)
+        db.session.flush()  # Para obtener el ID
+        
+        # Copiar los items a la nueva cotización
+        for draft_item in draft_quote.items:
+            formal_item = QuoteItem(
+                quote_id=formal_quote.id,
+                product_id=draft_item.product_id,
+                quantity=draft_item.quantity,
+                unit_price=draft_item.unit_price,
+                total_price=draft_item.total_price
+            )
+            db.session.add(formal_item)
+        
+        # Limpiar la cotización en borrador
+        for item in draft_quote.items:
+            db.session.delete(item)
+        draft_quote.total_amount = 0
+        
+        db.session.commit()
+        
+        flash(f'Cotización #{quote_number} creada exitosamente', 'success')
+        return redirect('/quote/history')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creando cotización: {str(e)}")
+        flash('Error al crear la cotización', 'error')
+        return redirect('/mi-cotizacion')
+
+@client_routes_bp.route('/quote/duplicate/<int:quote_id>', methods=['POST'])
+@login_required_sessions
+def duplicate_quote(quote_id):
+    """Duplicar una cotización existente"""
+    try:
+        user_id = session.get('user_id')
+        original_quote = Quote.query.filter_by(id=quote_id, user_id=user_id).first()
+        
+        if not original_quote:
+            flash('Cotización no encontrada', 'error')
+            return redirect('/quote/history')
+        
+        # Crear nueva cotización
+        quote_number = f"QT{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        new_quote = Quote(
+            user_id=user_id,
+            quote_number=quote_number,
+            status='draft',
+            total_amount=original_quote.total_amount,
+            business_name=original_quote.business_name,
+            contact_name=original_quote.contact_name,
+            contact_email=original_quote.contact_email
+        )
+        db.session.add(new_quote)
+        db.session.flush()
+        
+        # Copiar items
+        for original_item in original_quote.items:
+            new_item = QuoteItem(
+                quote_id=new_quote.id,
+                product_id=original_item.product_id,
+                quantity=original_item.quantity,
+                unit_price=original_item.unit_price,
+                total_price=original_item.total_price
+            )
+            db.session.add(new_item)
+        
+        db.session.commit()
+        
+        flash(f'Cotización #{quote_number} duplicada exitosamente', 'success')
+        return redirect('/mi-cotizacion')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error duplicando cotización: {str(e)}")
+        flash('Error al duplicar la cotización', 'error')
+        return redirect('/quote/history')
+
+# ==================== APIs JSON ====================
+
+@client_routes_bp.route("/api/get-quote", methods=["GET"])
 def api_get_quote():
     """API para obtener cotización actual - CON BASE DE DATOS"""
     try:
@@ -634,7 +1010,7 @@ def api_get_quote():
             'total': 0
         }), 500
 
-@products_bp.route("/api/get-favorites", methods=["GET"])
+@client_routes_bp.route("/api/get-favorites", methods=["GET"])
 def api_get_favorites():
     """API para obtener favoritos - CON BASE DE DATOS"""
     try:
@@ -655,7 +1031,7 @@ def api_get_favorites():
             'count': 0
         }), 500
 
-@products_bp.route("/api/check-favorite/<product_id>", methods=["GET"])
+@client_routes_bp.route("/api/check-favorite/<product_id>", methods=["GET"])
 def api_check_favorite(product_id):
     """Verificar si un producto está en favoritos - CON BASE DE DATOS"""
     try:
@@ -689,9 +1065,9 @@ def api_check_favorite(product_id):
             'favorites_count': 0
         }), 500
 
-# ==================== APIs DE GESTIÓN (ACTUALIZADAS PARA BD) ====================
+# ==================== APIs DE GESTIÓN ====================
 
-@products_bp.route('/api/update-quote-quantity', methods=['POST'])
+@client_routes_bp.route('/api/update-quote-quantity', methods=['POST'])
 def api_update_quote_quantity():
     """Actualizar cantidad en cotización - CON BASE DE DATOS"""
     try:
@@ -707,7 +1083,7 @@ def api_update_quote_quantity():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@products_bp.route('/api/remove-from-quote', methods=['POST'])
+@client_routes_bp.route('/api/remove-from-quote', methods=['POST'])
 def api_remove_from_quote():
     """Eliminar producto de cotización - CON BASE DE DATOS"""
     try:
@@ -743,7 +1119,7 @@ def api_remove_from_quote():
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@products_bp.route('/api/clear-quote', methods=['POST'])
+@client_routes_bp.route('/api/clear-quote', methods=['POST'])
 def api_clear_quote():
     """Limpiar cotización completa - CON BASE DE DATOS"""
     try:
@@ -753,66 +1129,7 @@ def api_clear_quote():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ==================== RUTAS DE UTILIDAD (ACTUALIZADAS PARA BD) ====================
-
-@products_bp.route('/limpiar-cotizacion', methods=["POST"])
-def limpiar_cotizacion():
-    """Limpiar cotización (ruta HTML) - CON BASE DE DATOS"""
-    try:
-        user_id = get_current_user_id()
-        clear_user_quote(user_id)
-        session['flash_message'] = "Cotización limpiada exitosamente"
-        return redirect('/products/mi-cotizacion')
-    except Exception as e:
-        session['flash_message'] = f"Error al limpiar cotización: {str(e)}"
-        return redirect('/products/mi-cotizacion')
-
-@products_bp.route('/actualizar-cantidad-cotizacion', methods=["POST"])
-def actualizar_cantidad_cotizacion():
-    """Actualizar cantidad (ruta HTML) - CON BASE DE DATOS"""
-    try:
-        part_number = request.form.get('part_number')
-        new_quantity = int(request.form.get('quantity', 1))
-        
-        if new_quantity < 1:
-            session['flash_message'] = "La cantidad debe ser mayor a 0"
-            return redirect('/products/mi-cotizacion')
-        
-        user_id = get_current_user_id()
-        update_quote_quantity(user_id, part_number, new_quantity)
-        
-        session['flash_message'] = f"Cantidad actualizada a {new_quantity}"
-        return redirect('/products/mi-cotizacion')
-        
-    except (ValueError, TypeError):
-        session['flash_message'] = "Cantidad inválida"
-        return redirect('/products/mi-cotizacion')
-    except Exception as e:
-        session['flash_message'] = f"Error al actualizar cantidad: {str(e)}"
-        return redirect('/products/mi-cotizacion')
-
-# ==================== RUTAS ADICIONALES QUE FALTABAN ====================
-
-@products_bp.route("/limpiar-busqueda", methods=["GET"])
-def limpiar_busqueda():
-    """Limpiar parámetros de búsqueda y redirigir a página 1"""
-    return redirect('/products/catalogo-completo-cards?page=1')
-
-@products_bp.route("/it-data-global", methods=["GET"])
-def it_data_global():
-    """Redirigir a página 1 del catálogo (para botones)"""
-    return redirect('/products/catalogo-completo-cards?page=1')
-
-@products_bp.route("/pagina/<int:page_number>", methods=["GET"])
-def ir_a_pagina(page_number):
-    """Ir a una página específica manteniendo los filtros actuales"""
-    # Mantener todos los parámetros de query excepto 'page'
-    args = request.args.copy()
-    args['page'] = page_number
-    return redirect('/products/catalogo-completo-cards?' + '&'.join([f'{k}={v}' for k, v in args.items()]))
-
-# ==================== RUTAS PARA BOTONES AJAX ====================
-@products_bp.route('/api/add-to-quote', methods=['POST'])
+@client_routes_bp.route('/api/add-to-quote', methods=['POST'])
 def api_add_to_quote():
     """API para agregar producto a cotización"""
     try:
@@ -823,15 +1140,13 @@ def api_add_to_quote():
         quantity_input = data.get('quantity')
         
         if quantity_input is None:
-            # Si no viene cantidad del frontend, usar 1
             quantity = 1
         else:
             try:
                 quantity = int(quantity_input)
-                # Validar que sea un número positivo
                 if quantity < 1:
                     quantity = 1
-                if quantity > 999:  # Límite máximo
+                if quantity > 999:
                     quantity = 999
             except (ValueError, TypeError):
                 quantity = 1
@@ -862,21 +1177,19 @@ def api_add_to_quote():
         
         if precio_res.status_code == 200:
             precio_data = precio_res.json()
-            print(f"DEBUG - Precio API response: {precio_data}")  # DEBUG
+            print(f"DEBUG - Precio API response: {precio_data}")
             
-            # La API devuelve un array de productos en la respuesta
             if isinstance(precio_data, list) and len(precio_data) > 0:
                 first_product = precio_data[0]
                 pricing = first_product.get('pricing', {})
                 customer_price = pricing.get('customerPrice')
                 
-                # Debug del precio
                 print(f"DEBUG - Customer price: {customer_price}, Type: {type(customer_price)}")
                 
                 if customer_price is not None:
                     try:
                         real_price = float(customer_price)
-                        print(f"DEBUG - Precio convertido: {real_price}")  # DEBUG
+                        print(f"DEBUG - Precio convertido: {real_price}")
                     except (ValueError, TypeError) as e:
                         print(f"DEBUG - Error convirtiendo precio: {e}")
                         real_price = 0
@@ -885,7 +1198,7 @@ def api_add_to_quote():
                     real_price = 0
                 
                 availability_data = first_product.get('availability', {})
-                print(f"DEBUG - Availability: {availability_data}")  # DEBUG
+                print(f"DEBUG - Availability: {availability_data}")
             else:
                 print(f"DEBUG - Formato inesperado de respuesta: {type(precio_data)}")
         else:
@@ -902,7 +1215,7 @@ def api_add_to_quote():
             'productImages': detalle.get('productImages', [])
         }
         
-        print(f"DEBUG - Product data: {product_data}")  # DEBUG
+        print(f"DEBUG - Product data: {product_data}")
         
         user_id = get_current_user_id()
         add_to_quote(user_id, product_data, quantity)
@@ -916,10 +1229,10 @@ def api_add_to_quote():
     except Exception as e:
         print(f"Error en api_add_to_quote: {str(e)}")
         import traceback
-        traceback.print_exc()  # Esto mostrará el traceback completo
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@products_bp.route('/api/toggle-favorite', methods=['POST'])
+@client_routes_bp.route('/api/toggle-favorite', methods=['POST'])
 def api_toggle_favorite():
     """API para agregar/eliminar favorito"""
     try:
@@ -958,370 +1271,57 @@ def api_toggle_favorite():
         print(f"Error en api_toggle_favorite: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ==================== FUNCIONES FALTANTES ====================
+# ==================== RUTAS DE UTILIDAD ====================
 
-def toggle_favorite(user_id, product_data):
-    """Agregar/eliminar producto de favoritos usando nuevos modelos"""
-    from app.models.favorite import Favorite
-    from app.models.product import Product
-    
-    # Buscar o crear producto
-    product = Product.query.filter_by(ingram_part_number=product_data['ingramPartNumber']).first()
-    if not product:
-        product = Product(
-            ingram_part_number=product_data['ingramPartNumber'],
-            description=product_data.get('description', ''),
-            vendor_name=product_data.get('vendorName', 'N/A')
-        )
-        db.session.add(product)
-        db.session.flush()
-    
-    # Verificar si ya es favorito
-    existing_fav = Favorite.query.filter_by(user_id=user_id, product_id=product.id).first()
-    
-    if existing_fav:
-        db.session.delete(existing_fav)
-        action = 'removed'
-    else:
-        new_fav = Favorite(user_id=user_id, product_id=product.id)
-        db.session.add(new_fav)
-        action = 'added'
-    
-    db.session.commit()
-    return action
-
-def is_product_favorite(user_id, part_number):
-    """Verificar si un producto está en favoritos usando nuevos modelos"""
-    from app.models.favorite import Favorite
-    from app.models.product import Product
-    
-    # Para usuarios anónimos, siempre retornar false
-    if user_id == 'anonymous_user':
-        return False
-    
+@client_routes_bp.route('/limpiar-cotizacion', methods=["POST"])
+def limpiar_cotizacion():
+    """Limpiar cotización (ruta HTML) - CON BASE DE DATOS"""
     try:
-        product = Product.query.filter_by(ingram_part_number=part_number).first()
-        if not product:
-            return False
-        
-        return Favorite.query.filter_by(user_id=user_id, product_id=product.id).first() is not None
+        user_id = get_current_user_id()
+        clear_user_quote(user_id)
+        session['flash_message'] = "Cotización limpiada exitosamente"
+        return redirect('/mi-cotizacion')
     except Exception as e:
-        print(f"Error en is_product_favorite: {str(e)}")
-        return False
-    
-def remove_from_quote(user_id, part_number):
-    """Eliminar producto de cotización usando nuevos modelos"""
-    from app.models.quote import Quote, QuoteItem
-    from app.models.product import Product
-    
+        session['flash_message'] = f"Error al limpiar cotización: {str(e)}"
+        return redirect('/mi-cotizacion')
+
+@client_routes_bp.route('/actualizar-cantidad-cotizacion', methods=["POST"])
+def actualizar_cantidad_cotizacion():
+    """Actualizar cantidad (ruta HTML) - CON BASE DE DATOS"""
     try:
-        print(f"DEBUG: remove_from_quote - User: {user_id}, Part: {part_number}")
+        part_number = request.form.get('part_number')
+        new_quantity = int(request.form.get('quantity', 1))
         
-        # Obtener la cotización del usuario
-        quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
-        if not quote:
-            print("DEBUG: No quote found for user")
-            return False
-        print(f"DEBUG: Quote found: {quote.id}")
+        if new_quantity < 1:
+            session['flash_message'] = "La cantidad debe ser mayor a 0"
+            return redirect('/mi-cotizacion')
         
-        # Buscar el producto en la base de datos local
-        product = Product.query.filter_by(ingram_part_number=part_number).first()
-        if not product:
-            print(f"DEBUG: Product {part_number} not found in database")
-            return False
-        print(f"DEBUG: Product found: {product.id}")
+        user_id = get_current_user_id()
+        update_quote_quantity(user_id, part_number, new_quantity)
         
-        # Buscar el item en la cotización
-        item = QuoteItem.query.filter_by(quote_id=quote.id, product_id=product.id).first()
-        if not item:
-            print(f"DEBUG: Product {part_number} not found in quote")
-            return False
-        print(f"DEBUG: Quote item found: {item.id}")
+        session['flash_message'] = f"Cantidad actualizada a {new_quantity}"
+        return redirect('/mi-cotizacion')
         
-        # Eliminar el item
-        db.session.delete(item)
-        print("DEBUG: Item deleted from session")
-        
-        # Recalcular el total de la cotización
-        quote.calculate_total()
-        print("DEBUG: Total recalculated")
-        
-        # Guardar cambios
-        db.session.commit()
-        print("DEBUG: Changes committed to database")
-        
-        print(f"DEBUG: Product {part_number} removed successfully")
-        return True
-        
+    except (ValueError, TypeError):
+        session['flash_message'] = "Cantidad inválida"
+        return redirect('/mi-cotizacion')
     except Exception as e:
-        print(f"ERROR in remove_from_quote: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        db.session.rollback()
-        return False    
+        session['flash_message'] = f"Error al actualizar cantidad: {str(e)}"
+        return redirect('/mi-cotizacion')
 
-def update_quote_quantity(user_id, part_number, quantity):
-    """Actualizar cantidad en cotización usando nuevos modelos"""
-    from app.models.quote import Quote, QuoteItem
-    from app.models.product import Product
-    
-    quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
-    if not quote:
-        return
-    
-    product = Product.query.filter_by(ingram_part_number=part_number).first()
-    if not product:
-        return
-    
-    item = QuoteItem.query.filter_by(quote_id=quote.id, product_id=product.id).first()
-    if item:
-        item.quantity = max(1, quantity)
-        item.calculate_total()
-        quote.calculate_total()
-        db.session.commit()
+@client_routes_bp.route("/limpiar-busqueda", methods=["GET"])
+def limpiar_busqueda():
+    """Limpiar parámetros de búsqueda y redirigir a página 1"""
+    return redirect('/catalogo-completo-cards?page=1')
 
-def clear_user_quote(user_id):
-    """Limpiar toda la cotización del usuario usando nuevos modelos"""
-    from app.models.quote import Quote
-    
-    quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
-    if quote:
-        # Eliminar todos los items de la cotización
-        for item in quote.items:
-            db.session.delete(item)
-        quote.total_amount = 0
-        db.session.commit()
+@client_routes_bp.route("/it-data-global", methods=["GET"])
+def it_data_global():
+    """Redirigir a página 1 del catálogo (para botones)"""
+    return redirect('/catalogo-completo-cards?page=1')
 
-def get_user_favorites(user_id):
-    """Obtener favoritos del usuario usando los nuevos modelos"""
-    from app.models.favorite import Favorite
-    from app.models.product import Product
-    
-    favorites = Favorite.query.filter_by(user_id=user_id).all()
-    
-    favorite_list = []
-    for fav in favorites:
-        product = fav.product
-        favorite_list.append({
-            'ingramPartNumber': product.ingram_part_number,
-            'description': product.description,
-            'vendorName': product.vendor_name,
-            'favorited_date': fav.created_at.isoformat()
-        })
-    
-    return favorite_list
-# ==================== RUTAS DE HISTORIAL DE COTIZACIONES ====================
-
-@products_bp.route('/quote/history')
-@login_required_sessions
-def quote_history():
-    """Historial de cotizaciones del cliente"""
-    try:
-        user_id = session.get('user_id')
-        user = User.query.get(user_id)
-        
-        # Verificar que sea cliente
-        if user.account_type != 'client':
-            flash('Acceso no autorizado', 'error')
-            return redirect('/dashboard')
-        
-        # Obtener parámetros de filtro
-        status = request.args.get('status', 'all')
-        page = request.args.get('page', 1, type=int)
-        per_page = 10
-        
-        # Base query
-        query = Quote.query.filter_by(user_id=user_id)
-        
-        # Aplicar filtro de estado
-        if status == 'pending':
-            query = query.filter(Quote.status.in_(['draft', 'sent', 'pending']))
-        elif status == 'approved':
-            query = query.filter(Quote.status == 'approved')
-        elif status == 'rejected':
-            query = query.filter(Quote.status == 'rejected')
-        # 'all' muestra todas
-        
-        # Ordenar y paginar
-        quotes = query.order_by(Quote.created_at.desc()).paginate(
-            page=page, per_page=per_page, error_out=False
-        )
-        
-        # Estadísticas
-        stats = {
-            'total': Quote.query.filter_by(user_id=user_id).count(),
-            'pending': Quote.query.filter_by(user_id=user_id).filter(
-                Quote.status.in_(['draft', 'sent', 'pending'])
-            ).count(),
-            'approved': Quote.query.filter_by(user_id=user_id, status='approved').count(),
-            'rejected': Quote.query.filter_by(user_id=user_id, status='rejected').count()
-        }
-        
-        return render_template('client/quote_history.html',
-                            quotes=quotes,
-                            stats=stats,
-                            current_status=status,
-                            user_type='client')
-        
-    except Exception as e:
-        print(f"Error cargando historial de cotizaciones: {str(e)}")
-        flash('Error al cargar el historial de cotizaciones', 'error')
-        return redirect('/dashboard/client')
-
-@products_bp.route('/quote/<int:quote_id>')
-@login_required_sessions
-def quote_detail(quote_id):
-    """Detalle de una cotización específica"""
-    try:
-        user_id = session.get('user_id')
-        quote = Quote.query.filter_by(id=quote_id, user_id=user_id).first()
-        
-        if not quote:
-            flash('Cotización no encontrada', 'error')
-            return redirect('/quote/history')
-        
-        # Obtener items de la cotización
-        quote_items = QuoteItem.query.filter_by(quote_id=quote_id).all()
-        
-        # Calcular totales
-        total_amount = sum(item.quantity * (item.unit_price or 0) for item in quote_items)
-        
-        return render_template('client/quote_detail.html',
-                            quote=quote,
-                            quote_items=quote_items,
-                            total_amount=total_amount,
-                            user_type='client')
-        
-    except Exception as e:
-        print(f"Error cargando detalle de cotización: {str(e)}")
-        flash('Error al cargar la cotización', 'error')
-        return redirect('/quote/history')
-
-@products_bp.route('/quote/request-approval/<int:quote_id>', methods=['POST'])
-@login_required_sessions
-def request_quote_approval(quote_id):
-    """Solicitar aprobación de una cotización"""
-    try:
-        user_id = session.get('user_id')
-        quote = Quote.query.filter_by(id=quote_id, user_id=user_id).first()
-        
-        if not quote:
-            flash('Cotización no encontrada', 'error')
-            return redirect('/quote/history')
-        
-        # Cambiar estado a pendiente de aprobación
-        quote.status = 'pending'
-        db.session.commit()
-        
-        flash('Solicitud de aprobación enviada correctamente', 'success')
-        return redirect('/quote/history')
-        
-    except Exception as e:
-        print(f"Error solicitando aprobación: {str(e)}")
-        flash('Error al solicitar aprobación', 'error')
-        return redirect('/quote/history')
-# ==================== RUTAS ADICIONALES DE COTIZACIONES ====================
-
-@products_bp.route('/quote/create', methods=['POST'])
-@login_required_sessions
-def create_quote_from_cart():
-    """Crear una cotización formal desde el carrito/cotización actual"""
-    try:
-        user_id = session.get('user_id')
-        user = User.query.get(user_id)
-        
-        # Obtener la cotización en borrador actual
-        draft_quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
-        
-        if not draft_quote or not draft_quote.items:
-            flash('No hay productos en tu cotización actual', 'warning')
-            return redirect('/products/mi-cotizacion')
-        
-        # Crear una nueva cotización formal
-        quote_number = f"QT{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        formal_quote = Quote(
-            user_id=user_id,
-            quote_number=quote_number,
-            status='sent',
-            total_amount=draft_quote.total_amount,
-            business_name=user.business_name,
-            contact_name=user.full_name,
-            contact_email=user.email
-        )
-        db.session.add(formal_quote)
-        db.session.flush()  # Para obtener el ID
-        
-        # Copiar los items a la nueva cotización
-        for draft_item in draft_quote.items:
-            formal_item = QuoteItem(
-                quote_id=formal_quote.id,
-                product_id=draft_item.product_id,
-                quantity=draft_item.quantity,
-                unit_price=draft_item.unit_price,
-                total_price=draft_item.total_price
-            )
-            db.session.add(formal_item)
-        
-        # Limpiar la cotización en borrador
-        for item in draft_quote.items:
-            db.session.delete(item)
-        draft_quote.total_amount = 0
-        
-        db.session.commit()
-        
-        flash(f'Cotización #{quote_number} creada exitosamente', 'success')
-        return redirect('/quote/history')
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error creando cotización: {str(e)}")
-        flash('Error al crear la cotización', 'error')
-        return redirect('/products/mi-cotizacion')
-
-@products_bp.route('/quote/duplicate/<int:quote_id>', methods=['POST'])
-@login_required_sessions
-def duplicate_quote(quote_id):
-    """Duplicar una cotización existente"""
-    try:
-        user_id = session.get('user_id')
-        original_quote = Quote.query.filter_by(id=quote_id, user_id=user_id).first()
-        
-        if not original_quote:
-            flash('Cotización no encontrada', 'error')
-            return redirect('/quote/history')
-        
-        # Crear nueva cotización
-        quote_number = f"QT{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        new_quote = Quote(
-            user_id=user_id,
-            quote_number=quote_number,
-            status='draft',
-            total_amount=original_quote.total_amount,
-            business_name=original_quote.business_name,
-            contact_name=original_quote.contact_name,
-            contact_email=original_quote.contact_email
-        )
-        db.session.add(new_quote)
-        db.session.flush()
-        
-        # Copiar items
-        for original_item in original_quote.items:
-            new_item = QuoteItem(
-                quote_id=new_quote.id,
-                product_id=original_item.product_id,
-                quantity=original_item.quantity,
-                unit_price=original_item.unit_price,
-                total_price=original_item.total_price
-            )
-            db.session.add(new_item)
-        
-        db.session.commit()
-        
-        flash(f'Cotización #{quote_number} duplicada exitosamente', 'success')
-        return redirect('/products/mi-cotizacion')
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error duplicando cotización: {str(e)}")
-        flash('Error al duplicar la cotización', 'error')
-        return redirect('/quote/history')
+@client_routes_bp.route("/pagina/<int:page_number>", methods=["GET"])
+def ir_a_pagina(page_number):
+    """Ir a una página específica manteniendo los filtros actuales"""
+    args = request.args.copy()
+    args['page'] = page_number
+    return redirect('/catalogo-completo-cards?' + '&'.join([f'{k}={v}' for k, v in args.items()]))

@@ -407,6 +407,189 @@ def api_get_cart_count():
             'count': 0
         }), 500
 
+# ==================== RUTAS DE PERFIL ====================
+@public_bp.route('/profile', methods=['GET'])
+def public_profile():
+    """Página para EDITAR perfil del usuario público"""
+    try:
+        user_id = get_current_user_id()
+        
+        if user_id == 'anonymous_user':
+            flash('Por favor inicia sesión para editar tu perfil', 'warning')
+            return redirect('/login')
+        
+        user = User.query.get(user_id)
+        if not user:
+            flash('Usuario no encontrado', 'error')
+            return redirect('/')
+        
+        # Obtener estadísticas para mostrar en el perfil
+        favorites_count = get_favorites_count(user_id)
+        cart_stats = get_cart_stats(user_id)
+        
+        # Datos para el template de PERFIL/EDITAR
+        profile_data = {
+            'user_id': user_id,
+            'user_name': user.full_name or user.email.split('@')[0],
+            'user_email': user.email,
+            'account_type': user.account_type,
+            'business_name': user.business_name or 'No especificado',
+            'rfc': user.rfc or 'No especificado',
+            'favorites_count': favorites_count,
+            'cart_count': cart_stats['total_items'],
+            'member_since': user.created_at.strftime('%d/%m/%Y') if user.created_at else 'Reciente',
+            # CORREGIDO: Usar created_at si last_login no existe
+            'last_login': user.last_login.strftime('%d/%m/%Y %H:%M') if hasattr(user, 'last_login') and user.last_login else user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'Nunca',
+            'is_verified': user.is_verified
+        }
+        
+        return render_template('public/catalog/profile.html', **profile_data)
+        
+    except Exception as e:
+        print(f"Error cargando perfil: {str(e)}")
+        flash('Error al cargar el perfil', 'error')
+        return redirect('public/public_dashboard.html')
+    
+@public_bp.route('/profile/update', methods=['POST'])
+def update_profile():
+    """Actualizar información del perfil"""
+    try:
+        user_id = get_current_user_id()
+        
+        # Verificar que el usuario esté autenticado
+        if user_id == 'anonymous_user':
+            flash('Usuario no autenticado', 'error')
+            return redirect('/auth/login')
+        
+        # Obtener datos del formulario
+        full_name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        
+        # Validaciones básicas
+        if not full_name:
+            flash('El nombre completo es requerido', 'error')
+            return redirect('/profile')
+        
+        if not email:
+            flash('El correo electrónico es requerido', 'error')
+            return redirect('/profile')
+        
+        # Validar formato de email
+        import re
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            flash('El formato del correo electrónico no es válido', 'error')
+            return redirect('/profile')
+        
+        # Buscar usuario en la base de datos
+        user = User.query.get(user_id)
+        if not user:
+            flash('Usuario no encontrado', 'error')
+            return redirect('/profile')
+        
+        # Verificar si el email ya existe (excluyendo al usuario actual)
+        existing_user = User.query.filter(User.email == email, User.id != user_id).first()
+        if existing_user:
+            flash('Este correo electrónico ya está en uso', 'error')
+            return redirect('/profile')
+        
+        # Actualizar datos del usuario
+        user.full_name = full_name
+        user.email = email
+        
+        # Guardar cambios en la base de datos
+        db.session.commit()
+        
+        # Actualizar datos en la sesión
+        session['user_email'] = email
+        session['username'] = full_name
+        
+        print(f"DEBUG - Perfil actualizado exitosamente: {full_name} ({email})")
+        
+        # SOLO UNA RESPUESTA - Redirección al dashboard
+        flash('Perfil actualizado correctamente', 'success')
+        return redirect('/dashboard/public')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR en update_profile: {str(e)}")
+        flash('Error al actualizar el perfil', 'error')
+        return redirect('/profile')
+
+@public_bp.route('/profile/password', methods=['POST'])
+def update_password():
+    """Actualizar contraseña del usuario"""
+    try:
+        user_id = get_current_user_id()
+        
+        # Verificar que el usuario esté autenticado
+        if user_id == 'anonymous_user':
+            return jsonify({'success': False, 'error': 'Usuario no autenticado'}), 401
+        
+        # Obtener datos del formulario
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        # Validaciones
+        if not current_password or not new_password or not confirm_password:
+            return jsonify({'success': False, 'error': 'Todos los campos son requeridos'}), 400
+        
+        if new_password != confirm_password:
+            return jsonify({'success': False, 'error': 'Las contraseñas nuevas no coinciden'}), 400
+        
+        if len(new_password) < 6:
+            return jsonify({'success': False, 'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+        
+        # Buscar usuario en la base de datos
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
+        # Verificar contraseña actual (asumiendo que tienes un campo password_hash)
+        if not user.check_password(current_password):  # Si tienes este método
+            return jsonify({'success': False, 'error': 'La contraseña actual es incorrecta'}), 400
+        
+        # Actualizar contraseña
+        user.set_password(new_password)  # Si tienes este método
+        
+        # Guardar cambios
+        db.session.commit()
+        
+        print(f"DEBUG - Contraseña actualizada para usuario: {user.email}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Contraseña actualizada correctamente'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR en update_password: {str(e)}")
+        return jsonify({'success': False, 'error': f'Error al actualizar contraseña: {str(e)}'}), 500
+
+@public_bp.route('/profile/stats', methods=['GET'])
+def get_profile_stats():
+    """API para obtener estadísticas del perfil (para actualizar en tiempo real)"""
+    try:
+        user_id = get_current_user_id()
+        
+        if user_id == 'anonymous_user':
+            return jsonify({'success': False, 'error': 'Usuario no autenticado'}), 401
+        
+        favorites_count = get_favorites_count(user_id)
+        cart_stats = get_cart_stats(user_id)
+        
+        return jsonify({
+            'success': True,
+            'favorites_count': favorites_count,
+            'cart_count': cart_stats['total_items'],
+            'cart_value': cart_stats['total_value']
+        })
+        
+    except Exception as e:
+        print(f"Error obteniendo estadísticas: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ==================== RUTAS DEL CATÁLOGO ====================
 @public_bp.route("/catalog", methods=["GET"])
 @public_bp.route("/tienda", methods=["GET"])

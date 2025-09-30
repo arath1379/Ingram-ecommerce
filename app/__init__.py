@@ -120,10 +120,12 @@ def create_app():
     from app.routes.admin import admin_bp
     from app.routes.api import api_bp
     from app.routes.public_products import public_bp
+    from app.routes.client_routes import client_routes_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(products_bp)
+    app.register_blueprint(client_routes_bp)
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(api_bp, url_prefix='/api')

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Cotizaciones | IT Data Global</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #F15A29;
+            --primary-dark: #d14a1f;
+            --secondary-color: #1C2A2F;
+            --surface-color: #FFFFFF;
+            --background-color: #F1F3F4;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+            --info-color: #3B82F6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--background-color) 0%, #E8EAED 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Elementos decorativos de fondo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 70%, rgba(241, 90, 41, 0.03) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 30%, rgba(28, 42, 47, 0.02) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-20px, -20px) rotate(1deg); }
+            66% { transform: translate(20px, -10px) rotate(-1deg); }
+        }
+
+        /* Header Profesional */
+        .header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            color: var(--surface-color);
+            padding: 1rem 0;
+            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.15);
+            border-bottom: 3px solid var(--primary-color);
+            position: relative;
+            z-index: 100;
+            margin-bottom: 2rem;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
+            color: var(--surface-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            letter-spacing: -0.025em;
+        }
+
+        .logo i {
+            color: var(--surface-color);
+            font-size: 1.75rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--surface-color);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            color: var(--surface-color);
+        }
+
+        /* Container Principal */
+        .container-fluid {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Card profesional */
+        .card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 40px rgba(28, 42, 47, 0.08),
+                0 8px 16px rgba(28, 42, 47, 0.04);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            border-radius: 20px 20px 0 0;
+        }
+
+        .card-body {
+            padding: 2.5rem;
+        }
+
+        /* Título principal */
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h1 i {
+            color: var(--primary-color);
+        }
+
+        /* Badges de estado mejorados */
+        .status-badge {
+            padding: 0.6rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending { 
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            color: #92400E;
+            border: 2px solid #F59E0B;
+        }
+
+        .status-approved { 
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            color: #065F46;
+            border: 2px solid #10B981;
+        }
+
+        .status-rejected { 
+            background: linear-gradient(135deg, #FEE2E2, #FECACA);
+            color: #991B1B;
+            border: 2px solid #EF4444;
+        }
+
+        .status-draft { 
+            background: linear-gradient(135deg, #F1F5F9, #E2E8F0);
+            color: #475569;
+            border: 2px solid #94A3B8;
+        }
+
+        .status-sent { 
+            background: linear-gradient(135deg, #DBEAFE, #BFDBFE);
+            color: #1E40AF;
+            border: 2px solid #3B82F6;
+        }
+
+        /* Tabla mejorada */
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+            color: var(--text-primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            border: none;
+            padding: 1.25rem 1rem;
+        }
+
+        .table tbody tr {
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #F1F5F9;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(241, 90, 41, 0.05);
+            transform: translateX(4px);
+        }
+
+        .table tbody td {
+            padding: 1.25rem 1rem;
+            vertical-align: middle;
+            border: none;
+        }
+
+        /* Estado vacío mejorado */
+        .text-center.py-5 {
+            padding: 5rem 2rem !important;
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+            border-radius: 16px;
+            margin: 2rem 0;
+        }
+
+        .text-center.py-5 i {
+            color: var(--primary-color);
+            opacity: 0.7;
+        }
+
+        .text-center.py-5 h4 {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 1.5rem 0 1rem;
+        }
+
+        /* Animaciones de entrada */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .d-flex.justify-content-between {
+                flex-direction: column !important;
+                gap: 1rem;
+                align-items: stretch !important;
+            }
+
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn-group .btn {
+                border-radius: 12px !important;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        /* Mejoras en botones de Bootstrap para mantener consistencia */
+        .btn {
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(241, 90, 41, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #b8401a);
+            box-shadow: 0 8px 20px rgba(241, 90, 41, 0.4);
+        }
+
+        .btn-group .btn {
+            border-radius: 0;
+        }
+
+        .btn-group .btn:first-child {
+            border-radius: 12px 0 0 12px;
+        }
+
+        .btn-group .btn:last-child {
+            border-radius: 0 12px 12px 0;
+        }
+
+        .table-responsive {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <i class="fas fa-microchip"></i>
+                IT Data Global
+            </a>
+            <div class="nav-links">
+                <a href="/catalog" class="nav-link">
+                    <i class="fas fa-boxes"></i>
+                    Catálogo
+                </a>
+                <a href="/dashboard/public" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="/logout" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4 animate-in">
+                    <h1><i class="fas fa-file-invoice-dollar"></i> Historial de Cotizaciones</h1>
+                    <a href="/products/mi-cotizacion" class="btn btn-primary">
+                        <i class="fas fa-shopping-cart"></i> Ver Cotización Actual
+                    </a>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card animate-in animate-delay-1">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="btn-group" role="group">
+                                    <a href="/quote/history?status=all" 
+                                       class="btn {% if current_status == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                        Todas ({{ stats.total }})
+                                    </a>
+                                    <a href="/quote/history?status=pending" 
+                                       class="btn {% if current_status == 'pending' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                        Pendientes ({{ stats.pending }})
+                                    </a>
+                                    <a href="/quote/history?status=approved" 
+                                       class="btn {% if current_status == 'approved' %}btn-success{% else %}btn-outline-success{% endif %}">
+                                        Aprobadas ({{ stats.approved }})
+                                    </a>
+                                    <a href="/quote/history?status=rejected" 
+                                       class="btn {% if current_status == 'rejected' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                        Rechazadas ({{ stats.rejected }})
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de cotizaciones -->
+                <div class="card animate-in animate-delay-2">
+                    <div class="card-body">
+                        {% if quotes.items %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Fecha</th>
+                                            <th>Productos</th>
+                                            <th>Total</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for quote in quotes.items %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ quote.quote_number }}</strong>
+                                            </td>
+                                            <td>{{ quote.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                            <td>{{ quote.items|length }} productos</td>
+                                            <td>${{ "%.2f"|format(quote.total_amount or 0) }} MXN</td>
+                                            <td>
+                                                <span class="status-badge status-{{ quote.status }}">
+                                                    {% if quote.status == 'draft' %}Borrador
+                                                    {% elif quote.status == 'sent' %}Enviada
+                                                    {% elif quote.status == 'pending' %}Pendiente
+                                                    {% elif quote.status == 'approved' %}Aprobada
+                                                    {% elif quote.status == 'rejected' %}Rechazada
+                                                    {% else %}{{ quote.status }}{% endif %}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="/quote/{{ quote.id }}" class="btn btn-outline-primary">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </a>
+                                                    {% if quote.status in ['draft', 'rejected'] %}
+                                                    <form method="POST" action="/quote/duplicate/{{ quote.id }}" class="d-inline">
+                                                        <button type="submit" class="btn btn-outline-secondary">
+                                                            <i class="fas fa-copy"></i> Duplicar
+                                                        </button>
+                                                    </form>
+                                                    {% endif %}
+                                                    {% if quote.status == 'draft' %}
+                                                    <form method="POST" action="/quote/request-approval/{{ quote.id }}" class="d-inline">
+                                                        <button type="submit" class="btn btn-outline-success">
+                                                            <i class="fas fa-paper-plane"></i> Enviar
+                                                        </button>
+                                                    </form>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Paginación -->
+                            {% if quotes.pages > 1 %}
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center">
+                                    {% if quotes.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('products.quote_history', page=quotes.prev_num, status=current_status) }}">Anterior</a>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in quotes.iter_pages() %}
+                                    <li class="page-item {% if page_num == quotes.page %}active{% endif %}">
+                                        <a class="page-link" href="{{ url_for('products.quote_history', page=page_num, status=current_status) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% endfor %}
+                                    
+                                    {% if quotes.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('products.quote_history', page=quotes.next_num, status=current_status) }}">Siguiente</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-file-invoice-dollar fa-4x mb-3"></i>
+                                <h4>No hay cotizaciones</h4>
+                                <p class="text-muted">Aún no has creado ninguna cotización.</p>
+                                <a href="/products/catalogo-completo-cards" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Crear Primera Cotización
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animaciones de entrada escalonada
+            const animatedElements = document.querySelectorAll('.animate-in');
+            animatedElements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                setTimeout(() => {
+                    el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 150);
+            });
+
+            // Efectos hover mejorados para las filas de la tabla
+            const tableRows = document.querySelectorAll('.table tbody tr');
+            tableRows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(8px)';
+                });
+                
+                row.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateX(0)';
+                });
+            });
+
+            console.log('Historial de cotizaciones cargado correctamente');
+        });
+    </script>
+</body>
+</html>

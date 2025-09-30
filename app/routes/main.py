@@ -163,103 +163,59 @@ def public_dashboard():
             'time': 'Reciente'
         })
     
+    # DEBUG: Verificar datos del usuario desde BD
+    print(f"🔍 DEBUG - Datos del usuario desde BD:")
+    print(f"   - account_type: {user.account_type}")
+    print(f"   - is_active: {user.is_active} (tipo: {type(user.is_active)})")
+    print(f"   - is_admin: {user.is_admin}")
+    
+    # Determinar tipo de cuenta para mostrar
+    account_type_display = "Público"
+    if user.account_type and user.account_type != 'None' and user.account_type != 'nan':
+        account_type_display = user.account_type.title()
+    elif user.account_type == 'public':
+        account_type_display = "Público"
+    
+    # Determinar estado activo (manejar tanto boolean como integer)
+    is_active = True  # Por defecto activo
+    if hasattr(user, 'is_active'):
+        if isinstance(user.is_active, bool):
+            is_active = user.is_active
+        elif isinstance(user.is_active, int):
+            is_active = user.is_active == 1
+        # Si es string u otro tipo, mantener True por defecto
+    
+    # Manejar last_login
+    last_login_display = 'Hoy'
+    if hasattr(user, 'last_login') and user.last_login:
+        last_login_display = user.last_login.strftime('%d/%m/%Y %H:%M')
+    elif user.created_at:
+        last_login_display = user.created_at.strftime('%d/%m/%Y %H:%M')
+    
     public_data = {
         'user_name': user.full_name or user.email.split('@')[0],
         'user_email': user.email,
         'favorites_count': favorites_count,
         'active_quotes': active_quotes,
         'user_type': 'public',
-        'account_type': user.account_type,
+        'account_type': account_type_display,  # Usar el valor procesado
         'member_since': user.created_at.strftime('%d/%m/%Y') if user.created_at else 'Reciente',
-        'last_login': 'Hoy',
+        'last_login': last_login_display,
         'cart_stats': cart_stats,
         'recent_favorites': recent_favorites,
         'favorite_categories': favorite_categories,
-        'recent_activity': recent_activity
+        'recent_activity': recent_activity,
+        'is_active': is_active  # Valor booleano procesado
     }
     
-    # DEBUG: Verificar datos
-    print(f"🔍 Datos para template público:")
-    print(f"   - User: {public_data['user_name']}")
-    print(f"   - Favoritos: {public_data['favorites_count']}")
-    print(f"   - Carrito total_items: {public_data['cart_stats']['total_items']}")
-    print(f"   - Carrito item_count: {public_data['cart_stats']['item_count']}")
-    print(f"   - Carrito total_value: {public_data['cart_stats']['total_value']}")
+    # DEBUG: Verificar datos enviados al template
+    print(f"✅ DEBUG - Datos enviados al template:")
+    print(f"   - account_type: '{public_data['account_type']}'")
+    print(f"   - is_active: {public_data['is_active']}")
+    print(f"   - last_login: {public_data['last_login']}")
     
-    try:
-        # PRIMERO: Intentar con template normal
-        return render_template('public_dashboard.html', **public_data)
-    except Exception as e:
-        print(f"❌ Error con template: {e}")
-        try:
-            # SEGUNDO: Intentar con ruta alternativa
-            return render_template('public/public_dashboard.html', **public_data)
-        except Exception as e2:
-            print(f"❌ Error con template alternativo: {e2}")
-            # TERCERO: Fallback básico
-            return f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Panel Público - IT Data Global</title>
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-                <style>
-                    body {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }}
-                    .dashboard-card {{ background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }}
-                </style>
-            </head>
-            <body>
-                <div class="container py-5">
-                    <div class="row">
-                        <div class="col-12 text-center mb-4">
-                            <h1 class="text-white">👋 ¡Hola {public_data['user_name']}!</h1>
-                            <p class="text-white">Panel de Usuario Público</p>
-                        </div>
-                    </div>
-                    
-                    <div class="row g-4">
-                        <div class="col-md-4">
-                            <div class="dashboard-card p-4 text-center">
-                                <h3>❤️ Favoritos</h3>
-                                <h2 class="text-primary">{public_data['favorites_count']}</h2>
-                                <p>Productos guardados</p>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <div class="dashboard-card p-4 text-center">
-                                <h3>🛒 Carrito</h3>
-                                <h2 class="text-success">{public_data['cart_stats']['total_items']}</h2>
-                                <p>Productos en carrito</p>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <div class="dashboard-card p-4 text-center">
-                                <h3>📋 Cotizaciones</h3>
-                                <h2 class="text-warning">{public_data['active_quotes']}</h2>
-                                <p>Activas</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="dashboard-card p-4">
-                                <h4>🚀 Acciones Rápidas</h4>
-                                <div class="d-grid gap-2 d-md-flex">
-                                    <a href="/catalog" class="btn btn-primary me-md-2">📦 Ver Catálogo</a>
-                                    <a href="/cart" class="btn btn-success me-md-2">🛒 Ver Carrito</a>
-                                    <a href="/favorites" class="btn btn-warning me-md-2">❤️ Mis Favoritos</a>
-                                    <a href="/logout" class="btn btn-outline-danger">🚪 Cerrar Sesión</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
+    # Renderizar el template del DASHBOARD (solo lectura)
+    return render_template('public/public_dashboard.html', **public_data)
 
 @main_bp.route('/dashboard/client')
 @login_required_sessions
