@@ -833,7 +833,6 @@ def request_quote_approval(quote_id):
         return redirect('/quote/history')
 
 # ==================== RUTAS ADICIONALES DE COTIZACIONES ====================
-
 @client_routes_bp.route('/quote/create', methods=['POST'])
 @login_required_sessions
 def create_quote_from_cart():
@@ -854,14 +853,14 @@ def create_quote_from_cart():
         formal_quote = Quote(
             user_id=user_id,
             quote_number=quote_number,
-            status='sent',
-            total_amount=draft_quote.total_amount,
+            status='sent',  # Cambiado a 'sent' para indicar que se envió
+            total_amount=0,  # Se calculará después con IVA
             business_name=user.business_name,
             contact_name=user.full_name,
             contact_email=user.email
         )
         db.session.add(formal_quote)
-        db.session.flush()  # Para obtener el ID
+        db.session.flush()
         
         # Copiar los items a la nueva cotización
         for draft_item in draft_quote.items:
@@ -874,14 +873,18 @@ def create_quote_from_cart():
             )
             db.session.add(formal_item)
         
+        # ENVIAR AL ADMINISTRADOR CON IVA INCLUIDO
+        send_quote_to_admin(formal_quote, user)
+        
         # Limpiar la cotización en borrador
         for item in draft_quote.items:
             db.session.delete(item)
         draft_quote.total_amount = 0
+        draft_quote.status = 'converted'  # Marcar como convertida
         
         db.session.commit()
         
-        flash(f'Cotización #{quote_number} creada exitosamente', 'success')
+        flash(f'Cotización #{quote_number} enviada al administrador. Total con IVA: ${formal_quote.total_amount:,.2f} MXN', 'success')
         return redirect('/quote/history')
         
     except Exception as e:
@@ -889,7 +892,7 @@ def create_quote_from_cart():
         print(f"Error creando cotización: {str(e)}")
         flash('Error al crear la cotización', 'error')
         return redirect('/mi-cotizacion')
-
+    
 @client_routes_bp.route('/quote/duplicate/<int:quote_id>', methods=['POST'])
 @login_required_sessions
 def duplicate_quote(quote_id):
@@ -1325,3 +1328,67 @@ def ir_a_pagina(page_number):
     args = request.args.copy()
     args['page'] = page_number
     return redirect('/catalogo-completo-cards?' + '&'.join([f'{k}={v}' for k, v in args.items()]))
+
+def send_quote_to_admin(quote, user):
+    """Enviar cotización al administrador con el total que incluye IVA"""
+    try:
+        # Calcular totales con IVA
+        totals = quote.calculate_totals_with_tax()
+        
+        # Aquí implementas el envío al administrador
+        # Opción 1: Guardar en base de datos para que el admin lo vea
+        # Opción 2: Enviar email
+        # Opción 3: Notificación interna
+        
+        # EJEMPLO: Guardar en la misma cotización (modificando el modelo)
+        quote.subtotal = totals['subtotal']
+        quote.tax_amount = totals['tax_amount']
+        quote.total_amount = totals['total_with_tax']
+        quote.status = 'sent'  # Cambiar estado a enviado
+        db.session.commit()
+        
+        # EJEMPLO: También podrías enviar un email
+        # send_quote_email_to_admin(quote, user, totals)
+        
+        print(f"COTIZACIÓN ENVIADA AL ADMINISTRADOR:")
+        print(f"Quote ID: {quote.id}")
+        print(f"Subtotal: ${totals['subtotal']:,.2f} MXN")
+        print(f"IVA (16%): ${totals['tax_amount']:,.2f} MXN")
+        print(f"TOTAL CON IVA: ${totals['total_with_tax']:,.2f} MXN")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error enviando cotización al admin: {str(e)}")
+        return False
+    
+@client_routes_bp.route('/enviar-cotizacion', methods=['POST'])
+@login_required_sessions
+def enviar_cotizacion():
+    """Enviar cotización actual al administrador (desde la página de cotización)"""
+    try:
+        user_id = session.get('user_id')
+        user = User.query.get(user_id)
+        
+        # Obtener la cotización en borrador actual
+        draft_quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
+        
+        if not draft_quote or not draft_quote.items:
+            flash('No hay productos en tu cotización actual', 'warning')
+            return redirect('/mi-cotizacion')
+        
+        # Cambiar el estado a 'sent' y calcular con IVA
+        draft_quote.status = 'sent'
+        
+        # Enviar al administrador con IVA
+        send_quote_to_admin(draft_quote, user)
+        
+        flash(f'Cotización enviada al administrador. Total con IVA: ${draft_quote.total_amount:,.2f} MXN', 'success')
+        return redirect('/mi-cotizacion')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error enviando cotización: {str(e)}")
+        flash('Error al enviar la cotización', 'error')
+        return redirect('/mi-cotizacion')
+    

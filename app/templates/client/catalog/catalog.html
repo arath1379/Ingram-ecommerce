@@ -102,10 +102,11 @@
 
         .header-stats {
             display: flex;
-            gap: 2rem;
+            gap: 1.5rem;
             font-size: 0.9rem;
             opacity: 0.95;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .stat-item {
@@ -119,9 +120,10 @@
         .header-actions {
             display: flex;
             gap: 0.75rem;
+            flex-wrap: wrap;
         }
 
-        .nav-link {
+        .nav-btn {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
@@ -135,9 +137,10 @@
             font-size: 0.9rem;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            white-space: nowrap;
         }
 
-        .nav-link:hover {
+        .nav-btn:hover {
             background: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
             color: var(--surface-color);
@@ -800,6 +803,10 @@
                 flex-wrap: wrap;
             }
 
+            .header-actions {
+                justify-content: center;
+            }
+
             .search-form {
                 grid-template-columns: 1fr;
                 gap: 1.5rem;
@@ -881,7 +888,7 @@
             <div class="header-stats">
                 <div class="stat-item">
                     <i class="fas fa-boxes"></i>
-                    <span>{{ total_records }}+ productos</span>
+                    <span>{{ total_records }} productos</span>
                 </div>
                 <div class="stat-item">
                     <i class="fas fa-shipping-fast"></i>
@@ -893,9 +900,17 @@
                 </div>
             </div>
             <div class="header-actions">
-                <a href="/dashboard/client" class="nav-link">
+                <a href="/dashboard/client" class="nav-btn">
                     <i class="fas fa-tachometer-alt"></i>
                     Dashboard
+                </a>
+                <a href="/mi-cotizacion" class="nav-btn">
+                    <i class="fas fa-shopping-cart"></i>
+                    Mi Cotización
+                </a>
+                <a href="/mis-favoritos" class="nav-btn">
+                    <i class="fas fa-heart"></i>
+                    Favoritos
                 </a>
             </div>
         </div>
@@ -947,7 +962,7 @@
                     <i class="fas fa-search"></i>
                     Buscar
                 </button>
-                <a href="/products/catalogo-completo-cards" class="btn btn-secondary">
+                <a href="/catalogo-completo-cards" class="btn btn-secondary">
                     <i class="fas fa-eraser"></i>
                     Limpiar
                 </a>
@@ -1020,7 +1035,7 @@
         <!-- Grid de productos -->
         <div class="products-grid">
             {% for p in productos %}
-            <a class="product-card" href="/products/producto/{{ p.get('ingramPartNumber') }}">
+            <a class="product-card" href="/producto/{{ p.get('ingramPartNumber') }}">
                 <div class="product-image-container">
                     <img src="{{ get_image_url_enhanced(p) }}" alt="{{ p.get('description', 'Producto') }}" class="product-image" loading="lazy">
                     {% if p.get('availability') %}

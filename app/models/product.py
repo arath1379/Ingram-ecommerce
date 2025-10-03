@@ -22,6 +22,7 @@ class Product(db.Model):
     
     # Relaciones
     favorites = db.relationship('Favorite', backref='product', lazy=True, cascade='all, delete-orphan')
+    # quote_items se define aquí con backref
     quote_items = db.relationship('QuoteItem', backref='product', lazy=True)
     
     def to_dict(self):

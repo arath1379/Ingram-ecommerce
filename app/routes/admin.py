@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from datetime import datetime
 from sqlalchemy import or_
 from app import db
-from app.models import User, Quote, Product
+from app.models import User, Quote, Product, QuoteHistory
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -148,7 +148,6 @@ def users():
         </body>
         </html>
         """
-
 @admin_bp.route('/quotes')
 @admin_required
 def quotes():
@@ -175,15 +174,36 @@ def quotes():
             page=page, per_page=per_page, error_out=False
         )
         
+        # Estadísticas
+        stats = {
+            'total': Quote.query.count(),
+            'draft': Quote.query.filter_by(status='draft').count(),
+            'sent': Quote.query.filter_by(status='sent').count(),
+            'pending': Quote.query.filter_by(status='pending').count(),
+            'approved': Quote.query.filter_by(status='approved').count(),
+            'rejected': Quote.query.filter_by(status='rejected').count(),
+            'in_progress': Quote.query.filter_by(status='in_progress').count(),
+            'completed': Quote.query.filter_by(status='completed').count(),
+            'invoiced': Quote.query.filter_by(status='invoiced').count(),
+            'paid': Quote.query.filter_by(status='paid').count(),
+            'cancelled': Quote.query.filter_by(status='cancelled').count()
+        }
+        
         return render_template('admin/quotes.html',
                              quotes=quotes_pagination.items,
                              pagination=quotes_pagination,
                              status_filter=status_filter,
-                             search=search)
+                             current_status=status_filter,
+                             search=search,
+                             stats=stats)
         
     except Exception as e:
         flash(f'Error al cargar cotizaciones: {str(e)}', 'danger')
-        return render_template('admin/quotes.html', quotes=[], pagination=None)
+        # También cambiar en el caso de error
+        return render_template('admin/quotes.html', 
+                             quotes=[], 
+                             pagination=None,
+                             stats={'total': 0, 'draft': 0, 'sent': 0, 'pending': 0, 'approved': 0, 'rejected': 0, 'in_progress': 0, 'completed': 0, 'invoiced': 0, 'paid': 0, 'cancelled': 0})
 
 @admin_bp.route('/products')
 @admin_required
@@ -473,3 +493,129 @@ def debug_admin():
         'session_user_email': session.get('user_email'),
         'session_keys': list(session.keys())
     })
+
+# AÑADE ESTAS RUTAS AL FINAL de admin.py (después de la línea 320)
+
+# ==================== RUTAS AVANZADAS DE COTIZACIONES ====================
+@admin_bp.route('/quotes/<int:quote_id>')
+@admin_required
+def quote_detail(quote_id):
+    """Vista detallada de una cotización"""
+    try:
+        quotation = Quote.query.get_or_404(quote_id)
+        history = QuoteHistory.query.filter_by(quote_id=quote_id).order_by(QuoteHistory.created_at.desc()).all()
+        
+        return render_template('admin/quotation_detail.html',
+                             quotation=quotation,
+                             history=history)
+        
+    except Exception as e:
+        flash(f'Error al cargar la cotización: {str(e)}', 'danger')
+        return redirect(url_for('admin.quotes'))
+
+@admin_bp.route('/quotes/<int:quote_id>/update_status', methods=['POST'])
+@admin_required
+def update_quote_status(quote_id):
+    """API para actualizar el estado de una cotización"""
+    try:
+        quotation = Quote.query.get_or_404(quote_id)
+        data = request.json
+        action = data.get('action')
+        admin_notes = data.get('admin_notes', '')
+        admin_user = User.query.get(session['user_id'])
+        
+        new_status = None
+        action_description = ""
+        
+        if action == 'send':
+            new_status = 'sent'
+            action_description = "Cotización enviada al cliente"
+        elif action == 'approve':
+            new_status = 'approved'
+            quotation.approved_at = datetime.utcnow()
+            quotation.approved_by = admin_user.email
+            action_description = "Cotización aprobada"
+        elif action == 'reject':
+            new_status = 'rejected'
+            action_description = "Cotización rechazada"
+        elif action == 'progress':
+            new_status = 'in_progress'
+            action_description = "Cotización en progreso"
+        elif action == 'complete':
+            new_status = 'completed'
+            action_description = "Cotización completada"
+        elif action == 'invoice':
+            new_status = 'invoiced'
+            quotation.invoice_number = data.get('invoice_number')
+            quotation.invoice_date = datetime.utcnow()
+            action_description = f"Factura {data.get('invoice_number')} generada"
+        elif action == 'pay':
+            new_status = 'paid'
+            quotation.payment_date = datetime.utcnow()
+            quotation.payment_method = data.get('payment_method', '')
+            quotation.payment_reference = data.get('payment_reference', '')
+            action_description = "Cotización pagada"
+        elif action == 'cancel':
+            new_status = 'cancelled'
+            action_description = "Cotización cancelada"
+        
+        if new_status:
+            quotation.status = new_status
+            quotation.admin_notes = admin_notes
+            quotation.updated_at = datetime.utcnow()
+            
+            # Agregar al historial
+            history = QuoteHistory(
+                quote_id=quotation.id,
+                action=action_description,
+                description=f"{action_description}. Notas: {admin_notes}",
+                user_id=admin_user.id,
+                user_name=admin_user.email
+            )
+            db.session.add(history)
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True, 
+                'message': f'Cotización {action_description.lower()}',
+                'new_status': new_status
+            })
+        else:
+            return jsonify({
+                'success': False, 
+                'error': 'Acción no válida'
+            }), 400
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin_bp.route('/quotes/<int:quote_id>/add_note', methods=['POST'])
+@admin_required
+def add_quote_note(quote_id):
+    """API para agregar una nota al historial"""
+    try:
+        quotation = Quote.query.get_or_404(quote_id)
+        data = request.json
+        note = data.get('note', '').strip()
+        admin_user = User.query.get(session['user_id'])
+        
+        if note:
+            history = QuoteHistory(
+                quote_id=quotation.id,
+                action="Nota agregada",
+                description=note,
+                user_id=admin_user.id,
+                user_name=admin_user.email
+            )
+            db.session.add(history)
+            db.session.commit()
+            
+            return jsonify({'success': True, 'message': 'Nota agregada correctamente'})
+        else:
+            return jsonify({'success': False, 'error': 'La nota no puede estar vacía'}), 400
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500

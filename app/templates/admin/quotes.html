@@ -4,38 +4,1116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Cotizaciones | IT Data Global</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #10B981;
+            --primary-dark: #059669;
+            --secondary-color: #1C2A2F;
+            --accent-color: #F15A29;
+            --surface-color: #FFFFFF;
+            --background-color: #F8FAFC;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+            --info-color: #3B82F6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header profesional */
+        .admin-header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.025em;
+            color: white !important;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .navbar-brand i {
+            font-size: 1.5rem;
+            color: var(--surface-color);
+        }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.25rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--primary-color);
+        }
+
+        /* Breadcrumb moderno */
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+        }
+
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-item a:hover {
+            color: var(--primary-dark);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-secondary);
+        }
+
+        /* Contenedor principal */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header de página */
+        .page-header {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 400;
+            margin: 0;
+        }
+
+        /* Tarjetas modernas */
+        .modern-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .modern-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header-modern {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem;
+        }
+
+        .card-body-modern {
+            padding: 1.5rem;
+        }
+
+        /* Estadísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-color);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(16, 185, 129, 0.15);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            color: var(--surface-color);
+        }
+
+        .stat-icon.primary { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); }
+        .stat-icon.success { background: linear-gradient(135deg, #10B981, #059669); }
+        .stat-icon.info { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
+        .stat-icon.warning { background: linear-gradient(135deg, var(--warning-color), #D97706); }
+        .stat-icon.secondary { background: linear-gradient(135deg, #6B7280, #4B5563); }
+        .stat-icon.danger { background: linear-gradient(135deg, var(--danger-color), #DC2626); }
+
+        .stat-number {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            line-height: 1;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Filtros elegantes */
+        .filter-section {
+            margin-bottom: 2rem;
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: 2px solid var(--border-color);
+            background: var(--surface-color);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Tabla moderna */
+        .table-modern {
+            background: var(--surface-color);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .table {
+            margin: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            border: none;
+            padding: 1.25rem 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .table td {
+            border: none;
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #F1F5F9;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(16, 185, 129, 0.05);
+            transform: scale(1.001);
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Badges modernos */
+        .badge {
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            letter-spacing: 0.025em;
+        }
+
+        .badge-pending {
+            background: linear-gradient(135deg, var(--warning-color), #D97706);
+            color: white;
+        }
+
+        .badge-approved {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .badge-rejected {
+            background: linear-gradient(135deg, var(--danger-color), #DC2626);
+            color: white;
+        }
+
+        .badge-in-progress {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            color: white;
+        }
+
+        .badge-completed {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: white;
+        }
+
+        .badge-invoiced {
+            background: linear-gradient(135deg, #1C2A2F, #374151);
+            color: white;
+        }
+
+        .badge-paid {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .badge-draft {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: white;
+        }
+
+        .badge-sent {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            color: white;
+        }
+
+        .badge-cancelled {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: white;
+        }
+
+        /* Botones modernos */
+        .btn {
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-action {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-group-modern {
+            display: flex;
+            gap: 0.25rem;
+            justify-content: center;
+        }
+
+        /* Información de cliente */
+        .quote-number {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .client-info {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .total-amount {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary-color);
+        }
+
+        /* Estado vacío */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Paginación moderna */
+        .pagination {
+            --bs-pagination-border-radius: 12px;
+            --bs-pagination-border-color: var(--border-color);
+            --bs-pagination-hover-bg: rgba(16, 185, 129, 0.1);
+            --bs-pagination-hover-border-color: var(--primary-color);
+            --bs-pagination-active-bg: var(--primary-color);
+            --bs-pagination-active-border-color: var(--primary-color);
+            gap: 0.25rem;
+        }
+
+        .page-link {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Modal moderno */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 16px 16px 0 0;
+            padding: 1.5rem;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background: var(--surface-color);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            outline: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 0 1rem;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 1rem;
+            }
+
+            .stat-card {
+                padding: 1.5rem;
+            }
+
+            .filter-buttons {
+                justify-content: center;
+            }
+
+            .btn-group-modern {
+                flex-wrap: wrap;
+            }
+        }
+
+        /* Animaciones */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideIn 0.4s ease-out;
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark admin-header">
+        <div class="container-fluid main-container">
             <a class="navbar-brand" href="/admin/dashboard">
-                <i class="fas fa-microchip"></i> IT Data Global - Admin
+                <i class="fas fa-microchip"></i>
+                <span>IT Data Global - Admin</span>
             </a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-cog me-2"></i>
+                        <span>{{ session.user_email }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/admin/dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="fas fa-file-invoice"></i> Gestión de Cotizaciones</h1>
-            <a href="/admin/dashboard" class="btn btn-outline-primary">
-                <i class="fas fa-arrow-left"></i> Volver al Dashboard
-            </a>
+    <!-- Contenido principal -->
+    <div class="main-container py-4">
+        <!-- Navegación -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Gestión de Cotizaciones</li>
+            </ol>
+        </nav>
+
+        <!-- Header de la página -->
+        <div class="page-header animate-in">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Gestión de Cotizaciones</span>
+                    </h1>
+                    <p class="page-subtitle">Administra todas las cotizaciones del sistema</p>
+                </div>
+                <a href="/admin/dashboard" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                </a>
+            </div>
         </div>
 
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> Módulo de cotizaciones en desarrollo. Próximamente disponible.
+        <!-- Estadísticas -->
+        <div class="stats-grid animate-in">
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+                <div class="stat-number">{{ stats.total }}</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon warning">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-number">{{ stats.pending }}</div>
+                <div class="stat-label">Pendientes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-number">{{ stats.approved }}</div>
+                <div class="stat-label">Aprobadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon info">
+                    <i class="fas fa-spinner"></i>
+                </div>
+                <div class="stat-number">{{ stats.in_progress }}</div>
+                <div class="stat-label">En Progreso</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon secondary">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div class="stat-number">{{ stats.invoiced }}</div>
+                <div class="stat-label">Facturadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon danger">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-number">{{ stats.rejected }}</div>
+                <div class="stat-label">Rechazadas</div>
+            </div>
         </div>
 
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="fas fa-tools fa-3x text-muted mb-3"></i>
-                <h3>En construcción</h3>
-                <p class="text-muted">Esta funcionalidad estará disponible pronto</p>
-                <a href="/admin/users" class="btn btn-primary">Volver a Usuarios</a>
+        <!-- Filtros -->
+        <div class="modern-card filter-section animate-in">
+            <div class="card-header-modern">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <i class="fas fa-filter me-2 text-primary"></i>
+                    Filtros de Estado
+                </h5>
+            </div>
+            <div class="card-body-modern">
+                <div class="filter-buttons">
+                    <a href="/admin/quotes?status=all" class="filter-btn {{ 'active' if current_status == 'all' or not current_status else '' }}">
+                        Todas
+                    </a>
+                    <a href="/admin/quotes?status=draft" class="filter-btn {{ 'active' if current_status == 'draft' else '' }}">
+                        Borrador
+                    </a>
+                    <a href="/admin/quotes?status=pending" class="filter-btn {{ 'active' if current_status == 'pending' else '' }}">
+                        Pendientes
+                    </a>
+                    <a href="/admin/quotes?status=approved" class="filter-btn {{ 'active' if current_status == 'approved' else '' }}">
+                        Aprobadas
+                    </a>
+                    <a href="/admin/quotes?status=in_progress" class="filter-btn {{ 'active' if current_status == 'in_progress' else '' }}">
+                        En Progreso
+                    </a>
+                    <a href="/admin/quotes?status=completed" class="filter-btn {{ 'active' if current_status == 'completed' else '' }}">
+                        Completadas
+                    </a>
+                    <a href="/admin/quotes?status=invoiced" class="filter-btn {{ 'active' if current_status == 'invoiced' else '' }}">
+                        Facturadas
+                    </a>
+                    <a href="/admin/quotes?status=paid" class="filter-btn {{ 'active' if current_status == 'paid' else '' }}">
+                        Pagadas
+                    </a>
+                    <a href="/admin/quotes?status=rejected" class="filter-btn {{ 'active' if current_status == 'rejected' else '' }}">
+                        Rechazadas
+                    </a>
+                    <a href="/admin/quotes?status=cancelled" class="filter-btn {{ 'active' if current_status == 'cancelled' else '' }}">
+                        Canceladas
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de cotizaciones -->
+        <div class="modern-card animate-in">
+            <div class="card-header-modern">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="fas fa-list me-2 text-primary"></i>
+                        Lista de Cotizaciones
+                    </h5>
+                    <span class="badge bg-primary">{{ quotes|length }} cotizaciones encontradas</span>
+                </div>
+            </div>
+            <div class="card-body-modern p-0">
+                {% if quotes %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>N° Cotización</th>
+                                <th>Cliente</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for quote in quotes %}
+                            <tr>
+                                <td>
+                                    <div class="quote-number">{{ quote.quote_number }}</div>
+                                    <small class="text-muted">ID: {{ quote.id }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold mb-1">
+                                        {% if quote.user %}
+                                            {{ quote.user.full_name or quote.user.business_name or quote.user.email }}
+                                        {% else %}
+                                            Usuario no encontrado
+                                        {% endif %}
+                                    </div>
+                                    <div class="client-info">
+                                        {% if quote.user %}
+                                            {{ quote.user.email }}<br>
+                                            {{ quote.user.phone or 'Sin teléfono' }}
+                                        {% else %}
+                                            Información no disponible
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>{{ quote.created_at.strftime('%d/%m/%Y') }}</div>
+                                    <small class="text-muted">{{ quote.created_at.strftime('%H:%M') }}</small>
+                                </td>
+                                <td>
+                                    <div class="total-amount">${{ "%.2f"|format(quote.total_amount) }}</div>
+                                </td>
+                                <td>
+                                    {% if quote.status == 'draft' %}
+                                        <span class="badge badge-draft">
+                                            <i class="fas fa-edit me-1"></i>Borrador
+                                        </span>
+                                    {% elif quote.status == 'sent' %}
+                                        <span class="badge badge-sent">
+                                            <i class="fas fa-paper-plane me-1"></i>Enviada
+                                        </span>
+                                    {% elif quote.status == 'pending' %}
+                                        <span class="badge badge-pending">
+                                            <i class="fas fa-clock me-1"></i>Pendiente
+                                        </span>
+                                    {% elif quote.status == 'approved' %}
+                                        <span class="badge badge-approved">
+                                            <i class="fas fa-check-circle me-1"></i>Aprobada
+                                        </span>
+                                    {% elif quote.status == 'rejected' %}
+                                        <span class="badge badge-rejected">
+                                            <i class="fas fa-times-circle me-1"></i>Rechazada
+                                        </span>
+                                    {% elif quote.status == 'in_progress' %}
+                                        <span class="badge badge-in-progress">
+                                            <i class="fas fa-spinner me-1"></i>En Progreso
+                                        </span>
+                                    {% elif quote.status == 'completed' %}
+                                        <span class="badge badge-completed">
+                                            <i class="fas fa-flag-checkered me-1"></i>Completada
+                                        </span>
+                                    {% elif quote.status == 'invoiced' %}
+                                        <span class="badge badge-invoiced">
+                                            <i class="fas fa-receipt me-1"></i>Facturada
+                                        </span>
+                                    {% elif quote.status == 'paid' %}
+                                        <span class="badge badge-paid">
+                                            <i class="fas fa-dollar-sign me-1"></i>Pagada
+                                        </span>
+                                    {% elif quote.status == 'cancelled' %}
+                                        <span class="badge badge-cancelled">
+                                            <i class="fas fa-ban me-1"></i>Cancelada
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group-modern">
+                                        <a href="/admin/quotes/{{ quote.id }}"  
+                                           class="btn btn-outline-primary btn-action" 
+                                           title="Ver detalles" data-bs-toggle="tooltip">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        
+                                        {% if quote.status == 'draft' %}
+                                            <button class="btn btn-outline-info btn-action" 
+                                                    onclick="updateStatus({{ quote.id }}, 'send')"
+                                                    title="Enviar al cliente" data-bs-toggle="tooltip">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                        {% elif quote.status in ['sent', 'pending'] %}
+                                            <button class="btn btn-outline-success btn-action" 
+                                                    onclick="updateStatus({{ quote.id }}, 'approve')"
+                                                    title="Aprobar" data-bs-toggle="tooltip">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-action" 
+                                                    onclick="updateStatus({{ quote.id }}, 'reject')"
+                                                    title="Rechazar" data-bs-toggle="tooltip">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        {% elif quote.status == 'approved' %}
+                                            <button class="btn btn-outline-info btn-action" 
+                                                    onclick="updateStatus({{ quote.id }}, 'progress')"
+                                                    title="Marcar en progreso" data-bs-toggle="tooltip">
+                                                <i class="fas fa-spinner"></i>
+                                            </button>
+                                        {% elif quote.status == 'in_progress' %}
+                                            <button class="btn btn-outline-secondary btn-action" 
+                                                    onclick="updateStatus({{ quote.id }}, 'complete')"
+                                                    title="Marcar completada" data-bs-toggle="tooltip">
+                                                <i class="fas fa-flag-checkered"></i>
+                                            </button>
+                                        {% elif quote.status == 'completed' %}
+                                            <button class="btn btn-outline-dark btn-action" 
+                                                    onclick="showInvoiceModal({{ quote.id }})"
+                                                    title="Generar factura" data-bs-toggle="tooltip">
+                                                <i class="fas fa-receipt"></i>
+                                            </button>
+                                        {% elif quote.status == 'invoiced' %}
+                                            <button class="btn btn-outline-success btn-action" 
+                                                    onclick="updateStatus({{ quote.id }}, 'pay')"
+                                                    title="Marcar como pagada" data-bs-toggle="tooltip">
+                                                <i class="fas fa-dollar-sign"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-invoice"></i>
+                    <h4>No se encontraron cotizaciones</h4>
+                    <p class="mb-0">No hay cotizaciones con los filtros aplicados</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        {% if pagination and pagination.pages > 1 %}
+        <nav aria-label="Navegación de páginas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.quotes', page=pagination.prev_num, status=current_status, search=search) }}">
+                        <i class="fas fa-chevron-left me-1"></i>Anterior
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin.quotes', page=page_num, status=current_status, search=search) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.quotes', page=pagination.next_num, status=current_status, search=search) }}">
+                        Siguiente<i class="fas fa-chevron-right ms-1"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+    <!-- Modal para actualizar estado -->
+    <div class="modal fade" id="statusModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statusModalTitle">Actualizar Estado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="statusForm">
+                        <input type="hidden" id="quoteId">
+                        <input type="hidden" id="actionType">
+                        <div class="mb-3">
+                            <label for="adminNotes" class="form-label">Notas del administrador:</label>
+                            <textarea class="form-control" id="adminNotes" rows="3" 
+                                      placeholder="Agregue notas adicionales..."></textarea>
+                        </div>
+                        <div id="invoiceFields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="invoiceNumber" class="form-label">Número de Factura:</label>
+                                <input type="text" class="form-control" id="invoiceNumber" 
+                                       placeholder="Ej: FACT-2024-001">
+                            </div>
+                        </div>
+                        <div id="paymentFields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="paymentMethod" class="form-label">Método de Pago:</label>
+                                <select class="form-control" id="paymentMethod">
+                                    <option value="transferencia">Transferencia Bancaria</option>
+                                    <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+                                    <option value="efectivo">Efectivo</option>
+                                    <option value="cheque">Cheque</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="paymentReference" class="form-label">Referencia de Pago:</label>
+                                <input type="text" class="form-control" id="paymentReference" 
+                                       placeholder="Número de referencia, transacción, etc.">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitStatusUpdate()">
+                        <i class="fas fa-check me-2"></i>Actualizar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Efectos hover mejorados para tarjetas de estadísticas
+            const statCards = document.querySelectorAll('.stat-card');
+            statCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+
+            // Animación de entrada escalonada
+            const animatedElements = document.querySelectorAll('.animate-in');
+            animatedElements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+
+        let currentQuoteId = null;
+        let currentAction = null;
+        
+        function updateStatus(quoteId, action) {
+            currentQuoteId = quoteId;
+            currentAction = action;
+            
+            const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+            const title = document.getElementById('statusModalTitle');
+            const invoiceFields = document.getElementById('invoiceFields');
+            const paymentFields = document.getElementById('paymentFields');
+            
+            // Configurar título según la acción
+            const actionTitles = {
+                'send': 'Enviar Cotización al Cliente',
+                'approve': 'Aprobar Cotización',
+                'reject': 'Rechazar Cotización',
+                'progress': 'Marcar en Progreso',
+                'complete': 'Marcar Completada',
+                'invoice': 'Generar Factura',
+                'pay': 'Registrar Pago'
+            };
+            
+            title.textContent = actionTitles[action] || 'Actualizar Estado';
+            
+            // Mostrar campos según la acción
+            invoiceFields.style.display = action === 'invoice' ? 'block' : 'none';
+            paymentFields.style.display = action === 'pay' ? 'block' : 'none';
+            
+            modal.show();
+        }
+        
+        function showInvoiceModal(quoteId) {
+            currentQuoteId = quoteId;
+            currentAction = 'invoice';
+            
+            const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+            document.getElementById('statusModalTitle').textContent = 'Generar Factura';
+            document.getElementById('invoiceFields').style.display = 'block';
+            document.getElementById('paymentFields').style.display = 'none';
+            
+            modal.show();
+        }
+        
+        function submitStatusUpdate() {
+            const adminNotes = document.getElementById('adminNotes').value;
+            const invoiceNumber = document.getElementById('invoiceNumber').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const paymentReference = document.getElementById('paymentReference').value;
+            
+            const data = {
+                action: currentAction,
+                admin_notes: adminNotes
+            };
+            
+            if (currentAction === 'invoice') {
+                if (!invoiceNumber) {
+                    alert('Por favor ingrese el número de factura');
+                    return;
+                }
+                data.invoice_number = invoiceNumber;
+            }
+            
+            if (currentAction === 'pay') {
+                data.payment_method = paymentMethod;
+                data.payment_reference = paymentReference;
+            }
+            
+            fetch(`/admin/quotes/${currentQuoteId}/update_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            })
+            .catch(error => {
+                alert('Error de conexión: ' + error);
+            });
+        }
+        
+        // Limpiar modal cuando se cierre
+        document.getElementById('statusModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('adminNotes').value = '';
+            document.getElementById('invoiceNumber').value = '';
+            document.getElementById('paymentMethod').value = 'transferencia';
+            document.getElementById('paymentReference').value = '';
+            currentQuoteId = null;
+            currentAction = null;
+        });
+    </script>
 </body>
 </html>

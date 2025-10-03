@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotización {{ quotation.quote_number }} | IT Data Global</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #F15A29;
+            --primary-dark: #d14a1f;
+            --secondary-color: #1C2A2F;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .quote-header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        .item-row {
+            border-bottom: 1px solid #e3e6f0;
+            padding: 1rem 0;
+        }
+        
+        .item-row:last-child {
+            border-bottom: none;
+        }
+        
+        .total-section {
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+        
+        .history-timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .history-timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.75rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #e3e6f0;
+        }
+        
+        .history-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .history-item::before {
+            content: '';
+            position: absolute;
+            left: -1.75rem;
+            top: 0.25rem;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-microchip"></i> IT Data Global - Admin
+            </a>
+        </div>
+    </nav>
+
+    <div class="quote-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="h2 mb-1">Cotización {{ quotation.quote_number }}</h1>
+                    <p class="mb-0 opacity-75">Creada el {{ quotation.created_at.strftime('%d/%m/%Y a las %H:%M') }}</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    {% if quotation.status == 'pending' %}
+                        <span class="badge status-badge bg-warning">Pendiente</span>
+                    {% elif quotation.status == 'approved' %}
+                        <span class="badge status-badge bg-success">Aprobada</span>
+                    {% elif quotation.status == 'rejected' %}
+                        <span class="badge status-badge bg-danger">Rechazada</span>
+                    {% elif quotation.status == 'in_progress' %}
+                        <span class="badge status-badge bg-info">En Progreso</span>
+                    {% elif quotation.status == 'completed' %}
+                        <span class="badge status-badge bg-secondary">Completada</span>
+                    {% elif quotation.status == 'invoiced' %}
+                        <span class="badge status-badge bg-dark">Facturada</span>
+                    {% elif quotation.status == 'paid' %}
+                        <span class="badge status-badge bg-success">Pagada</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <a href="/admin/cotizaciones" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a Cotizaciones
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Información Principal -->
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-list"></i> Productos Cotizados
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% set items = quotation.items|from_json %}
+                        {% for item in items %}
+                        <div class="item-row">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <h6 class="mb-1">{{ item.description }}</h6>
+                                    <small class="text-muted">SKU: {{ item.sku }}</small>
+                                    {% if item.vendor %}
+                                    <br>
+                                    <small class="text-muted">Marca: {{ item.vendor }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <span class="fw-bold">{{ item.quantity }} und</span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <span class="text-muted">${{ "%.2f"|format(item.unit_price) }} c/u</span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <span class="fw-bold text-primary">${{ "%.2f"|format(item.total_price) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Notas -->
+                {% if quotation.notes %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-sticky-note"></i> Notas del Cliente
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ quotation.notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if quotation.admin_notes %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clipboard-check"></i> Notas del Administrador
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ quotation.admin_notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Información del Cliente -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user"></i> Información del Cliente
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Nombre:</strong><br>
+                            {{ quotation.client_name }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Email:</strong><br>
+                            <a href="mailto:{{ quotation.client_email }}">{{ quotation.client_email }}</a>
+                        </div>
+                        {% if quotation.client_phone %}
+                        <div class="mb-3">
+                            <strong>Teléfono:</strong><br>
+                            <a href="tel:{{ quotation.client_phone }}">{{ quotation.client_phone }}</a>
+                        </div>
+                        {% endif %}
+                        {% if quotation.client_company %}
+                        <div class="mb-3">
+                            <strong>Empresa:</strong><br>
+                            {{ quotation.client_company }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Totales -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-calculator"></i> Resumen de Costos
+                        </h5>
+                    </div>
+                    <div class="card-body total-section">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span>${{ "%.2f"|format(quotation.subtotal) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>IVA (16%):</span>
+                            <span>${{ "%.2f"|format(quotation.tax) }}</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-0">
+                            <strong>Total:</strong>
+                            <strong class="text-primary">${{ "%.2f"|format(quotation.total) }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cogs"></i> Acciones
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            {% if quotation.status == 'pending' %}
+                                <button class="btn btn-success" onclick="updateStatus('approve')">
+                                    <i class="fas fa-check"></i> Aprobar
+                                </button>
+                                <button class="btn btn-danger" onclick="updateStatus('reject')">
+                                    <i class="fas fa-times"></i> Rechazar
+                                </button>
+                            {% elif quotation.status == 'approved' %}
+                                <button class="btn btn-info" onclick="updateStatus('progress')">
+                                    <i class="fas fa-spinner"></i> En Progreso
+                                </button>
+                            {% elif quotation.status == 'in_progress' %}
+                                <button class="btn btn-secondary" onclick="updateStatus('complete')">
+                                    <i class="fas fa-flag-checkered"></i> Completar
+                                </button>
+                            {% elif quotation.status == 'completed' %}
+                                <button class="btn btn-dark" onclick="showInvoiceModal()">
+                                    <i class="fas fa-receipt"></i> Generar Factura
+                                </button>
+                            {% elif quotation.status == 'invoiced' %}
+                                <button class="btn btn-success" onclick="updateStatus('pay')">
+                                    <i class="fas fa-dollar-sign"></i> Marcar como Pagada
+                                </button>
+                            {% endif %}
+                            
+                            <button class="btn btn-outline-primary" onclick="printQuotation()">
+                                <i class="fas fa-print"></i> Imprimir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Factura -->
+                {% if quotation.invoice_number %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-receipt"></i> Información de Factura
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <strong>N° Factura:</strong><br>
+                            {{ quotation.invoice_number }}
+                        </div>
+                        {% if quotation.invoice_date %}
+                        <div class="mb-2">
+                            <strong>Fecha de Factura:</strong><br>
+                            {{ quotation.invoice_date.strftime('%d/%m/%Y') }}
+                        </div>
+                        {% endif %}
+                        {% if quotation.payment_date %}
+                        <div class="mb-0">
+                            <strong>Fecha de Pago:</strong><br>
+                            {{ quotation.payment_date.strftime('%d/%m/%Y') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Historial -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history"></i> Historial de la Cotización
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="history-timeline">
+                            {% for entry in history %}
+                            <div class="history-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ entry.action }}</h6>
+                                        <p class="mb-1">{{ entry.description }}</p>
+                                        <small class="text-muted">
+                                            Por: {{ entry.user_name or 'Sistema' }}
+                                        </small>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ entry.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para actualizar estado -->
+    <div class="modal fade" id="statusModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statusModalTitle">Actualizar Estado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="statusForm">
+                        <input type="hidden" id="actionType">
+                        <div class="mb-3">
+                            <label for="adminNotes" class="form-label">Notas del administrador:</label>
+                            <textarea class="form-control" id="adminNotes" rows="3" 
+                                      placeholder="Agregue notas adicionales..."></textarea>
+                        </div>
+                        <div id="invoiceFields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="invoiceNumber" class="form-label">Número de Factura:</label>
+                                <input type="text" class="form-control" id="invoiceNumber" 
+                                       placeholder="Ej: FACT-2024-001">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitStatusUpdate()">Actualizar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentAction = null;
+        
+        function updateStatus(action) {
+            currentAction = action;
+            
+            const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+            const title = document.getElementById('statusModalTitle');
+            const invoiceFields = document.getElementById('invoiceFields');
+            
+            const actionTitles = {
+                'approve': 'Aprobar Cotización',
+                'reject': 'Rechazar Cotización',
+                'progress': 'Marcar en Progreso',
+                'complete': 'Marcar Completada',
+                'invoice': 'Generar Factura',
+                'pay': 'Marcar como Pagada'
+            };
+            
+            title.textContent = actionTitles[action] || 'Actualizar Estado';
+            
+            if (action === 'invoice') {
+                invoiceFields.style.display = 'block';
+            } else {
+                invoiceFields.style.display = 'none';
+            }
+            
+            modal.show();
+        }
+        
+        function showInvoiceModal() {
+            currentAction = 'invoice';
+            const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+            document.getElementById('statusModalTitle').textContent = 'Generar Factura';
+            document.getElementById('invoiceFields').style.display = 'block';
+            modal.show();
+        }
+        
+        function submitStatusUpdate() {
+            const adminNotes = document.getElementById('adminNotes').value;
+            const invoiceNumber = document.getElementById('invoiceNumber').value;
+            
+            const data = {
+                action: currentAction,
+                admin_notes: adminNotes
+            };
+            
+            if (currentAction === 'invoice') {
+                if (!invoiceNumber) {
+                    alert('Por favor ingrese el número de factura');
+                    return;
+                }
+                data.invoice_number = invoiceNumber;
+            }
+            
+            fetch(`/admin/cotizaciones/{{ quotation.id }}/actualizar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            })
+            .catch(error => {
+                alert('Error de conexión: ' + error);
+            });
+        }
+        
+        function printQuotation() {
+            window.print();
+        }
+        
+        document.getElementById('statusModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('adminNotes').value = '';
+            document.getElementById('invoiceNumber').value = '';
+            currentAction = null;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Cotización #{{ quotation.quote_number }} | IT Data Global</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #10B981;
+            --primary-dark: #059669;
+            --secondary-color: #1C2A2F;
+            --accent-color: #F15A29;
+            --surface-color: #FFFFFF;
+            --background-color: #F8FAFC;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+            --info-color: #3B82F6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .admin-header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.025em;
+            color: white !important;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .navbar-brand i {
+            font-size: 1.5rem;
+        }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.25rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--primary-color);
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+        }
+
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-item a:hover {
+            color: var(--primary-dark);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-secondary);
+        }
+
+        /* Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Page Header with gradient accent */
+        .page-header {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .page-title i {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 12px;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        /* Info Grid with hover effects */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.75rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary-color);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(16, 185, 129, 0.15);
+        }
+
+        .info-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-label i {
+            color: var(--primary-color);
+        }
+
+        .info-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modern Cards */
+        .modern-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modern-card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header-modern {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem;
+        }
+
+        .card-header-modern h5 {
+            margin: 0;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-header-modern h5 i {
+            color: var(--primary-color);
+        }
+
+        .card-body-modern {
+            padding: 1.5rem;
+        }
+
+        /* Badges with gradients */
+        .badge {
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            letter-spacing: 0.025em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge-draft { background: linear-gradient(135deg, #6B7280, #4B5563); color: white; }
+        .badge-sent { background: linear-gradient(135deg, #3B82F6, #1D4ED8); color: white; }
+        .badge-pending { background: linear-gradient(135deg, #F59E0B, #D97706); color: white; }
+        .badge-approved { background: linear-gradient(135deg, #10B981, #059669); color: white; }
+        .badge-rejected { background: linear-gradient(135deg, #EF4444, #DC2626); color: white; }
+        .badge-in_progress { background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: white; }
+        .badge-completed { background: linear-gradient(135deg, #6B7280, #4B5563); color: white; }
+        .badge-invoiced { background: linear-gradient(135deg, #1C2A2F, #374151); color: white; }
+        .badge-paid { background: linear-gradient(135deg, #10B981, #059669); color: white; }
+        .badge-cancelled { background: linear-gradient(135deg, #6B7280, #4B5563); color: white; }
+
+        /* Table */
+        .table-modern {
+            background: var(--surface-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            font-weight: 600;
+            border: none;
+            padding: 1.25rem 1rem;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.05em;
+            color: var(--text-primary);
+        }
+
+        .table td {
+            border: none;
+            padding: 1.25rem 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #F1F5F9;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(16, 185, 129, 0.05);
+            transform: scale(1.001);
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Total Section with visual emphasis */
+        .total-section {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
+            border: 2px solid var(--primary-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .total-amount {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* History Timeline */
+        .history-timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .history-item {
+            position: relative;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            background: rgba(16, 185, 129, 0.03);
+            border-left: 4px solid var(--primary-color);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: rgba(16, 185, 129, 0.08);
+            transform: translateX(4px);
+        }
+
+        .history-item::before {
+            content: '';
+            position: absolute;
+            left: -2.5rem;
+            top: 1.5rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            border: 3px solid var(--surface-color);
+            box-shadow: 0 0 0 3px var(--border-color);
+        }
+
+        .history-date {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .history-action {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+        }
+
+        .history-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        /* Buttons */
+        .btn {
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: white;
+        }
+
+        .btn-dark {
+            background: linear-gradient(135deg, #1C2A2F, #374151);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--text-secondary);
+            opacity: 0.5;
+            margin-bottom: 1rem;
+        }
+
+        /* Modal */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 16px 16px 0 0;
+            padding: 1.5rem;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-control {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            outline: none;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 0 1rem;
+            }
+            
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-title i {
+                width: 50px;
+                height: 50px;
+                font-size: 1.25rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .total-amount {
+                font-size: 2rem;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Status indicator dot */
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-indicator.active {
+            background: var(--success-color);
+        }
+
+        .status-indicator.pending {
+            background: var(--warning-color);
+        }
+
+        .status-indicator.inactive {
+            background: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark admin-header">
+        <div class="container-fluid main-container">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-microchip"></i>
+                <span>IT Data Global - Admin</span>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-cog me-2"></i>
+                        <span>{{ session.user_email }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/admin/dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item" href="/admin/quotes">
+                            <i class="fas fa-file-invoice me-2"></i>Cotizaciones
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <div class="main-container py-4">
+        <!-- Navegación -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/admin/quotes">Cotizaciones</a></li>
+                <li class="breadcrumb-item active">Detalle #{{ quotation.quote_number }}</li>
+            </ol>
+        </nav>
+
+        <!-- Header -->
+        <div class="page-header animate-in">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Cotización #{{ quotation.quote_number }}</span>
+                    </h1>
+                    <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
+                        <span class="badge badge-{{ quotation.status }}">
+                            <span class="status-indicator {{ 'active' if quotation.status in ['approved', 'paid'] else 'pending' if quotation.status in ['pending', 'sent', 'in_progress'] else 'inactive' }}"></span>
+                            {% if quotation.status == 'draft' %}
+                                <i class="fas fa-edit"></i>Borrador
+                            {% elif quotation.status == 'sent' %}
+                                <i class="fas fa-paper-plane"></i>Enviada
+                            {% elif quotation.status == 'pending' %}
+                                <i class="fas fa-clock"></i>Pendiente
+                            {% elif quotation.status == 'approved' %}
+                                <i class="fas fa-check-circle"></i>Aprobada
+                            {% elif quotation.status == 'rejected' %}
+                                <i class="fas fa-times-circle"></i>Rechazada
+                            {% elif quotation.status == 'in_progress' %}
+                                <i class="fas fa-spinner"></i>En Progreso
+                            {% elif quotation.status == 'completed' %}
+                                <i class="fas fa-flag-checkered"></i>Completada
+                            {% elif quotation.status == 'invoiced' %}
+                                <i class="fas fa-receipt"></i>Facturada
+                            {% elif quotation.status == 'paid' %}
+                                <i class="fas fa-dollar-sign"></i>Pagada
+                            {% elif quotation.status == 'cancelled' %}
+                                <i class="fas fa-ban"></i>Cancelada
+                            {% endif %}
+                        </span>
+                        <span class="text-muted">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            Creada el {{ quotation.created_at.strftime('%d/%m/%Y a las %H:%M') }}
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="/admin/quotes" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i>Volver
+                    </a>
+                    {% if quotation.status in ['draft'] %}
+                        <button class="btn btn-info" onclick="updateStatus('send')">
+                            <i class="fas fa-paper-plane"></i>Enviar
+                        </button>
+                    {% elif quotation.status in ['sent', 'pending'] %}
+                        <button class="btn btn-success" onclick="updateStatus('approve')">
+                            <i class="fas fa-check"></i>Aprobar
+                        </button>
+                        <button class="btn btn-danger" onclick="updateStatus('reject')">
+                            <i class="fas fa-times"></i>Rechazar
+                        </button>
+                    {% elif quotation.status == 'approved' %}
+                        <button class="btn btn-primary" onclick="updateStatus('progress')">
+                            <i class="fas fa-spinner"></i>En Progreso
+                        </button>
+                    {% elif quotation.status == 'in_progress' %}
+                        <button class="btn btn-secondary" onclick="updateStatus('complete')">
+                            <i class="fas fa-flag-checkered"></i>Completar
+                        </button>
+                    {% elif quotation.status == 'completed' %}
+                        <button class="btn btn-dark" onclick="showInvoiceModal()">
+                            <i class="fas fa-receipt"></i>Facturar
+                        </button>
+                    {% elif quotation.status == 'invoiced' %}
+                        <button class="btn btn-success" onclick="updateStatus('pay')">
+                            <i class="fas fa-dollar-sign"></i>Marcar Pagada
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Información General -->
+        <div class="info-grid animate-in">
+            <div class="info-card">
+                <div class="info-label">
+                    <i class="fas fa-user-circle"></i>
+                    Cliente
+                </div>
+                <div class="info-value">
+                    {% if quotation.user %}
+                        {{ quotation.user.full_name or quotation.user.business_name or quotation.user.email }}
+                    {% else %}
+                        Usuario no encontrado
+                    {% endif %}
+                </div>
+                {% if quotation.user %}
+                    <div class="text-muted small mt-1">
+                        <i class="fas fa-envelope me-1"></i>{{ quotation.user.email }}
+                    </div>
+                    {% if quotation.user.phone %}
+                        <div class="text-muted small">
+                            <i class="fas fa-phone me-1"></i>{{ quotation.user.phone }}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <div class="info-card">
+                <div class="info-label">
+                    <i class="fas fa-info-circle"></i>
+                    Información de Cotización
+                </div>
+                <div class="info-value">{{ quotation.quote_number }}</div>
+                <div class="text-muted small mt-1">
+                    <i class="fas fa-plus-circle me-1"></i>Creada: {{ quotation.created_at.strftime('%d/%m/%Y %H:%M') }}<br>
+                    {% if quotation.updated_at %}
+                        <i class="fas fa-sync me-1"></i>Actualizada: {{ quotation.updated_at.strftime('%d/%m/%Y %H:%M') }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-label">
+                    <i class="fas fa-tasks"></i>
+                    Estado Actual
+                </div>
+                <div class="info-value">
+                    <span class="badge badge-{{ quotation.status }}">
+                        {{ quotation.status|upper }}
+                    </span>
+                </div>
+                {% if quotation.approved_by %}
+                    <div class="text-muted small mt-1">
+                        <i class="fas fa-user-check me-1"></i>Aprobada por: {{ quotation.approved_by }}<br>
+                        {% if quotation.approved_at %}
+                            <i class="fas fa-calendar-check me-1"></i>El {{ quotation.approved_at.strftime('%d/%m/%Y') }}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="info-card">
+                <div class="info-label">
+                    <i class="fas fa-dollar-sign"></i>
+                    Información de Pago
+                </div>
+                <div class="info-value" style="color: var(--primary-color);">${{ "%.2f"|format(quotation.total_amount) }}</div>
+                <div class="text-muted small mt-1">
+                    <i class="fas fa-coins me-1"></i>Moneda: {{ quotation.currency }}<br>
+                    <i class="fas fa-percent me-1"></i>Markup: {{ quotation.markup_percentage }}%
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Items de la Cotización -->
+            <div class="col-lg-8">
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-list"></i>
+                            Productos y Servicios
+                        </h5>
+                    </div>
+                    <div class="card-body-modern p-0">
+                        {% if quotation.items %}
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-end">Precio Unitario</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in quotation.items %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">
+                                                {% if item.product %}
+                                                    {{ item.product.name }}
+                                                {% else %}
+                                                    Producto no encontrado
+                                                {% endif %}
+                                            </div>
+                                            {% if item.notes %}
+                                                <small class="text-muted">
+                                                    <i class="fas fa-sticky-note me-1"></i>{{ item.notes }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-light text-dark">{{ item.quantity }}</span>
+                                        </td>
+                                        <td class="text-end">${{ "%.2f"|format(item.unit_price) }}</td>
+                                        <td class="text-end fw-bold" style="color: var(--primary-color);">
+                                            ${{ "%.2f"|format(item.total_price) }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-box-open"></i>
+                            <h5 class="text-muted">No hay items en esta cotización</h5>
+                        </div>
+                        {% endif %}
+
+                        <!-- Totales -->
+                        <div class="total-section">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <span class="text-muted me-2">Subtotal:</span>
+                                        <span class="fw-bold">${{ "%.2f"|format(quotation.total_amount / (1 + quotation.markup_percentage/100)) }}</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="text-muted me-2">Markup ({{ quotation.markup_percentage }}%):</span>
+                                        <span class="fw-bold">${{ "%.2f"|format(quotation.total_amount * (quotation.markup_percentage/100) / (1 + quotation.markup_percentage/100)) }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                                    <div class="text-muted mb-1">Total</div>
+                                    <div class="total-amount">${{ "%.2f"|format(quotation.total_amount) }}</div>
+                                    <small class="text-muted">{{ quotation.currency }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Adicional e Historial -->
+            <div class="col-lg-4">
+                <!-- Notas -->
+                {% if quotation.notes or quotation.admin_notes %}
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-sticky-note"></i>
+                            Notas
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        {% if quotation.notes %}
+                        <div class="mb-3 p-3 bg-light rounded">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-user text-primary me-2"></i>
+                                <strong>Notas del Cliente:</strong>
+                            </div>
+                            <p class="mb-0 text-muted">{{ quotation.notes }}</p>
+                        </div>
+                        {% endif %}
+                        {% if quotation.admin_notes %}
+                        <div class="p-3 bg-light rounded">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-user-shield text-warning me-2"></i>
+                                <strong>Notas del Administrador:</strong>
+                            </div>
+                            <p class="mb-0 text-muted">{{ quotation.admin_notes }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Historial -->
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-history"></i>
+                            Historial de Cambios
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        {% if history %}
+                        <div class="history-timeline">
+                            {% for entry in history %}
+                            <div class="history-item">
+                                <div class="history-date">
+                                    <i class="fas fa-clock"></i>
+                                    {{ entry.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                </div>
+                                <div class="history-action">{{ entry.action }}</div>
+                                <div class="history-description">{{ entry.description }}</div>
+                                <div class="text-muted small mt-2">
+                                    <i class="fas fa-user me-1"></i>
+                                    Por: <strong>{{ entry.user_name or 'Sistema' }}</strong>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-history"></i>
+                            <p class="text-muted mb-0">No hay historial registrado</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Acciones Rápidas -->
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-bolt"></i>
+                            Acciones Rápidas
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="window.print()">
+                                <i class="fas fa-print"></i>
+                                Imprimir Cotización
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="alert('Función de descarga en desarrollo')">
+                                <i class="fas fa-download"></i>
+                                Descargar PDF
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="alert('Función de envío en desarrollo')">
+                                <i class="fas fa-envelope"></i>
+                                Enviar por Email
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="if(confirm('¿Duplicar esta cotización?')) alert('Función en desarrollo')">
+                                <i class="fas fa-copy"></i>
+                                Duplicar Cotización
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para actualizar estado -->
+    <div class="modal fade" id="statusModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statusModalTitle">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        Actualizar Estado
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="statusForm">
+                        <input type="hidden" id="actionType">
+                        <div class="mb-3">
+                            <label for="adminNotes" class="form-label">
+                                <i class="fas fa-comment-alt me-1"></i>
+                                Notas del administrador:
+                            </label>
+                            <textarea class="form-control" id="adminNotes" rows="4" 
+                                      placeholder="Agregue comentarios o razones para esta actualización..."></textarea>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Estas notas serán visibles en el historial
+                            </small>
+                        </div>
+                        <div id="invoiceFields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="invoiceNumber" class="form-label">
+                                    <i class="fas fa-receipt me-1"></i>
+                                    Número de Factura:
+                                </label>
+                                <input type="text" class="form-control" id="invoiceNumber" 
+                                       placeholder="Ej: FACT-2024-001">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Ingrese el número de factura correspondiente
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="submitStatusUpdate()">
+                        <i class="fas fa-check me-2"></i>Confirmar Actualización
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animación de entrada escalonada
+            const animatedElements = document.querySelectorAll('.animate-in');
+            animatedElements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+
+        function updateStatus(action) {
+            const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+            const title = document.getElementById('statusModalTitle');
+            const invoiceFields = document.getElementById('invoiceFields');
+            
+            const actionTitles = {
+                'send': '<i class="fas fa-paper-plane me-2"></i>Enviar Cotización al Cliente',
+                'approve': '<i class="fas fa-check-circle me-2"></i>Aprobar Cotización',
+                'reject': '<i class="fas fa-times-circle me-2"></i>Rechazar Cotización',
+                'progress': '<i class="fas fa-spinner me-2"></i>Marcar en Progreso',
+                'complete': '<i class="fas fa-flag-checkered me-2"></i>Marcar Completada',
+                'invoice': '<i class="fas fa-receipt me-2"></i>Generar Factura',
+                'pay': '<i class="fas fa-dollar-sign me-2"></i>Marcar como Pagada'
+            };
+            
+            title.innerHTML = actionTitles[action] || '<i class="fas fa-sync-alt me-2"></i>Actualizar Estado';
+            document.getElementById('actionType').value = action;
+            
+            invoiceFields.style.display = action === 'invoice' ? 'block' : 'none';
+            
+            modal.show();
+        }
+
+        function showInvoiceModal() {
+            updateStatus('invoice');
+        }
+
+        function submitStatusUpdate() {
+            const action = document.getElementById('actionType').value;
+            const adminNotes = document.getElementById('adminNotes').value;
+            const invoiceNumber = document.getElementById('invoiceNumber').value;
+            
+            const data = {
+                action: action,
+                admin_notes: adminNotes
+            };
+            
+            if (action === 'invoice') {
+                if (!invoiceNumber.trim()) {
+                    alert('Por favor ingrese el número de factura');
+                    return;
+                }
+                data.invoice_number = invoiceNumber;
+            }
+            
+            // Mostrar indicador de carga
+            const btn = event.target;
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+            
+            fetch(`/admin/quotes/{{ quotation.id }}/update_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Mostrar mensaje de éxito antes de recargar
+                    btn.innerHTML = '<i class="fas fa-check me-2"></i>¡Actualizado!';
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                } else {
+                    alert('Error: ' + result.error);
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                alert('Error de conexión: ' + error);
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            });
+        }
+
+        // Limpiar modal al cerrar
+        document.getElementById('statusModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('adminNotes').value = '';
+            document.getElementById('invoiceNumber').value = '';
+        });
+
+        // Función de impresión mejorada
+        window.onbeforeprint = function() {
+            document.body.classList.add('printing');
+        };
+        
+        window.onafterprint = function() {
+            document.body.classList.remove('printing');
+        };
+    </script>
+
+    <style media="print">
+        /* Estilos para impresión */
+        .admin-header,
+        .breadcrumb,
+        .btn,
+        .modern-card:last-child,
+        nav {
+            display: none !important;
+        }
+        
+        .page-header {
+            box-shadow: none;
+            border: 1px solid #000;
+        }
+        
+        .modern-card {
+            page-break-inside: avoid;
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+        
+        body {
+            background: white;
+        }
+    </style>
+</body>
+</html>

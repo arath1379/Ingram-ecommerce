@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Cotización | IT Data Global</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #F15A29;
+            --primary-dark: #d14a1f;
+            --secondary-color: #1C2A2F;
+            --surface-color: #FFFFFF;
+            --background-color: #F1F3F4;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+            --info-color: #3B82F6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--background-color) 0%, #E8EAED 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Elementos decorativos de fondo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 70%, rgba(241, 90, 41, 0.03) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 30%, rgba(28, 42, 47, 0.02) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-20px, -20px) rotate(1deg); }
+            66% { transform: translate(20px, -10px) rotate(-1deg); }
+        }
+
+        /* Header profesional */
+        .header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            color: var(--surface-color);
+            padding: 1rem 0;
+            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 3px solid var(--primary-color);
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
+            color: var(--surface-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            letter-spacing: -0.025em;
+        }
+
+        .logo i {
+            color: var(--surface-color);
+            font-size: 1.75rem;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--surface-color);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            color: var(--surface-color);
+        }
+
+        /* Container principal */
+        .main-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Breadcrumb mejorado */
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 1.25rem 1.75rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: 
+                0 8px 32px rgba(28, 42, 47, 0.08),
+                0 4px 16px rgba(28, 42, 47, 0.04);
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .breadcrumb::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            border-radius: 16px 16px 0 0;
+        }
+
+        .breadcrumb-list {
+            display: flex;
+            align-items: center;
+            list-style: none;
+            gap: 0.75rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .breadcrumb-list a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-list a:hover {
+            color: var(--primary-dark);
+        }
+
+        /* Título de página */
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            letter-spacing: -0.025em;
+        }
+
+        .page-title i {
+            color: var(--primary-color);
+        }
+
+        /* Mensajes flash mejorados */
+        .flash-message {
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            color: #065F46;
+            padding: 1.25rem 1.75rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            border: 2px solid #6EE7B7;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            position: relative;
+        }
+
+        .flash-message::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--success-color);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .flash-message.error {
+            background: linear-gradient(135deg, #FEE2E2, #FECACA);
+            color: #991B1B;
+            border-color: #F87171;
+        }
+
+        .flash-message.error::before {
+            background: var(--danger-color);
+        }
+
+        /* Barra de estadísticas */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 40px rgba(28, 42, 47, 0.08),
+                0 8px 16px rgba(28, 42, 47, 0.04);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            border-radius: 20px 20px 0 0;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Container de cotización */
+        .quote-container {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 
+                0 20px 60px rgba(28, 42, 47, 0.1),
+                0 10px 30px rgba(28, 42, 47, 0.05);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .quote-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            border-radius: 24px 24px 0 0;
+        }
+
+        /* Estado vacío mejorado */
+        .empty-state {
+            text-align: center;
+            padding: 5rem 2rem;
+        }
+
+        .empty-state i {
+            font-size: 4.5rem;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            opacity: 0.7;
+        }
+
+        .empty-state h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Items de cotización */
+        .quote-items {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .quote-item {
+            display: grid;
+            grid-template-columns: 120px 1fr auto auto auto;
+            gap: 1.5rem;
+            align-items: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .quote-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--primary-color);
+            border-radius: 20px 0 0 20px;
+        }
+
+        .quote-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(28, 42, 47, 0.12);
+        }
+
+        .item-image {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            border-radius: 16px;
+            background: var(--surface-color);
+            padding: 1rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .item-info h4 {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+            font-size: 1.1rem;
+        }
+
+        .item-info p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .item-info .brand {
+            color: var(--primary-color);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .item-info .availability {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.75rem;
+        }
+
+        .availability.in-stock {
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            color: #065F46;
+            border: 2px solid #6EE7B7;
+        }
+
+        .availability.limited-stock {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            color: #92400E;
+            border: 2px solid #F59E0B;
+        }
+
+        .availability.out-of-stock {
+            background: linear-gradient(135deg, #FEE2E2, #FECACA);
+            color: #991B1B;
+            border: 2px solid #F87171;
+        }
+
+        /* Controles de cantidad */
+        .item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--surface-color);
+            padding: 0.75rem 1rem;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border: 2px solid var(--border-color);
+        }
+
+        .quantity-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--border-color);
+            background: var(--surface-color);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-secondary);
+        }
+
+        .quantity-btn:hover:not(:disabled) {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .quantity-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .quantity-input {
+            width: 70px;
+            text-align: center;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .quantity-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(241, 90, 41, 0.1);
+        }
+
+        /* Precios */
+        .item-price {
+            text-align: right;
+        }
+
+        .price-main {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .price-unit {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Acciones del item */
+        .item-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-direction: column;
+        }
+
+        .action-btn {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: var(--surface-color);
+            color: var(--text-secondary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 2px solid var(--border-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .action-btn:hover {
+            background: linear-gradient(135deg, var(--danger-color), #DC2626);
+            color: white;
+            border-color: var(--danger-color);
+            transform: scale(1.05);
+        }
+
+        /* Resumen de cotización */
+        .quote-summary {
+            background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+            padding: 2.5rem;
+            border-radius: 20px;
+            margin-top: 2rem;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 8px 32px rgba(241, 90, 41, 0.15);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid rgba(241, 90, 41, 0.2);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: var(--primary-color);
+            padding-top: 1.5rem;
+        }
+
+        /* Acciones de cotización */
+        .quote-actions {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        /* Botones mejorados */
+        .btn {
+            padding: 1.1rem 2rem;
+            border: none;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1rem;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--surface-color);
+            box-shadow: 0 8px 24px rgba(241, 90, 41, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, var(--primary-dark), #b8401a);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(241, 90, 41, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--background-color);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: white;
+            color: var(--text-primary);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 10000;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 350px;
+            transform: translateX(100%);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, var(--danger-color), #DC2626);
+        }
+
+        .toast.info {
+            background: linear-gradient(135deg, var(--info-color), #1D4ED8);
+        }
+
+        /* Modal para enviar cotización */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--danger-color);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(241, 90, 41, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .quote-item {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 1.5rem;
+            }
+            
+            .item-actions {
+                justify-content: center;
+                flex-direction: row;
+            }
+            
+            .quote-actions {
+                flex-direction: column;
+            }
+
+            .stats-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .main-container {
+                padding: 0 1rem;
+            }
+
+            .quote-container {
+                padding: 1.5rem;
+            }
+
+            .item-price {
+                text-align: center;
+            }
+        }
+
+        /* Animaciones */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .quote-item {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .quote-item:nth-child(2) { animation-delay: 0.1s; }
+        .quote-item:nth-child(3) { animation-delay: 0.2s; }
+        .quote-item:nth-child(4) { animation-delay: 0.3s; }
+        .quote-item:nth-child(5) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/catalogo-completo-cards" class="logo">
+                <i class="fas fa-microchip"></i>
+                IT Data Global
+            </a>
+            <div class="nav-buttons">
+                <a href="/dashboard/client" class="nav-btn">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="/catalogo-completo-cards" class="nav-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Catálogo
+                </a>
+                <a href="/mis-favoritos" class="nav-btn">
+                    <i class="fas fa-heart"></i>
+                    Favoritos
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Container Principal -->
+    <div class="main-container">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <ul class="breadcrumb-list">
+                <li><i class="fas fa-home"></i></li>
+                <li><i class="fas fa-chevron-right"></i></li>
+                <li><a href="/dashboard/client">Dashboard</a></li>
+                <li><i class="fas fa-chevron-right"></i></li>
+                <li><a href="/catalogo-completo-cards">Catálogo</a></li>
+                <li><i class="fas fa-chevron-right"></i></li>
+                <li>Mi Cotización</li>
+            </ul>
+        </nav>
+
+        <h1 class="page-title">
+            <i class="fas fa-file-invoice-dollar"></i>
+            Mi Cotización
+        </h1>
+
+        {% if flash_message %}
+        <div class="flash-message">
+            <i class="fas fa-info-circle"></i>
+            {{ flash_message }}
+        </div>
+        {% endif %}
+
+        <!-- Estadísticas rápidas -->
+        {% if items and items|length > 0 %}
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-number">{{ count }}</div>
+                <div class="stat-label">Productos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ items|sum(attribute='quantity') }}</div>
+                <div class="stat-label">Unidades</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ formatted_total }}</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Container de cotización -->
+        <div class="quote-container">
+            {% if not items or items|length == 0 %}
+                <!-- Estado vacío -->
+                <div class="empty-state">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h3>Tu cotización está vacía</h3>
+                    <p>Agrega productos desde el catálogo para comenzar tu cotización</p>
+                    <a href="/catalogo-completo-cards" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                        Explorar catálogo
+                    </a>
+                </div>
+            {% else %}
+                <!-- Items de cotización -->
+                <div class="quote-items">
+                    {% for item in items %}
+                    <div class="quote-item">
+                        <!-- Imagen del producto -->
+                        <img src="https://via.placeholder.com/120x120?text=Producto" 
+                            alt="{{ item.product.description }}" 
+                            class="item-image">
+                        
+                        <!-- Información del producto -->
+                        <div class="item-info">
+                            <h4>{{ item.product.description }}</h4>
+                            <p><strong>SKU:</strong> {{ item.product.ingramPartNumber }}</p>
+                            <p class="brand">{{ item.product.vendorName }}</p>
+                            {% if item.product.extraDescription %}
+                            <p>{{ item.product.extraDescription }}</p>
+                            {% endif %}
+                            <div class="availability in-stock">
+                                <i class="fas fa-check-circle"></i>
+                                En stock
+                            </div>
+                        </div>
+                        
+                        <!-- Controles de cantidad -->
+                        <div class="item-quantity">
+                            <form method="POST" action="/actualizar-cantidad-cotizacion" style="display: flex; align-items: center; gap: 0.75rem;">
+                                <input type="hidden" name="part_number" value="{{ item.product.ingramPartNumber }}">
+                                <button type="button" class="quantity-btn" onclick="updateQuantity('{{ item.product.ingramPartNumber }}', {{ item.quantity - 1 }})" {{ 'disabled' if item.quantity <= 1 else '' }}>
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" name="quantity" class="quantity-input" value="{{ item.quantity }}" 
+                                    min="1" max="999" onchange="this.form.submit()">
+                                <button type="button" class="quantity-btn" onclick="updateQuantity('{{ item.product.ingramPartNumber }}', {{ item.quantity + 1 }})">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Precios -->
+                        <div class="item-price">
+                            {% if item.formatted_total_price and item.formatted_total_price != 'No disponible' %}
+                            <div class="price-main">{{ item.formatted_total_price }}</div>
+                            <div class="price-unit">{{ item.formatted_unit_price }} c/u</div>
+                            {% else %}
+                            <div class="price-main">${{ "%.2f"|format(item.total_price) }}</div>
+                            <div class="price-unit">${{ "%.2f"|format(item.unit_price) }} c/u</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Acciones -->
+                        <div class="item-actions">
+                            <form action="/api/remove-from-quote" method="POST" 
+                                onsubmit="return confirm('¿Eliminar este producto?')">
+                                <input type="hidden" name="product_id" value="{{ item.product.ingramPartNumber }}">
+                                <button class="action-btn" 
+                                        onclick="removeFromQuote('{{ item.product.ingramPartNumber }}')">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Resumen y acciones -->
+                {% if total > 0 %}
+                <div class="totals-section">
+                    <div class="total-line">
+                        <span>Subtotal:</span>
+                        <span>${{ "%.2f"|format(total) }} MXN</span>
+                    </div>
+                    <div class="total-line">
+                        <span>IVA (16%):</span>
+                        <span>${{ "%.2f"|format(total * 0.16) }} MXN</span>
+                    </div>
+                    <div class="total-line grand-total">
+                        <strong>Total con IVA:</strong>
+                        <strong>${{ "%.2f"|format(total * 1.16) }} MXN</strong>
+                    </div>
+                </div>
+
+                <div class="quote-actions">
+                    <form action="/enviar-cotizacion" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane"></i> Enviar cotización al administrador
+                        </button>
+                    </form>
+                    
+                    <form action="/limpiar-cotizacion" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="fas fa-trash"></i> Limpiar cotización
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal para enviar cotización -->
+    <div class="modal-overlay" id="sendQuoteModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeSendQuoteModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="modal-title">
+                <i class="fas fa-paper-plane"></i>
+                Enviar Cotización
+            </h2>
+            <form id="sendQuoteForm" method="POST" action="/products/enviar-cotizacion">
+                <div class="form-group">
+                    <label class="form-label" for="customer_name">Nombre del cliente</label>
+                    <input type="text" id="customer_name" name="customer_name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="customer_email">Email del cliente</label>
+                    <input type="email" id="customer_email" name="customer_email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="customer_phone">Teléfono</label>
+                    <input type="tel" id="customer_phone" name="customer_phone" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="notes">Notas adicionales</label>
+                    <textarea id="notes" name="notes" class="form-input form-textarea" placeholder="Agregue cualquier información adicional o comentario..."></textarea>
+                </div>
+                <div class="quote-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeSendQuoteModal()">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                        Enviar Cotización
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Función simple para actualizar cantidad via GET
+        function updateQuantity(partNumber, newQuantity) {
+            if (newQuantity < 1) return;
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/actualizar-cantidad-cotizacion';
+            
+            const partInput = document.createElement('input');
+            partInput.type = 'hidden';
+            partInput.name = 'part_number';
+            partInput.value = partNumber;
+            
+            const qtyInput = document.createElement('input');
+            qtyInput.type = 'hidden';
+            qtyInput.name = 'quantity';
+            qtyInput.value = newQuantity;
+            
+            form.appendChild(partInput);
+            form.appendChild(qtyInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // Función para mostrar modal de envío de cotización
+        function showSendQuoteModal() {
+            document.getElementById('sendQuoteModal').classList.add('active');
+        }
+
+        // Función para cerrar modal de envío de cotización
+        function closeSendQuoteModal() {
+            document.getElementById('sendQuoteModal').classList.remove('active');
+        }
+
+        // Función para enviar cotización
+        function submitQuote() {
+            // Aquí se enviaría la cotización al servidor
+            const form = document.getElementById('sendQuoteForm');
+            const formData = new FormData(form);
+            
+            // Mostrar indicador de carga
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+            submitBtn.disabled = true;
+            
+            fetch('/enviar-cotizacion', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Cotización enviada correctamente', 'success');
+                    closeSendQuoteModal();
+                    
+                    // Redirigir después de un tiempo
+                    setTimeout(() => {
+                        window.location.href = '/dashboard/client';
+                    }, 2000);
+                } else {
+                    showNotification('Error al enviar la cotización: ' + data.error, 'error');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                showNotification('Error de conexión', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+
+        // Auto-ocultar mensajes flash después de 5 segundos
+        setTimeout(function() {
+            const flashMessage = document.querySelector('.flash-message');
+            if (flashMessage) {
+                flashMessage.style.opacity = '0';
+                flashMessage.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => flashMessage.remove(), 500);
+            }
+        }, 5000);
+
+        function removeFromQuote(productId) {
+            if (confirm('¿Eliminar este producto de la cotización?')) {
+                // Mostrar indicador de carga
+                const button = event.target;
+                const originalHtml = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+                
+                fetch('/api/remove-from-quote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ product_id: productId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Mostrar notificación de éxito
+                        showNotification('Producto eliminado correctamente', 'success');
+                        
+                        // Redirigir a la página de cotización después de 1 segundo
+                        setTimeout(() => {
+                            window.location.href = '/mi-cotizacion';
+                        }, 1000);
+                    } else {
+                        alert('Error: ' + data.error);
+                        button.innerHTML = originalHtml;
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    alert('Error de conexión');
+                    button.innerHTML = originalHtml;
+                    button.disabled = false;
+                });
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Crear notificación toast
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Mostrar toast
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+            
+            // Ocultar y remover después de 5 segundos
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        // Manejar envío del formulario de cotización
+        document.getElementById('sendQuoteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitQuote();
+        });
+
+        // Cerrar modal al hacer clic fuera de él
+        document.getElementById('sendQuoteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSendQuoteModal();
+            }
+        });
+    </script>
+</body>
+</html>
