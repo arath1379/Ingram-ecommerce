@@ -3,63 +3,584 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes | IT Data Global</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Reportes y Analytics | IT Data Global</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #10B981;
+            --primary-dark: #059669;
+            --secondary-color: #1C2A2F;
+            --accent-color: #F15A29;
+            --surface-color: #FFFFFF;
+            --background-color: #F8FAFC;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+            --info-color: #3B82F6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.025em;
+            color: white !important;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .navbar-brand i {
+            font-size: 1.5rem;
+        }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.25rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--primary-color);
+        }
+
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+        }
+
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-item a:hover {
+            color: var(--primary-dark);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .page-header {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .alert-modern {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-modern i {
+            font-size: 1.5rem;
+            color: var(--info-color);
+        }
+
+        .alert-modern .alert-content {
+            flex: 1;
+        }
+
+        .alert-modern .alert-title {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-modern .alert-text {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .report-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .report-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .report-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .report-card.primary::before { background: linear-gradient(90deg, var(--primary-color), var(--primary-dark)); }
+        .report-card.success::before { background: linear-gradient(90deg, #10B981, #059669); }
+        .report-card.info::before { background: linear-gradient(90deg, #3B82F6, #1D4ED8); }
+        .report-card.warning::before { background: linear-gradient(90deg, #F59E0B, #D97706); }
+
+        .report-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+            color: var(--surface-color);
+        }
+
+        .report-icon.primary { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); }
+        .report-icon.success { background: linear-gradient(135deg, #10B981, #059669); }
+        .report-icon.info { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
+        .report-icon.warning { background: linear-gradient(135deg, #F59E0B, #D97706); }
+
+        .report-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .report-description {
+            color: var(--text-secondary);
+            font-size: 0.925rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .report-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(16, 185, 129, 0.03);
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+
+        .btn {
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline-success {
+            border: 2px solid var(--success-color);
+            color: var(--success-color);
+            background: transparent;
+        }
+
+        .btn-outline-success:hover {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-outline-info {
+            border: 2px solid var(--info-color);
+            color: var(--info-color);
+            background: transparent;
+        }
+
+        .btn-outline-info:hover {
+            background: var(--info-color);
+            color: white;
+        }
+
+        .btn-outline-warning {
+            border: 2px solid var(--warning-color);
+            color: var(--warning-color);
+            background: transparent;
+        }
+
+        .btn-outline-warning:hover {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .badge-coming-soon {
+            background: linear-gradient(135deg, var(--warning-color), #D97706);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 0 1rem;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .reports-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .report-stats {
+                gap: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark admin-header">
+        <div class="container-fluid main-container">
             <a class="navbar-brand" href="/admin/dashboard">
-                <i class="fas fa-microchip"></i> IT Data Global - Admin
+                <i class="fas fa-microchip"></i>
+                <span>IT Data Global - Admin</span>
             </a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-cog me-2"></i>
+                        <span>Admin</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/admin/dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item" href="/admin/quotes">
+                            <i class="fas fa-file-invoice me-2"></i>Cotizaciones
+                        </a></li>
+                        <li><a class="dropdown-item" href="/admin/users">
+                            <i class="fas fa-users me-2"></i>Usuarios
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="fas fa-chart-bar"></i> Reportes y Analytics</h1>
-            <a href="/admin/dashboard" class="btn btn-outline-primary">
-                <i class="fas fa-arrow-left"></i> Volver al Dashboard
-            </a>
+    <!-- Main Content -->
+    <div class="main-container py-4">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item active">Reportes y Analytics</li>
+            </ol>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="page-header animate-in">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reportes y Analisis</span>
+                    </h1>
+                    <p class="page-subtitle">Visualiza estadísticas y genera reportes del sistema</p>
+                </div>
+                <a href="/admin/dashboard" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left"></i>Volver
+                </a>
+            </div>
         </div>
 
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> Módulo de reportes en desarrollo.
+        <!-- Alert -->
+        <div class="alert-modern animate-in">
+            <i class="fas fa-info-circle"></i>
+            <div class="alert-content">
+                <div class="alert-title">Módulo en Desarrollo</div>
+                <p class="alert-text">Los reportes avanzados están en desarrollo. Actualmente puedes acceder a las vistas básicas de usuarios y cotizaciones.</p>
+            </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <i class="fas fa-users fa-2x text-primary mb-3"></i>
-                        <h5>Reporte de Usuarios</h5>
-                        <p class="text-muted">Estadísticas de usuarios registrados</p>
-                        <a href="/admin/users" class="btn btn-outline-primary">Ver Usuarios</a>
+        <!-- Reports Grid -->
+        <div class="reports-grid animate-in">
+            <!-- Reporte de Usuarios -->
+            <div class="report-card primary">
+                <div class="report-icon primary">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="report-title">Reporte de Usuarios</h3>
+                <p class="report-description">Estadísticas completas de usuarios registrados, verificación y actividad en la plataforma</p>
+                <div class="report-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">150+</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">85%</div>
+                        <div class="stat-label">Activos</div>
                     </div>
                 </div>
+                <a href="/admin/users" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-eye"></i>Ver Reporte
+                </a>
             </div>
-            <div class="col-md-4">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <i class="fas fa-file-invoice fa-2x text-success mb-3"></i>
-                        <h5>Reporte de Cotizaciones</h5>
-                        <p class="text-muted">Estadísticas de cotizaciones</p>
-                        <a href="/admin/quotes" class="btn btn-outline-success">Ver Cotizaciones</a>
+
+            <!-- Reporte de Cotizaciones -->
+            <div class="report-card success">
+                <div class="report-icon success">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+                <h3 class="report-title">Reporte de Cotizaciones</h3>
+                <p class="report-description">Análisis detallado de cotizaciones generadas, estados, conversiones y seguimiento</p>
+                <div class="report-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">234</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">42%</div>
+                        <div class="stat-label">Aprobadas</div>
                     </div>
                 </div>
+                <a href="/admin/quotes" class="btn btn-outline-success w-100">
+                    <i class="fas fa-eye"></i>Ver Reporte
+                </a>
             </div>
-            <div class="col-md-4">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <i class="fas fa-chart-line fa-2x text-info mb-3"></i>
-                        <h5>Reporte de Ventas</h5>
-                        <p class="text-muted">Estadísticas de ventas</p>
-                        <button class="btn btn-outline-info" disabled>Próximamente</button>
+
+            <!-- Reporte de Ventas -->
+            <div class="report-card info">
+                <div class="report-icon info">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="report-title">
+                    Reporte de Ventas
+                    <span class="badge-coming-soon">Próximamente</span>
+                </h3>
+                <p class="report-description">Métricas de ventas, ingresos, tendencias y análisis de rendimiento comercial</p>
+                <div class="report-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">---</div>
+                        <div class="stat-label">Ventas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">---</div>
+                        <div class="stat-label">Ingresos</div>
                     </div>
                 </div>
+                <button class="btn btn-outline-info w-100" disabled>
+                    <i class="fas fa-lock"></i>En Desarrollo
+                </button>
+            </div>
+
+            <!-- Reporte de Productos -->
+            <div class="report-card warning">
+                <div class="report-icon warning">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <h3 class="report-title">
+                    Reporte de Productos
+                    <span class="badge-coming-soon">Próximamente</span>
+                </h3>
+                <p class="report-description">Catálogo de productos más consultados, categorías y análisis de demanda</p>
+                <div class="report-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">---</div>
+                        <div class="stat-label">Productos</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">---</div>
+                        <div class="stat-label">Categorías</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline-warning w-100" disabled>
+                    <i class="fas fa-lock"></i>En Desarrollo
+                </button>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animación de entrada escalonada
+            const animatedElements = document.querySelectorAll('.animate-in');
+            animatedElements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Hover effects para las tarjetas
+            document.querySelectorAll('.report-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    if (!this.querySelector('button:disabled')) {
+                        this.style.transform = 'translateY(-8px) scale(1.02)';
+                    }
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+        });
+    </script>
 </body>
 </html>

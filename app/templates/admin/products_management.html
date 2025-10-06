@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo Ingram | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #10B981;
+            --primary-dark: #059669;
+            --primary-light: #D1FAE5;
+            --secondary-color: #1C2A2F;
+            --accent-color: #F15A29;
+            --surface-color: #FFFFFF;
+            --background-color: #F8FAFC;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header Premium */
+        .admin-header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #2D3E45 50%, var(--primary-color) 100%);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            transform: translateY(-2px);
+        }
+
+        .navbar-brand i {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
+        }
+
+        /* Breadcrumb Moderno */
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .breadcrumb-item a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-weight: 500;
+        }
+
+        .breadcrumb-item a:hover {
+            color: var(--primary-color);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Page Header Refinado */
+        .page-header {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #DC2626 100%);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.35rem 1rem;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            display: inline-block;
+        }
+
+        /* Search Section Profesional */
+        .catalog-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 24px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .catalog-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .catalog-header h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .search-section {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .search-input-group {
+            position: relative;
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1.25rem 1.25rem 1.25rem 3.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: var(--background-color);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.1);
+            outline: none;
+            background: white;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+        }
+
+        .search-btn {
+            padding: 1.25rem 3rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.4);
+        }
+
+        .form-select {
+            padding: 0.875rem 1.25rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: var(--background-color);
+        }
+
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+            outline: none;
+            background: white;
+        }
+
+        /* Product Cards Premium */
+        .product-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.75rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px rgba(16, 185, 129, 0.2);
+            border-color: var(--primary-color);
+        }
+
+        .product-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .product-image-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            margin-bottom: 1.5rem;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--background-color) 0%, #F1F5F9 100%);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.4s ease;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+
+        .product-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 3rem;
+        }
+
+        .product-meta {
+            background: var(--background-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .product-sku, .product-vendor {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .product-sku strong, .product-vendor strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .price-section {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(239, 68, 68, 0.1);
+        }
+
+        .price-admin {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--danger-color);
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.5px;
+        }
+
+        .price-public {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-decoration: line-through;
+            font-weight: 500;
+        }
+
+        .availability-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .availability-badge i {
+            font-size: 0.75rem;
+        }
+
+        .bg-success {
+            background: linear-gradient(135deg, var(--success-color), #059669) !important;
+            color: white;
+        }
+
+        .bg-warning {
+            background: linear-gradient(135deg, var(--warning-color), #D97706) !important;
+            color: white;
+        }
+
+        .btn-details {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid var(--primary-color);
+            background: transparent;
+            color: var(--primary-color);
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-details:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-disabled {
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+            cursor: not-allowed;
+        }
+
+        /* Alert Mejorado */
+        .alert-info {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            color: #1E40AF;
+            font-weight: 500;
+        }
+
+        .alert-info i {
+            color: #3B82F6;
+        }
+
+        /* Paginación Moderna */
+        .pagination {
+            gap: 0.5rem;
+        }
+
+        .page-item .page-link {
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            color: var(--text-primary);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0;
+        }
+
+        .page-item.active .page-link {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .page-item .page-link:hover {
+            background: var(--primary-light);
+            border-color: var(--primary-color);
+            color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Estado vacío */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--surface-color);
+            border-radius: 24px;
+            border: 2px dashed var(--border-color);
+        }
+
+        .empty-state i {
+            color: var(--text-secondary);
+            opacity: 0.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state h4 {
+            color: var(--text-secondary);
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Botones Mejorados */
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border: none;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .search-input-group {
+                flex-direction: column;
+            }
+
+            .search-btn {
+                width: 100%;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .catalog-header {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark admin-header">
+        <div class="container-fluid" style="max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem;">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-microchip"></i>
+                <span>IT Data Global - Admin</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid py-4" style="max-width: 1400px; margin: 0 auto; padding: 0 1.5rem;">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin/dashboard"><i class="fas fa-home me-1"></i>Dashboard</a></li>
+                <li class="breadcrumb-item active">Catálogo Ingram</li>
+            </ol>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="fas fa-cloud me-2"></i>
+                        Catálogo Ingram Micro
+                    </h1>
+                    <p class="text-muted mb-0">
+                        <span class="admin-badge me-2">Vista Administrador</span> 
+                        Consulta productos y precios de costo en tiempo real
+                    </p>
+                </div>
+                <a href="/admin/dashboard" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+
+        <!-- Barra de búsqueda -->
+        <div class="catalog-header">
+            <div class="row align-items-center position-relative">
+                <div class="col-md-8">
+                    <h3 class="text-white mb-2">
+                        <i class="fas fa-search me-2"></i>
+                        Buscar en Catálogo
+                    </h3>
+                    <p class="text-white mb-0 opacity-90">Encuentra productos por SKU, descripción o fabricante</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario de búsqueda -->
+        <div class="search-section">
+            <form method="GET" action="{{ url_for('admin.products') }}">
+                <div class="search-input-group">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" name="q" 
+                           value="{{ query }}" placeholder="Ingresa SKU, VPN, descripción o fabricante...">
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search me-2"></i>Buscar
+                    </button>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary mb-2">
+                            <i class="fas fa-building me-1"></i>Fabricante
+                        </label>
+                        <select class="form-select" name="vendor">
+                            <option value="">Todos los fabricantes</option>
+                            {% for vendor_option in local_vendors %}
+                                <option value="{{ vendor_option }}" {% if vendor_option == vendor %}selected{% endif %}>
+                                    {{ vendor_option }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold text-secondary mb-2">
+                            <i class="fas fa-list me-1"></i>Resultados por página
+                        </label>
+                        <select class="form-select" name="page_size">
+                            <option value="25" {% if request.args.get('page_size', '25') == '25' %}selected{% endif %}>25 productos</option>
+                            <option value="50" {% if request.args.get('page_size', '25') == '50' %}selected{% endif %}>50 productos</option>
+                            <option value="100" {% if request.args.get('page_size', '25') == '100' %}selected{% endif %}>100 productos</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Resultados -->
+        {% if query or vendor %}
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle me-2"></i>
+            Mostrando <strong>{{ start_record }}-{{ end_record }}</strong> de <strong>{{ total_records }}</strong> resultados
+            {% if query %}para <strong>"{{ query }}"</strong>{% endif %}
+            {% if vendor %}del fabricante <strong>{{ vendor }}</strong>{% endif %}
+        </div>
+        {% endif %}
+
+        {% if productos_ingram %}
+        <div class="row g-4">
+            {% for producto in productos_ingram %}
+            <div class="col-xl-3 col-lg-4 col-md-6">
+                <div class="product-card">
+                    <!-- Imagen -->
+                    <div class="product-image-container">
+                        <img src="{{ get_image_url_enhanced(producto) }}" 
+                             alt="{{ producto.description }}"
+                             class="product-image">
+                    </div>
+
+                    <!-- Título -->
+                    <h5 class="product-title">{{ producto.description }}</h5>
+                    
+                    <!-- Meta información -->
+                    <div class="product-meta">
+                        <div class="product-sku">
+                            <i class="fas fa-barcode"></i>
+                            <span><strong>SKU:</strong> {{ producto.ingram_part_number }}</span>
+                        </div>
+                        <div class="product-vendor">
+                            <i class="fas fa-building"></i>
+                            <span><strong>Marca:</strong> {{ producto.vendor_name }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Precios -->
+                    <div class="price-section">
+                        <div class="price-admin">
+                            {{ producto.precio_original if producto.precio_original else 'Consultar' }}
+                        </div>
+                        {% if producto.precio_publico and producto.precio_publico != 'Consultar' and producto.precio_publico != 'Error' %}
+                        <div class="price-public">
+                            Precio público: {{ producto.precio_publico }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Disponibilidad -->
+                    <div class="mb-3">
+                        <span class="availability-badge {% if producto.disponible %}bg-success{% else %}bg-warning{% endif %}">
+                            <i class="fas fa-{% if producto.disponible %}check-circle{% else %}clock{% endif %}"></i>
+                            {% if producto.disponibilidad_real is defined %}
+                                {{ producto.disponibilidad_real }} disponibles
+                            {% else %}
+                                {{ get_availability_text(producto) }}
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <!-- Acciones -->
+                    {% if producto.ingram_part_number and producto.ingram_part_number != 'None' and producto.ingram_part_number != 'NO SKU' %}
+                    <a href="/admin/products/catalog/{{ producto.ingram_part_number }}" 
+                       class="btn-details">
+                        <i class="fas fa-info-circle me-2"></i>Ver Detalles
+                    </a>
+                    {% else %}
+                    <button class="btn-details btn-disabled" disabled>
+                        <i class="fas fa-exclamation-triangle me-2"></i>SKU Inválido
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if total_pages > 1 %}
+        <nav aria-label="Page navigation" class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if page_number > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.products', page=page_number-1, q=query, vendor=vendor, page_size=request.args.get('page_size', 25)) }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p >= page_number - 2 and p <= page_number + 2 %}
+                    <li class="page-item {% if p == page_number %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.products', page=p, q=query, vendor=vendor, page_size=request.args.get('page_size', 25)) }}">
+                            {{ p }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_number < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.products', page=page_number+1, q=query, vendor=vendor, page_size=request.args.get('page_size', 25)) }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <!-- Estado vacío -->
+        <div class="empty-state">
+            <i class="fas fa-search fa-4x"></i>
+            <h4>
+                {% if query or vendor %}
+                    No se encontraron productos
+                {% else %}
+                    Busca productos en el catálogo
+                {% endif %}
+            </h4>
+            <p class="text-muted mb-4">
+                {% if query or vendor %}
+                    Intenta con otros términos de búsqueda o ajusta los filtros
+                {% else %}
+                    Utiliza el buscador superior para encontrar productos del catálogo Ingram
+                {% endif %}
+            </p>
+            {% if query or vendor %}
+            <a href="{{ url_for('admin.products') }}" class="btn btn-primary">
+                <i class="fas fa-redo me-2"></i>Limpiar búsqueda
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

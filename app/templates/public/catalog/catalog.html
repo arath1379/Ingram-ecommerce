@@ -1241,7 +1241,7 @@
                             {% if p.get('pricing') and p.get('pricing').get('customerPrice') %}
                                 {% set precio_base = p.get('pricing').get('customerPrice') %}
                                 {% set moneda = p.get('pricing').get('currencyCode', '') %}
-                                {% set precio_final = (precio_base * 1.10) | round(2) %}
+                                {% set precio_final = (precio_base * 1.15) | round(2) %}
                                 {{ moneda }} ${{ precio_final | round(2) }}
                             {% else %}
                                 Consultar precio
