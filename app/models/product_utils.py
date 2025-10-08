@@ -522,132 +522,60 @@ class ProductUtils:
         return score
 
     @staticmethod
-    def buscar_productos_hibrido(query="", vendor="", page_number=1, page_size=25, use_keywords=False):
-        """
-        Búsqueda híbrida mejorada con tracking y analytics
-        PRIORIDAD 1: Búsqueda local en base de datos
-        PRIORIDAD 2: Búsqueda en API de Ingram Micro
-        """
-        # Optimizar query
-        optimized_query = ProductUtils.optimize_search_query(query)
-        
-        # Trackear búsqueda
-        ProductUtils.track_search(optimized_query)
-        
-        start_time = time.time()
-        
-        # INICIALIZAR variables locales para evitar errores
-        productos_locales = []
-        total_local = 0
-        error_local = False
-        
-        # PRIORIDAD 1: Búsqueda local si hay query significativa
-        if optimized_query and len(optimized_query.strip()) > 2:
-            try:
-                productos_locales, total_local, error_local = ProductUtils.buscar_local_avanzado(
-                    query=optimized_query,
-                    vendor=vendor,
-                    category=None,
-                    page=page_number,
-                    page_size=page_size
-                )
-                
-                # Si encontramos resultados locales, usarlos (son más rápidos y precisos)
-                if productos_locales and total_local > 0:
-                    end_time = time.time()
-                    ProductUtils.log_search_metrics(optimized_query, total_local, end_time - start_time)
-                    print(f"✅ Búsqueda LOCAL exitosa: {len(productos_locales)} resultados")
-                    return (productos_locales, total_local, False)
+    def buscar_productos_hibrido(query="", vendor="", page_number=1, page_size=25, use_keywords=True):
+        """Versión mejorada con paginación correcta"""
+        try:
+            print(f"DEBUG - Buscando productos - Página: {page_number}, Tamaño: {page_size}")
+            
+            # URL base para el catálogo
+            url = "https://api.ingrammicro.com/resellers/v6/catalog"
+            
+            # Parámetros base
+            params = {
+                'pageSize': page_size,
+                'pageNumber': page_number,
+                'showGroupInfo': 'false'
+            }
+            
+            # Agregar parámetros de búsqueda si existen
+            if query:
+                if use_keywords:
+                    params['keyword'] = query
+                else:
+                    params['ingramPartNumber'] = query
                     
-            except Exception as e:
-                print(f"⚠️  Error en búsqueda local: {str(e)}")
-                # Continuar con búsqueda API si falla la local
-                error_local = True
-        
-        # PRIORIDAD 2: Búsqueda en API con sistema de caché
-        
-        # Generar clave única para esta búsqueda
-        cache_key = f"{optimized_query}_{vendor}_{page_number}_{page_size}_{use_keywords}"
-        
-        # Intentar obtener del caché primero
-        cached_result = search_cache.get(cache_key)
-        if cached_result:
-            end_time = time.time()
-            ProductUtils.log_search_metrics(optimized_query, cached_result['total_records'], end_time - start_time)
-            print(f"✅ Resultados desde CACHÉ: {cached_result['total_records']} resultados")
-            return (cached_result['productos'], cached_result['total_records'], 
-                    cached_result['pagina_vacia'])
-
-        productos = []
-        total_records = 0
-        pagina_vacia = False
-
-        # Si la consulta parece un SKU (sin espacios y alfanumérico), intentar búsqueda directa primero
-        if optimized_query and not vendor and not optimized_query.strip().isspace() and len(optimized_query) >= 3:
-            # Verificar si la consulta parece un SKU (sin espacios, principalmente alfanumérico)
-            sku_like = optimized_query.replace(" ", "").replace("-", "").replace("_", "")
-            if sku_like.isalnum() and len(sku_like) >= 3:
-                try:
-                    productos_sku = ProductUtils.buscar_por_sku_directo(optimized_query)
-                    if productos_sku:
-                        productos = productos_sku
-                        total_records = len(productos)
-                        # Guardar en caché
-                        search_cache.save(cache_key, {
-                            'productos': productos,
-                            'total_records': total_records,
-                            'pagina_vacia': pagina_vacia
-                        })
-                        end_time = time.time()
-                        ProductUtils.log_search_metrics(optimized_query, total_records, end_time - start_time)
-                        ProductUtils.analyze_search_patterns(optimized_query, total_records)
-                        print(f"✅ Búsqueda por SKU exitosa: {total_records} resultados")
-                        return productos, total_records, pagina_vacia
-                        
-                except Exception as e:
-                    print(f"⚠️  Error en búsqueda por SKU: {str(e)}")
-                    # Continuar con búsqueda normal
-        try:
-            if use_keywords and optimized_query:
-                # CORRECCIÓN: Usar el método correcto buscar_por_palabras_clave
-                productos, total_records, pagina_vacia = ProductUtils.buscar_por_palabras_clave(
-                    optimized_query, vendor, page_number, page_size
-                )
+            if vendor:
+                params['vendorName'] = vendor
+            
+            print(f"DEBUG - Llamando a API con params: {params}")
+            
+            # Llamada a la API
+            response = APIClient.make_request("GET", url, params=params)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                print(f"DEBUG - API response keys: {list(data.keys())}")
+                print(f"DEBUG - Productos encontrados: {len(data.get('catalog', []))}, Total: {data.get('recordsFound', 0)}")
+                
+                # Extraer información de paginación
+                total_records = data.get('recordsFound', 0)
+                catalog = data.get('catalog', [])
+                next_page = data.get('nextPage')
+                
+                print(f"Search: {query}, Results: {total_records}, Time: {data.get('responseTime', 0)}s")
+                
+                return catalog, total_records, len(catalog) == 0
+                
             else:
-                productos, total_records, pagina_vacia = ProductUtils.buscar_en_catalogo_general(
-                    optimized_query, vendor, page_number, page_size
-                )
+                print(f"ERROR - API response: {response.status_code if response else 'No response'}")
+                return [], 0, True
                 
         except Exception as e:
-            print(f"❌ Error en búsqueda API: {str(e)}")
-            # Si falla la API, intentar devolver resultados locales aunque sean pocos
-            if productos_locales and total_local > 0:
-                print("🔄 Fallback a resultados locales por error en API")
-                return productos_locales, total_local, False
-            # Si no hay resultados locales, devolver error
+            print(f"ERROR en buscar_productos_hibrido: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return [], 0, True
-
-        # Guardar en caché para futuras consultas
-        try:
-            search_cache.save(cache_key, {
-                'productos': productos,
-                'total_records': total_records,
-                'pagina_vacia': pagina_vacia
-            })
-        except Exception as e:
-            print(f"⚠️  Error guardando en caché: {str(e)}")
-
-        end_time = time.time()
         
-        # Log metrics
-        ProductUtils.log_search_metrics(optimized_query, total_records, end_time - start_time)
-        
-        # Analizar patrones
-        ProductUtils.analyze_search_patterns(optimized_query, total_records)
-        
-        print(f"✅ Búsqueda API exitosa: {total_records} resultados")
-        return productos, total_records, pagina_vacia
-    
     @staticmethod
     def _is_highly_relevant_product(producto, original_query, relevance_score):
         """
@@ -844,18 +772,11 @@ class ProductUtils:
         # Intentar con cada variante
         for sku in sku_variants[:5]:
             try:
-                url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-                body = {"products": [{"ingramPartNumber": sku}]}
-                params = {
-                    "includeAvailability": "true",
-                    "includePricing": "true",
-                    "includeProductAttributes": "true"
-                }
+                price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability?includeAvailability=true&includePricing=true"
+                response = APIClient.make_request("POST", price_url, json=body) 
                 
-                res = APIClient.make_request("POST", url, params=params, json=body)
-                
-                if res.status_code == 200:
-                    data = res.json()
+                if response.status_code == 200:
+                    data = response.json()
                     if isinstance(data, list) and data:
                         producto_info = data[0]
                         
@@ -998,18 +919,11 @@ class ProductUtils:
             if not part_number:
                 return None
                 
-            url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-            body = {"products": [{"ingramPartNumber": part_number}]}
-            params = {
-                "includeAvailability": "true",
-                "includePricing": "true",
-                "includeProductAttributes": "true"
-            }
+            price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability?includeAvailability=true&includePricing=true"
+            response = APIClient.make_request("POST", price_url, json=body) 
             
-            res = APIClient.make_request("POST", url, params=params, json=body)
-            
-            if res.status_code == 200:
-                data = res.json()
+            if response.status_code == 200:
+                data = response.json()
                 if isinstance(data, list) and data:
                     return data[0]  # Devolver el primer (y único) producto
                     

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ detalle.description }} | Admin</title>
+    <title>{{ detalle.description }} | IT Data Global Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -23,10 +23,6 @@
             --warning-color: #F59E0B;
             --danger-color: #EF4444;
             --info-color: #3B82F6;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -42,20 +38,20 @@
             line-height: 1.6;
         }
 
-        /* Header Premium */
+        /* Header */
         .admin-header {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, #2D3E45 50%, var(--primary-color) 100%);
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
             box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
             position: sticky;
             top: 0;
             z-index: 1000;
-            backdrop-filter: blur(10px);
         }
 
         .navbar-brand {
             font-size: 1.25rem;
             font-weight: 700;
             letter-spacing: -0.5px;
+            color: white !important;
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -68,19 +64,13 @@
 
         .navbar-brand i {
             font-size: 1.5rem;
-            color: var(--primary-color);
-            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
-        }
-
-        .nav-link {
-            font-weight: 600;
-            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
         }
 
         .dropdown-menu {
             border: none;
             border-radius: 16px;
-            box-shadow: var(--shadow-xl);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
             padding: 0.5rem;
         }
 
@@ -89,8 +79,6 @@
             padding: 0.75rem 1rem;
             font-weight: 500;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
         }
 
         .dropdown-item:hover {
@@ -99,15 +87,17 @@
             transform: translateX(4px);
         }
 
-        .dropdown-item i {
-            width: 24px;
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
         }
 
-        /* Breadcrumb Moderno */
+        /* Breadcrumb */
         .breadcrumb {
             background: transparent;
             padding: 0;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .breadcrumb-item a {
@@ -126,55 +116,67 @@
             font-weight: 600;
         }
 
-        /* Cards Premium */
-        .card {
+        /* Cards */
+        .modern-card {
+            background: var(--surface-color);
             border: 1px solid var(--border-color);
-            border-radius: 24px;
-            box-shadow: var(--shadow-md);
+            border-radius: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
             overflow: hidden;
-            background: var(--surface-color);
+            position: relative;
         }
 
-        .card:hover {
-            box-shadow: var(--shadow-xl);
+        .modern-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
         }
 
-        .card-header {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
-            border-bottom: 2px solid var(--border-color);
+        .modern-card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header-modern {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            border-bottom: 1px solid var(--border-color);
             padding: 1.5rem 2rem;
         }
 
-        .card-header h3 {
+        .card-header-modern h3 {
             font-size: 1.75rem;
             font-weight: 800;
             letter-spacing: -0.5px;
             margin: 0;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-color) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
         }
 
-        .card-body {
+        .card-body-modern {
             padding: 2rem;
         }
 
-        /* Imagen del Producto */
+        /* Product Image */
         .product-image-container {
             position: relative;
             background: linear-gradient(135deg, var(--background-color) 0%, #F1F5F9 100%);
-            border-radius: 20px;
-            padding: 3rem;
+            border-radius: 16px;
+            padding: 2.5rem;
             margin-bottom: 2rem;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
+            min-height: 350px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
 
         .product-image {
             width: 100%;
             height: auto;
-            max-height: 400px;
+            max-height: 350px;
             object-fit: contain;
             transition: transform 0.4s ease;
         }
@@ -183,50 +185,53 @@
             transform: scale(1.05);
         }
 
-        /* Precios Premium */
+        /* Price Section */
         .price-section {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.02) 100%);
-            border: 2px solid rgba(239, 68, 68, 0.15);
-            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.03) 100%);
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            border-radius: 16px;
             padding: 2rem;
             margin-bottom: 2rem;
             text-align: center;
         }
 
         .price-label {
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--text-secondary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
         .price-admin {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: 900;
-            color: var(--danger-color);
+            color: var(--primary-color);
             line-height: 1;
-            margin-bottom: 1rem;
-            letter-spacing: -2px;
-            text-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+            margin-bottom: 0.75rem;
+            letter-spacing: -1px;
         }
 
         .price-public {
-            font-size: 1.25rem;
+            font-size: 1rem;
             color: var(--text-secondary);
             text-decoration: line-through;
             font-weight: 600;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         /* Badges */
         .admin-badge {
             background: linear-gradient(135deg, var(--danger-color) 0%, #DC2626 100%);
             color: white;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
-            padding: 0.5rem 1.25rem;
+            padding: 0.5rem 1rem;
             border-radius: 50px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -240,72 +245,37 @@
             display: inline-flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 1.25rem 2rem;
-            border-radius: 16px;
-            font-size: 1.125rem;
+            padding: 1rem 1.75rem;
+            border-radius: 12px;
+            font-size: 1rem;
             font-weight: 700;
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow-md);
+            margin-bottom: 1.5rem;
         }
 
         .bg-success {
             background: linear-gradient(135deg, var(--success-color), #059669) !important;
             color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .bg-warning {
             background: linear-gradient(135deg, var(--warning-color), #D97706) !important;
             color: white;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
         }
 
-        /* Info Cards */
-        .info-card {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%);
-            border: 2px solid rgba(59, 130, 246, 0.1);
-            border-radius: 20px;
-            padding: 1.75rem;
-            margin-bottom: 2rem;
-            transition: all 0.3s ease;
-        }
-
-        .info-card:hover {
-            border-color: rgba(59, 130, 246, 0.3);
-            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
-        }
-
-        .info-card h6 {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: var(--info-color);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .info-card p {
-            margin-bottom: 0.75rem;
-            font-size: 1rem;
-            color: var(--text-primary);
-        }
-
-        .info-card strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        /* Sección de Información */
-        .info-row {
+        /* Info Grid */
+        .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
         .info-item {
             background: var(--background-color);
-            padding: 1.25rem;
-            border-radius: 16px;
+            padding: 1.5rem;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
             transition: all 0.3s ease;
         }
@@ -314,25 +284,33 @@
             border-color: var(--primary-color);
             background: white;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+            transform: translateY(-2px);
         }
 
-        .info-item strong {
-            display: block;
-            font-size: 0.875rem;
+        .info-item-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             font-weight: 700;
         }
 
-        .info-item span {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--text-primary);
+        .info-item-label i {
+            color: var(--primary-color);
         }
 
-        /* Sección de Especificaciones */
+        .info-item-value {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        /* Section Headers */
         .section-header {
             display: flex;
             align-items: center;
@@ -349,29 +327,48 @@
             color: var(--primary-color);
         }
 
-        /* Tabla de Especificaciones */
+        /* Description */
+        .description-section {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%);
+            border-left: 4px solid var(--info-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .description-section p {
+            font-size: 1.0625rem;
+            line-height: 1.8;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        /* Specs Table */
         .specs-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
         }
 
         .specs-table tbody tr {
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .specs-table tbody tr:hover {
-            background: var(--background-color);
+            background: rgba(16, 185, 129, 0.03);
         }
 
         .specs-table td {
-            padding: 1.25rem;
+            padding: 1rem 1.25rem;
             border-bottom: 1px solid var(--border-color);
-            font-size: 1rem;
+            font-size: 0.9375rem;
         }
 
         .specs-table td:first-child {
-            width: 35%;
+            width: 40%;
             font-weight: 700;
             color: var(--text-primary);
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, transparent 100%);
@@ -382,27 +379,62 @@
             font-weight: 500;
         }
 
-        .specs-table tbody tr:first-child td {
-            border-top: 1px solid var(--border-color);
-        }
-
         .specs-table tbody tr:last-child td {
             border-bottom: none;
         }
 
-        /* Botones Premium */
+        /* Info Card */
+        .info-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%);
+            border: 2px solid rgba(59, 130, 246, 0.1);
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-top: 2rem;
+        }
+
+        .info-card h6 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--info-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-card p {
+            margin-bottom: 0.75rem;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+        }
+
+        .info-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-card strong {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        /* Buttons */
         .btn-back {
             width: 100%;
             padding: 1rem;
             border: 2px solid var(--primary-color);
             background: transparent;
             color: var(--primary-color);
-            border-radius: 16px;
+            border-radius: 12px;
             font-weight: 700;
             font-size: 1rem;
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
         }
 
         .btn-back:hover {
@@ -412,14 +444,16 @@
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
         }
 
-        /* Alerts Premium */
+        /* Alerts */
         .alert {
             border: none;
-            border-radius: 16px;
-            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
             font-weight: 500;
-            box-shadow: var(--shadow-md);
             margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
         .alert-success {
@@ -440,75 +474,91 @@
             color: #1E40AF;
         }
 
-        /* Description Section */
-        .description-section {
-            background: var(--background-color);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            border-left: 4px solid var(--primary-color);
-        }
-
-        .description-section p {
-            font-size: 1.0625rem;
-            line-height: 1.8;
-            color: var(--text-secondary);
-            margin: 0;
-        }
-
-        /* Stock Info Grid */
-        .stock-grid {
+        /* Quick Actions */
+        .quick-actions {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-bottom: 2rem;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
         }
 
-        .stock-item {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
-            border: 2px solid rgba(16, 185, 129, 0.15);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .stock-item:hover {
-            border-color: var(--primary-color);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-        }
-
-        .stock-item-label {
+        .action-btn {
+            padding: 0.875rem 1.5rem;
+            border: 2px solid var(--border-color);
+            background: white;
+            color: var(--text-primary);
+            border-radius: 12px;
+            font-weight: 600;
             font-size: 0.875rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-secondary);
-            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
         }
 
-        .stock-item-value {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--primary-color);
+        .action-btn:hover {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            transform: translateX(4px);
+        }
+
+        .action-btn i {
+            font-size: 1rem;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideIn 0.4s ease-out;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .card-body {
+            .main-container {
+                padding: 0 1rem;
+            }
+
+            .card-body-modern {
                 padding: 1.5rem;
             }
 
             .price-admin {
-                font-size: 2.5rem;
+                font-size: 2rem;
             }
 
             .section-header {
                 font-size: 1.25rem;
             }
 
-            .stock-grid {
+            .info-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .specs-table td {
+                display: block;
+                width: 100% !important;
+            }
+
+            .specs-table td:first-child {
+                border-bottom: none;
+                padding-bottom: 0.5rem;
+            }
+
+            .specs-table td:last-child {
+                padding-top: 0.5rem;
             }
         }
     </style>
@@ -516,7 +566,7 @@
 <body>
     <!-- Header -->
     <nav class="navbar navbar-expand-lg navbar-dark admin-header">
-        <div class="container-fluid" style="max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem;">
+        <div class="container-fluid main-container" style="padding: 1rem 1.5rem;">
             <a class="navbar-brand" href="/admin/dashboard">
                 <i class="fas fa-microchip"></i>
                 <span>IT Data Global - Admin</span>
@@ -531,7 +581,7 @@
                         <li><a class="dropdown-item" href="/admin/dashboard">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a></li>
-                        <li><a class="dropdown-item" href="/admin/products?view=catalog">
+                        <li><a class="dropdown-item" href="/admin/products">
                             <i class="fas fa-boxes me-2"></i>Catálogo
                         </a></li>
                         <li><a class="dropdown-item" href="/admin/quotes">
@@ -548,12 +598,12 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="container-fluid py-4" style="max-width: 1400px; margin: 0 auto; padding: 0 1.5rem;">
+    <div class="main-container py-4">
         <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb">
+        <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/admin/dashboard"><i class="fas fa-home me-1"></i>Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="/admin/products?view=catalog"><i class="fas fa-boxes me-1"></i>Catálogo</a></li>
+                <li class="breadcrumb-item"><a href="/admin/products"><i class="fas fa-boxes me-1"></i>Catálogo</a></li>
                 <li class="breadcrumb-item active">{{ part_number }}</li>
             </ol>
         </nav>
@@ -562,8 +612,9 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        <strong><i class="fas fa-info-circle me-2"></i></strong>{{ message }}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show animate-in" role="alert">
+                        <i class="fas fa-info-circle"></i>
+                        <span>{{ message }}</span>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
@@ -571,100 +622,123 @@
         {% endwith %}
 
         <div class="row g-4">
-            <!-- Columna Izquierda: Imagen, Precios y Disponibilidad -->
+            <!-- Left Column: Image, Price & Availability -->
             <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-body">
-                        <!-- Imagen -->
+                <div class="modern-card animate-in">
+                    <div class="card-body-modern">
+                        <!-- Product Image -->
                         <div class="product-image-container">
-                            <img src="{{ imagen_url }}" 
+                            <img src="{{ imagen_url if imagen_url else 'https://via.placeholder.com/400x400?text=Sin+Imagen' }}" 
                                  alt="{{ detalle.description }}" 
-                                 class="product-image">
+                                 class="product-image"
+                                 onerror="this.src='https://via.placeholder.com/400x400?text=Sin+Imagen'">
                         </div>
                         
-                        <!-- Precios -->
+                        <!-- Price Section -->
                         <div class="price-section">
                             <div class="price-label">
-                                <i class="fas fa-tag me-1"></i>Precio de Cliente
+                                <i class="fas fa-tag"></i>
+                                Precio de Costo
                             </div>
                             <div class="price-admin">
-                                {{ precio_original }}
+                                {{ precio_original if precio_original else 'Consultar' }}
                             </div>
+                            {% if precio_publico and precio_publico != 'Consultar' %}
                             <div class="price-public">
-                                Precio público: {{ precio_publico }}
+                                Público: {{ precio_publico }}
                             </div>
+                            {% endif %}
                             <span class="admin-badge">
                                 <i class="fas fa-eye"></i>
                                 Vista Administrador
                             </span>
                         </div>
 
-                        <!-- Disponibilidad -->
-                        <div class="text-center mb-4">
-                            <span class="availability-badge {% if inventory_info.available %}bg-success{% else %}bg-warning{% endif %}">
-                                <i class="fas fa-{% if inventory_info.available %}check-circle{% else %}clock{% endif %}"></i>
-                                {{ disponibilidad }}
+                        <!-- Availability -->
+                        <div class="text-center">
+                            <span class="availability-badge {% if inventory_info and inventory_info.available %}bg-success{% else %}bg-warning{% endif %}">
+                                <i class="fas fa-{% if inventory_info and inventory_info.available %}check-circle{% else %}clock{% endif %}"></i>
+                                {{ disponibilidad if disponibilidad else 'Consultar disponibilidad' }}
                             </span>
                         </div>
 
-                        <!-- Información de Stock -->
-                        <div class="stock-grid">
-                            <div class="stock-item">
-                                <div class="stock-item-label">
-                                    <i class="fas fa-boxes me-1"></i>En Stock
-                                </div>
-                                <div class="stock-item-value">{{ inventory_info.total_availability }}</div>
-                            </div>
-                            <div class="stock-item">
-                                <div class="stock-item-label">
-                                    <i class="fas fa-clock me-1"></i>Backorder
-                                </div>
-                                <div class="stock-item-value">
-                                    {% if inventory_info.backOrderable %}
-                                        <i class="fas fa-check text-success"></i>
-                                    {% else %}
-                                        <i class="fas fa-times text-danger"></i>
-                                    {% endif %}
-                                </div>
-                            </div>
+                        <!-- Quick Actions -->
+                        <div class="quick-actions">
+                            <a href="/admin/products" class="btn-back">
+                                <i class="fas fa-arrow-left"></i>Volver al Catálogo
+                            </a>
                         </div>
-
-                        <!-- Botón de Acción -->
-                        <a href="/admin/products?view=catalog" class="btn-back">
-                            <i class="fas fa-arrow-left me-2"></i>Volver al Catálogo
-                        </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Columna Derecha: Información Detallada -->
+            <!-- Right Column: Detailed Information -->
             <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header">
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
                         <h3>{{ detalle.description }}</h3>
                     </div>
-                    <div class="card-body">
-                        <!-- Información Básica -->
-                        <div class="info-row">
+                    <div class="card-body-modern">
+                        <!-- Basic Information Grid -->
+                        <div class="info-grid">
                             <div class="info-item">
-                                <strong><i class="fas fa-barcode me-1"></i>SKU Ingram</strong>
-                                <span>{{ part_number }}</span>
+                                <div class="info-item-label">
+                                    <i class="fas fa-barcode"></i>
+                                    SKU Ingram
+                                </div>
+                                <div class="info-item-value">{{ part_number }}</div>
                             </div>
+                            
+                            {% if detalle.vendorPartNumber %}
                             <div class="info-item">
-                                <strong><i class="fas fa-building me-1"></i>Fabricante</strong>
-                                <span>{{ detalle.vendorName }}</span>
+                                <div class="info-item-label">
+                                    <i class="fas fa-hashtag"></i>
+                                    VPN
+                                </div>
+                                <div class="info-item-value">{{ detalle.vendorPartNumber }}</div>
                             </div>
+                            {% endif %}
+                            
                             <div class="info-item">
-                                <strong><i class="fas fa-folder me-1"></i>Categoría</strong>
-                                <span>{{ detalle.category }}</span>
+                                <div class="info-item-label">
+                                    <i class="fas fa-building"></i>
+                                    Fabricante
+                                </div>
+                                <div class="info-item-value">{{ detalle.vendorName if detalle.vendorName else 'N/A' }}</div>
                             </div>
+                            
+                            {% if detalle.upc %}
                             <div class="info-item">
-                                <strong><i class="fas fa-qrcode me-1"></i>UPC</strong>
-                                <span>{{ detalle.upc or 'N/A' }}</span>
+                                <div class="info-item-label">
+                                    <i class="fas fa-qrcode"></i>
+                                    UPC
+                                </div>
+                                <div class="info-item-value">{{ detalle.upc }}</div>
                             </div>
+                            {% endif %}
+
+                            {% if detalle.category %}
+                            <div class="info-item">
+                                <div class="info-item-label">
+                                    <i class="fas fa-folder"></i>
+                                    Categoría
+                                </div>
+                                <div class="info-item-value">{{ detalle.category }}</div>
+                            </div>
+                            {% endif %}
+
+                            {% if detalle.subCategory %}
+                            <div class="info-item">
+                                <div class="info-item-label">
+                                    <i class="fas fa-folder-open"></i>
+                                    Subcategoría
+                                </div>
+                                <div class="info-item-value">{{ detalle.subCategory }}</div>
+                            </div>
+                            {% endif %}
                         </div>
 
-                        <!-- Descripción -->
+                        <!-- Description -->
                         {% if detalle.description %}
                         <div class="section-header">
                             <i class="fas fa-file-alt"></i>
@@ -675,8 +749,8 @@
                         </div>
                         {% endif %}
 
-                        <!-- Especificaciones -->
-                        {% if atributos %}
+                        <!-- Technical Specifications -->
+                        {% if atributos and atributos|length > 0 %}
                         <div class="section-header">
                             <i class="fas fa-list-alt"></i>
                             Especificaciones Técnicas
@@ -686,24 +760,14 @@
                                 <tbody>
                                     {% for attr in atributos %}
                                     <tr>
-                                        <td>{{ attr.name }}</td>
-                                        <td>{{ attr.value }}</td>
+                                        <td>{{ attr.name if attr.name else attr.attributeName }}</td>
+                                        <td>{{ attr.value if attr.value else attr.attributeValue }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                         {% endif %}
-
-                        <!-- Información Adicional -->
-                        <div class="info-card mt-4">
-                            <h6>
-                                <i class="fas fa-info-circle"></i>
-                                Información Adicional
-                            </h6>
-                            <p><strong>Vendor Part Number:</strong> {{ detalle.vendorPartNumber or 'N/A' }}</p>
-                            <p class="mb-0"><strong>Última consulta:</strong> {{ fecha_consulta }}</p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -711,5 +775,23 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animación de entrada escalonada
+            const animatedElements = document.querySelectorAll('.animate-in');
+            animatedElements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Auto-hide alerts
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+    </script>
 </body>
 </html>

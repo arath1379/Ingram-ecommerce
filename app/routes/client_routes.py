@@ -27,7 +27,7 @@ def get_current_user_id():
     """Obtener ID del usuario actual de la sesión"""
     return session.get('user_id', 'anonymous_user')
 
-# ==================== FUNCIONES AUXILIARES ====================
+# ==================== FUNCIONES AUXILIARES OPTIMIZADAS ====================
 
 def get_user_quotes(user_id):
     """Obtener cotización del usuario usando los nuevos modelos"""
@@ -61,8 +61,6 @@ def get_user_quotes(user_id):
 def add_to_quote(user_id, product_data, quantity=1):
     """Agregar producto a cotización usando nuevos modelos"""
     try:
-        print(f"DEBUG - add_to_quote iniciado para: {product_data['ingramPartNumber']}")
-        
         # Obtener o crear quote
         quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
         if not quote:
@@ -70,13 +68,11 @@ def add_to_quote(user_id, product_data, quantity=1):
             quote = Quote(user_id=user_id, quote_number=quote_number, status='draft')
             db.session.add(quote)
             db.session.flush()
-            print(f"DEBUG - Nueva quote creada: {quote_number}")
         
         # Buscar o crear producto
         product = Product.query.filter_by(ingram_part_number=product_data['ingramPartNumber']).first()
         if not product:
             base_price = product_data.get('pricing', {}).get('customerPrice', 0)
-            print(f"DEBUG - Creando nuevo producto, precio base: {base_price}")
             
             product = Product(
                 ingram_part_number=product_data['ingramPartNumber'],
@@ -92,7 +88,6 @@ def add_to_quote(user_id, product_data, quantity=1):
             )
             db.session.add(product)
             db.session.flush()
-            print(f"DEBUG - Nuevo producto creado: {product.ingram_part_number}")
         
         # Buscar item existente
         existing_item = QuoteItem.query.filter_by(quote_id=quote.id, product_id=product.id).first()
@@ -100,7 +95,6 @@ def add_to_quote(user_id, product_data, quantity=1):
         if existing_item:
             existing_item.quantity += quantity
             existing_item.calculate_total()
-            print(f"DEBUG - Item existente actualizado, cantidad: {existing_item.quantity}")
         else:
             unit_price = product.base_price * 1.10  # 10% markup
             new_item = QuoteItem(
@@ -111,19 +105,15 @@ def add_to_quote(user_id, product_data, quantity=1):
             )
             new_item.calculate_total()
             db.session.add(new_item)
-            print(f"DEBUG - Nuevo item creado, precio: {unit_price}, cantidad: {quantity}")
         
         # Recalcular total
         quote.calculate_total()
         db.session.commit()
-        print(f"DEBUG - Quote guardada exitosamente, total: {quote.total_amount}")
         return True
         
     except Exception as e:
         db.session.rollback()
         print(f"Error adding to quote: {e}")
-        import traceback
-        traceback.print_exc()
         raise
 
 def toggle_favorite(user_id, product_data):
@@ -155,7 +145,6 @@ def toggle_favorite(user_id, product_data):
 
 def is_product_favorite(user_id, part_number):
     """Verificar si un producto está en favoritos usando nuevos modelos"""
-    # Para usuarios anónimos, siempre retornar false
     if user_id == 'anonymous_user':
         return False
     
@@ -169,51 +158,36 @@ def is_product_favorite(user_id, part_number):
         print(f"Error en is_product_favorite: {str(e)}")
         return False
 
-def remove_from_quote(user_id, part_number):
+def remove_product_from_quote(user_id, part_number):
     """Eliminar producto de cotización usando nuevos modelos"""
     try:
-        print(f"DEBUG: remove_from_quote - User: {user_id}, Part: {part_number}")
-        
         # Obtener la cotización del usuario
         quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
         if not quote:
-            print("DEBUG: No quote found for user")
             return False
-        print(f"DEBUG: Quote found: {quote.id}")
         
         # Buscar el producto en la base de datos local
         product = Product.query.filter_by(ingram_part_number=part_number).first()
         if not product:
-            print(f"DEBUG: Product {part_number} not found in database")
             return False
-        print(f"DEBUG: Product found: {product.id}")
         
         # Buscar el item en la cotización
         item = QuoteItem.query.filter_by(quote_id=quote.id, product_id=product.id).first()
         if not item:
-            print(f"DEBUG: Product {part_number} not found in quote")
             return False
-        print(f"DEBUG: Quote item found: {item.id}")
         
         # Eliminar el item
         db.session.delete(item)
-        print("DEBUG: Item deleted from session")
         
         # Recalcular el total de la cotización
         quote.calculate_total()
-        print("DEBUG: Total recalculated")
         
         # Guardar cambios
         db.session.commit()
-        print("DEBUG: Changes committed to database")
-        
-        print(f"DEBUG: Product {part_number} removed successfully")
         return True
         
     except Exception as e:
         print(f"ERROR in remove_from_quote: {str(e)}")
-        import traceback
-        traceback.print_exc()
         db.session.rollback()
         return False
 
@@ -306,8 +280,8 @@ def client_dashboard():
             'pending_quotes': pending_quotes,
             'approved_quotes': approved_quotes,
             'favorites_count': favorites_count,
-            'discount': 15,  # Ejemplo de descuento
-            'credit_limit': 50000,  # Ejemplo de límite de crédito
+            'discount': 15,
+            'credit_limit': 50000,
             'now': datetime.now(),
             'user_type': 'client'
         }
@@ -428,17 +402,9 @@ def producto_detalle(part_number=None, sku=None):
                 producto = productos[0]
                 extra_description = producto.get("extraDescription")
 
-        # Precio y disponibilidad
-        price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-        body = {"products": [{"ingramPartNumber": product_id}]}
-        params = {
-            "includeAvailability": "true",
-            "includePricing": "true",
-            "includeProductAttributes": "true"
-        }
-        precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
-        precio = precio_res.json() if precio_res.status_code == 200 else []
-        precio_info = precio[0] if isinstance(precio, list) and precio else (precio if isinstance(precio, dict) else {})
+        # Precio y disponibilidad - USANDO MÉTODO CORREGIDO
+        price_data = APIClient.get_product_price_and_availability(product_id)
+        precio_info = price_data if price_data else {}
 
         # Calcular precio final con markup del 10%
         pricing = precio_info.get("pricing") or {}
@@ -489,91 +455,7 @@ def producto_detalle(part_number=None, sku=None):
         print(f"Error obteniendo detalle del producto {product_id}: {str(e)}")
         return render_template("errors/500.html", message="Error al cargar el detalle del producto"), 500
 
-# ==================== RUTAS DE COTIZACIONES ====================
-
-@client_routes_bp.route("/agregar-cotizacion", methods=["GET", "POST"])
-def agregar_cotizacion():
-    """Añadir producto a cotización - CON BASE DE DATOS"""
-    try:
-        if request.method == 'GET':
-            part_number = request.args.get('part_number')
-            if not part_number:
-                return render_template("error.html", error="Número de parte requerido")
-            
-            # Obtener detalles del producto
-            detail_url = f"https://api.ingrammicro.com/resellers/v6/catalog/details/{part_number}"
-            detalle_res = APIClient.make_request("GET", detail_url)
-            
-            if detalle_res.status_code != 200:
-                return render_template("error.html", error="Producto no encontrado")
-            
-            detalle = detalle_res.json()
-            
-            # Obtener precio real de la API
-            price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-            body = {"products": [{"ingramPartNumber": part_number}]}
-            params = {
-                "includeAvailability": "true",
-                "includePricing": "true",
-                "includeProductAttributes": "true"
-            }
-            precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
-            
-            real_price = 0
-            availability_data = {}
-            
-            if precio_res.status_code == 200:
-                precio_data = precio_res.json()
-                if precio_data and isinstance(precio_data, list) and len(precio_data) > 0:
-                    first_product = precio_data[0]
-                    pricing = first_product.get('pricing', {})
-                    customer_price = pricing.get('customerPrice')
-                    
-                    if customer_price is not None:
-                        try:
-                            real_price = float(customer_price)
-                        except (ValueError, TypeError):
-                            real_price = 0
-                    
-                    availability_data = first_product.get('availability', {})
-            
-            # Construir datos del producto
-            product_data = {
-                'ingramPartNumber': part_number,
-                'description': detalle.get('description', f"Producto {part_number}"),
-                'pricing': {'customerPrice': real_price},
-                'vendorName': detalle.get('vendorName', 'N/A'),
-                'upc': detalle.get('upc', ''),
-                'category': detalle.get('category', ''),
-                'availability': availability_data,
-                'productImages': detalle.get('productImages', [])
-            }
-            quantity = 1
-            
-        else:
-            # POST method
-            product_data = {
-                'ingramPartNumber': request.form.get('part_number'),
-                'description': request.form.get('description'),
-                'pricing': {'customerPrice': float(request.form.get('price', 0))},
-                'vendorName': request.form.get('vendor', 'N/A'),
-                'upc': request.form.get('upc', ''),
-                'category': request.form.get('category', ''),
-                'availability': {}
-            }
-            quantity = int(request.form.get('quantity', 1))
-        
-        user_id = get_current_user_id()
-        
-        # Usar base de datos en lugar de diccionario en memoria
-        add_to_quote(user_id, product_data, quantity)
-        
-        session['flash_message'] = "Producto agregado a cotización"
-        return redirect('/mi-cotizacion')
-        
-    except Exception as e:
-        print(f"Error al agregar a cotización: {str(e)}")
-        return render_template("error.html", error=f"Error al agregar producto: {str(e)}")
+# ==================== RUTAS DE COTIZACIONES UNIFICADAS ====================
 
 @client_routes_bp.route('/mi-cotizacion', methods=["GET"])
 def mi_cotizacion():
@@ -637,51 +519,7 @@ def mi_cotizacion():
         print(f"Error al cargar cotización: {str(e)}")
         return render_template("error.html", error=f"Error al cargar cotización: {str(e)}")
 
-# ==================== RUTAS DE FAVORITOS ====================
-
-@client_routes_bp.route('/agregar-favorito', methods=["POST"])
-def agregar_favorito():
-    """Añadir/eliminar producto de favoritos - CON BASE DE DATOS"""
-    try:
-        part_number = request.form.get('part_number')
-        
-        if not part_number:
-            return render_template("errors/error.html", error="Número de parte requerido")
-        
-        # Si no tenemos descripción, obtenerla de la API
-        description = request.form.get('description')
-        vendor = request.form.get('vendor')
-        
-        if not description:
-            detail_url = f"https://api.ingrammicro.com/resellers/v6/catalog/details/{part_number}"
-            detalle_res = APIClient.make_request("GET", detail_url)
-            if detalle_res.status_code == 200:
-                detalle = detalle_res.json()
-                description = detalle.get('description', f"Producto {part_number}")
-                vendor = vendor or detalle.get('vendorName', 'N/A')
-        
-        product_data = {
-            'ingramPartNumber': part_number,
-            'description': description or f"Producto {part_number}",
-            'vendorName': vendor or 'N/A'
-        }
-        
-        user_id = get_current_user_id()
-        
-        # Usar base de datos en lugar de diccionario en memoria
-        action = toggle_favorite(user_id, product_data)
-        
-        if action == 'added':
-            message = "Producto agregado a favoritos"
-        else:
-            message = "Producto eliminado de favoritos"
-        
-        session['flash_message'] = message
-        return redirect(request.referrer or '/')
-        
-    except Exception as e:
-        print(f"Error con favoritos: {str(e)}")
-        return render_template("error.html", error=f"Error con favoritos: {str(e)}")
+# ==================== RUTAS DE FAVORITOS UNIFICADAS ====================
 
 @client_routes_bp.route('/mis-favoritos', methods=["GET"])
 @client_routes_bp.route('/favorites', methods=["GET"])
@@ -704,22 +542,6 @@ def mis_favoritos():
     except Exception as e:
         print(f"Error al cargar favoritos: {str(e)}")
         return render_template("error.html", error=f"Error al cargar favoritos: {str(e)}")
-    
-@client_routes_bp.route('/eliminar-favorito', methods=["POST"])
-def eliminar_favorito():
-    """Eliminar producto de favoritos (ruta HTML)"""
-    try:
-        part_number = request.form.get('part_number')
-        
-        user_id = get_current_user_id()
-        remove_from_favorites(user_id, part_number)
-        
-        session['flash_message'] = "Producto eliminado de favoritos"
-        return redirect('/mis-favoritos')
-        
-    except Exception as e:
-        session['flash_message'] = f"Error al eliminar favorito: {str(e)}"
-        return redirect('/mis-favoritos')
 
 # ==================== RUTAS DE HISTORIAL DE COTIZACIONES ====================
 
@@ -832,67 +654,6 @@ def request_quote_approval(quote_id):
         flash('Error al solicitar aprobación', 'error')
         return redirect('/quote/history')
 
-# ==================== RUTAS ADICIONALES DE COTIZACIONES ====================
-@client_routes_bp.route('/quote/create', methods=['POST'])
-@login_required_sessions
-def create_quote_from_cart():
-    """Crear una cotización formal desde el carrito/cotización actual"""
-    try:
-        user_id = session.get('user_id')
-        user = User.query.get(user_id)
-        
-        # Obtener la cotización en borrador actual
-        draft_quote = Quote.query.filter_by(user_id=user_id, status='draft').first()
-        
-        if not draft_quote or not draft_quote.items:
-            flash('No hay productos en tu cotización actual', 'warning')
-            return redirect('/mi-cotizacion')
-        
-        # Crear una nueva cotización formal
-        quote_number = f"QT{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        formal_quote = Quote(
-            user_id=user_id,
-            quote_number=quote_number,
-            status='sent',  # Cambiado a 'sent' para indicar que se envió
-            total_amount=0,  # Se calculará después con IVA
-            business_name=user.business_name,
-            contact_name=user.full_name,
-            contact_email=user.email
-        )
-        db.session.add(formal_quote)
-        db.session.flush()
-        
-        # Copiar los items a la nueva cotización
-        for draft_item in draft_quote.items:
-            formal_item = QuoteItem(
-                quote_id=formal_quote.id,
-                product_id=draft_item.product_id,
-                quantity=draft_item.quantity,
-                unit_price=draft_item.unit_price,
-                total_price=draft_item.total_price
-            )
-            db.session.add(formal_item)
-        
-        # ENVIAR AL ADMINISTRADOR CON IVA INCLUIDO
-        send_quote_to_admin(formal_quote, user)
-        
-        # Limpiar la cotización en borrador
-        for item in draft_quote.items:
-            db.session.delete(item)
-        draft_quote.total_amount = 0
-        draft_quote.status = 'converted'  # Marcar como convertida
-        
-        db.session.commit()
-        
-        flash(f'Cotización #{quote_number} enviada al administrador. Total con IVA: ${formal_quote.total_amount:,.2f} MXN', 'success')
-        return redirect('/quote/history')
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error creando cotización: {str(e)}")
-        flash('Error al crear la cotización', 'error')
-        return redirect('/mi-cotizacion')
-    
 @client_routes_bp.route('/quote/duplicate/<int:quote_id>', methods=['POST'])
 @login_required_sessions
 def duplicate_quote(quote_id):
@@ -941,7 +702,7 @@ def duplicate_quote(quote_id):
         flash('Error al duplicar la cotización', 'error')
         return redirect('/quote/history')
 
-# ==================== APIs JSON ====================
+# ==================== APIs JSON UNIFICADAS ====================
 
 @client_routes_bp.route("/api/get-quote", methods=["GET"])
 def api_get_quote():
@@ -1068,73 +829,11 @@ def api_check_favorite(product_id):
             'favorites_count': 0
         }), 500
 
-# ==================== APIs DE GESTIÓN ====================
+# ==================== APIs DE GESTIÓN UNIFICADAS ====================
 
-@client_routes_bp.route('/api/update-quote-quantity', methods=['POST'])
-def api_update_quote_quantity():
-    """Actualizar cantidad en cotización - CON BASE DE DATOS"""
-    try:
-        data = request.get_json()
-        product_id = data.get('product_id')
-        quantity = int(data.get('quantity', 1))
-        
-        user_id = get_current_user_id()
-        update_quote_quantity(user_id, product_id, quantity)
-        
-        return jsonify({'success': True})
-        
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@client_routes_bp.route('/api/remove-from-quote', methods=['POST'])
-def api_remove_from_quote():
-    """Eliminar producto de cotización - CON BASE DE DATOS"""
-    try:
-        print("DEBUG: api_remove_from_quote called")
-        
-        # Manejar tanto JSON como form data
-        if request.is_json:
-            data = request.get_json()
-            product_id = data.get('product_id')
-            print(f"DEBUG: JSON request - product_id: {product_id}")
-        else:
-            # Para formularios tradicionales
-            product_id = request.form.get('product_id')
-            print(f"DEBUG: Form request - product_id: {product_id}")
-        
-        if not product_id:
-            print("DEBUG: No product_id provided")
-            return jsonify({'success': False, 'error': 'product_id requerido'}), 400
-        
-        user_id = get_current_user_id()
-        print(f"DEBUG: User ID: {user_id}, Removing product: {product_id}")
-        
-        result = remove_from_quote(user_id, product_id)
-        
-        if result:
-            return jsonify({'success': True, 'message': 'Producto eliminado de cotización'})
-        else:
-            return jsonify({'success': False, 'error': 'Producto no encontrado en cotización'})
-        
-    except Exception as e:
-        print(f"ERROR en api_remove_from_quote: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@client_routes_bp.route('/api/clear-quote', methods=['POST'])
-def api_clear_quote():
-    """Limpiar cotización completa - CON BASE DE DATOS"""
-    try:
-        user_id = get_current_user_id()
-        clear_user_quote(user_id)
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@client_routes_bp.route('/api/add-to-quote', methods=['POST'])
+@client_routes_bp.route('/api/quote/add', methods=['POST'])
 def api_add_to_quote():
-    """API para agregar producto a cotización"""
+    """API UNIFICADA para agregar producto a cotización"""
     try:
         data = request.get_json()
         part_number = data.get('part_number')
@@ -1154,8 +853,6 @@ def api_add_to_quote():
             except (ValueError, TypeError):
                 quantity = 1
         
-        print(f"DEBUG - Quantity recibida: {quantity}")
-        
         # Obtener datos del producto
         detail_url = f"https://api.ingrammicro.com/resellers/v6/catalog/details/{part_number}"
         detalle_res = APIClient.make_request("GET", detail_url)
@@ -1165,47 +862,23 @@ def api_add_to_quote():
         
         detalle = detalle_res.json()
         
-        # Obtener precio y disponibilidad
-        price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-        body = {"products": [{"ingramPartNumber": part_number}]}
-        params = {
-            "includeAvailability": "true",
-            "includePricing": "true",
-            "includeProductAttributes": "true"
-        }
-        precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
+        # Obtener precio usando método corregido
+        price_data = APIClient.get_product_price_and_availability(part_number)
         
         real_price = 0
         availability_data = {}
         
-        if precio_res.status_code == 200:
-            precio_data = precio_res.json()
-            print(f"DEBUG - Precio API response: {precio_data}")
+        if price_data:
+            pricing = price_data.get('pricing', {})
+            customer_price = pricing.get('customerPrice')
             
-            if isinstance(precio_data, list) and len(precio_data) > 0:
-                first_product = precio_data[0]
-                pricing = first_product.get('pricing', {})
-                customer_price = pricing.get('customerPrice')
-                
-                print(f"DEBUG - Customer price: {customer_price}, Type: {type(customer_price)}")
-                
-                if customer_price is not None:
-                    try:
-                        real_price = float(customer_price)
-                        print(f"DEBUG - Precio convertido: {real_price}")
-                    except (ValueError, TypeError) as e:
-                        print(f"DEBUG - Error convirtiendo precio: {e}")
-                        real_price = 0
-                else:
-                    print("DEBUG - Customer price es None")
+            if customer_price is not None:
+                try:
+                    real_price = float(customer_price)
+                except (ValueError, TypeError):
                     real_price = 0
-                
-                availability_data = first_product.get('availability', {})
-                print(f"DEBUG - Availability: {availability_data}")
-            else:
-                print(f"DEBUG - Formato inesperado de respuesta: {type(precio_data)}")
-        else:
-            print(f"DEBUG - Error en API precio: {precio_res.status_code}")
+            
+            availability_data = price_data.get('availability', {})
         
         product_data = {
             'ingramPartNumber': part_number,
@@ -1218,8 +891,6 @@ def api_add_to_quote():
             'productImages': detalle.get('productImages', [])
         }
         
-        print(f"DEBUG - Product data: {product_data}")
-        
         user_id = get_current_user_id()
         add_to_quote(user_id, product_data, quantity)
         
@@ -1231,13 +902,64 @@ def api_add_to_quote():
         
     except Exception as e:
         print(f"Error en api_add_to_quote: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@client_routes_bp.route('/api/toggle-favorite', methods=['POST'])
+@client_routes_bp.route('/api/quote/remove', methods=['POST'])
+def api_remove_from_quote():
+    """API UNIFICADA para eliminar producto de cotización"""
+    try:
+        # Manejar tanto JSON como form data
+        if request.is_json:
+            data = request.get_json()
+            product_id = data.get('product_id')
+        else:
+            # Para formularios tradicionales
+            product_id = request.form.get('product_id')
+        
+        if not product_id:
+            return jsonify({'success': False, 'error': 'product_id requerido'}), 400
+        
+        user_id = get_current_user_id()
+        result = remove_product_from_quote(user_id, product_id)
+        
+        if result:
+            return jsonify({'success': True, 'message': 'Producto eliminado de cotización'})
+        else:
+            return jsonify({'success': False, 'error': 'Producto no encontrado en cotización'})
+        
+    except Exception as e:
+        print(f"ERROR en api_remove_from_quote: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@client_routes_bp.route('/api/quote/update-quantity', methods=['POST'])
+def api_update_quote_quantity():
+    """API UNIFICADA para actualizar cantidad en cotización"""
+    try:
+        data = request.get_json()
+        product_id = data.get('product_id')
+        quantity = int(data.get('quantity', 1))
+        
+        user_id = get_current_user_id()
+        update_quote_quantity(user_id, product_id, quantity)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@client_routes_bp.route('/api/quote/clear', methods=['POST'])
+def api_clear_quote():
+    """API UNIFICADA para limpiar cotización completa"""
+    try:
+        user_id = get_current_user_id()
+        clear_user_quote(user_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@client_routes_bp.route('/api/favorite/toggle', methods=['POST'])
 def api_toggle_favorite():
-    """API para agregar/eliminar favorito"""
+    """API UNIFICADA para agregar/eliminar favorito"""
     try:
         data = request.get_json()
         part_number = data.get('part_number')
@@ -1273,6 +995,73 @@ def api_toggle_favorite():
     except Exception as e:
         print(f"Error en api_toggle_favorite: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ==================== RUTAS DE ELIMINACIÓN DE COTIZACIONES ====================
+
+@client_routes_bp.route('/quote/delete/<int:quote_id>', methods=['POST'])
+@login_required_sessions
+def delete_quote(quote_id):
+    """Eliminar una cotización del historial (solo borradores y propias)"""
+    try:
+        user_id = session.get('user_id')
+        quote = Quote.query.filter_by(id=quote_id, user_id=user_id).first()
+        
+        if not quote:
+            flash('Cotización no encontrada', 'error')
+            return redirect('/quote/history')
+        
+        # Solo permitir eliminar cotizaciones en estado 'draft' o 'sent'
+        if quote.status not in ['draft', 'sent']:
+            flash('Solo puedes eliminar cotizaciones en borrador o enviadas', 'warning')
+            return redirect('/quote/history')
+        
+        quote_number = quote.quote_number
+        
+        # Eliminar items primero
+        QuoteItem.query.filter_by(quote_id=quote_id).delete()
+        
+        # Eliminar la cotización
+        db.session.delete(quote)
+        db.session.commit()
+        
+        flash(f'Cotización #{quote_number} eliminada correctamente', 'success')
+        return redirect('/quote/history')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error eliminando cotización: {str(e)}")
+        flash('Error al eliminar la cotización', 'error')
+        return redirect('/quote/history')
+
+@client_routes_bp.route('/quote/cancel/<int:quote_id>', methods=['POST'])
+@login_required_sessions
+def cancel_quote(quote_id):
+    """Cancelar una cotización (cambio de estado a cancelled)"""
+    try:
+        user_id = session.get('user_id')
+        quote = Quote.query.filter_by(id=quote_id, user_id=user_id).first()
+        
+        if not quote:
+            flash('Cotización no encontrada', 'error')
+            return redirect('/quote/history')
+        
+        # Solo permitir cancelar cotizaciones que no estén ya canceladas o aprobadas
+        if quote.status in ['cancelled', 'approved', 'completed']:
+            flash(f'No puedes cancelar una cotización en estado: {quote.status}', 'warning')
+            return redirect('/quote/history')
+        
+        quote.status = 'cancelled'
+        quote.updated_at = datetime.now()
+        db.session.commit()
+        
+        flash(f'Cotización #{quote.quote_number} cancelada correctamente', 'warning')
+        return redirect('/quote/history')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error cancelando cotización: {str(e)}")
+        flash('Error al cancelar la cotización', 'error')
+        return redirect('/quote/history')
 
 # ==================== RUTAS DE UTILIDAD ====================
 
@@ -1317,11 +1106,6 @@ def limpiar_busqueda():
     """Limpiar parámetros de búsqueda y redirigir a página 1"""
     return redirect('/catalogo-completo-cards?page=1')
 
-@client_routes_bp.route("/it-data-global", methods=["GET"])
-def it_data_global():
-    """Redirigir a página 1 del catálogo (para botones)"""
-    return redirect('/catalogo-completo-cards?page=1')
-
 @client_routes_bp.route("/pagina/<int:page_number>", methods=["GET"])
 def ir_a_pagina(page_number):
     """Ir a una página específica manteniendo los filtros actuales"""
@@ -1335,20 +1119,12 @@ def send_quote_to_admin(quote, user):
         # Calcular totales con IVA
         totals = quote.calculate_totals_with_tax()
         
-        # Aquí implementas el envío al administrador
-        # Opción 1: Guardar en base de datos para que el admin lo vea
-        # Opción 2: Enviar email
-        # Opción 3: Notificación interna
-        
-        # EJEMPLO: Guardar en la misma cotización (modificando el modelo)
+        # Guardar en la misma cotización
         quote.subtotal = totals['subtotal']
         quote.tax_amount = totals['tax_amount']
         quote.total_amount = totals['total_with_tax']
         quote.status = 'sent'  # Cambiar estado a enviado
         db.session.commit()
-        
-        # EJEMPLO: También podrías enviar un email
-        # send_quote_email_to_admin(quote, user, totals)
         
         print(f"COTIZACIÓN ENVIADA AL ADMINISTRADOR:")
         print(f"Quote ID: {quote.id}")
@@ -1361,7 +1137,7 @@ def send_quote_to_admin(quote, user):
     except Exception as e:
         print(f"Error enviando cotización al admin: {str(e)}")
         return False
-    
+
 @client_routes_bp.route('/enviar-cotizacion', methods=['POST'])
 @login_required_sessions
 def enviar_cotizacion():
@@ -1391,4 +1167,3 @@ def enviar_cotizacion():
         print(f"Error enviando cotización: {str(e)}")
         flash('Error al enviar la cotización', 'error')
         return redirect('/mi-cotizacion')
-    

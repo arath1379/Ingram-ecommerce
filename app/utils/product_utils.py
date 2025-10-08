@@ -2,6 +2,7 @@
 from flask import current_app
 from collections import defaultdict
 from datetime import datetime, timedelta
+from app.models.api_client import APIClient
 import re
 import time
 import requests
@@ -309,45 +310,19 @@ class ProductUtils:
     
     @staticmethod
     def get_price_and_availability(part_numbers):
-        """Obtener precios y disponibilidad para productos"""
+        """Obtener precios y disponibilidad para productos - VERSIÓN CORREGIDA"""
         try:
             if not part_numbers:
                 return []
             
-            headers = ProductUtils.get_api_headers()
-            if not headers:
-                return []
+            # Usa APIClient en lugar de requests directo
+            results = []
+            for part_number in part_numbers:
+                price_data = APIClient.get_product_price_and_availability(part_number)
+                if price_data:
+                    results.append(price_data)
             
-            base_url = current_app.config.get('INGRAM_API_BASE_URL')
-            endpoint = f"{base_url}/resellers/v6/catalog/priceandavailability"
-            
-            params = {
-                'includeAvailability': 'true',
-                'includePricing': 'true',
-                'includeProductAttributes': 'true'
-            }
-            
-            # Body para POST
-            body = {
-                "showIngramPartNumberOnly": True,
-                "products": [
-                    {"ingramPartNumber": pn} for pn in part_numbers
-                ]
-            }
-            
-            response = requests.post(
-                endpoint,
-                headers=headers,
-                params=params,
-                json=body,
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                return response.json()
-            else:
-                print(f"Error en precios: {response.status_code} - {response.text}")
-                return []
+            return results
                 
         except Exception as e:
             print(f"Excepción en get_price_and_availability: {str(e)}")

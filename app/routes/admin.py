@@ -1,7 +1,7 @@
-# app/routes/admin.py - VERSIÓN COMPLETA CON CATÁLOGO
+# app/routes/admin.py - VERSIÓN OPTIMIZADA SIN DUPLICADOS
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, jsonify
 from datetime import datetime
-from sqlalchemy import or_
+from sqlalchemy import func
 from app import db
 from app.models import User, Quote, Product, QuoteHistory
 from app.models.product_utils import ProductUtils
@@ -24,7 +24,6 @@ def admin_required(f):
             flash('Acceso restringido a administradores', 'danger')
             return redirect(url_for('main.index'))
         
-        print(f"✅ Acceso admin concedido a: {user.email}")
         return f(*args, **kwargs)
     return decorated_function
 
@@ -34,14 +33,11 @@ def admin_required(f):
 def dashboard():
     """Dashboard principal de administración."""
     try:
-        from sqlalchemy import func
-        from datetime import date
-        
         total_users = User.query.count()
-        business_users = User.query.filter_by(account_type='business').count()
+        client_users = User.query.filter_by(account_type='client').count()
         total_quotes = Quote.query.count()
         quotes_today = Quote.query.filter(
-            func.date(Quote.created_at) == date.today()
+            func.date(Quote.created_at) == datetime.now().date()
         ).count()
         
         new_users_month = User.query.filter(
@@ -52,7 +48,7 @@ def dashboard():
         admin_data = {
             'user_name': session.get('user_email', 'Administrador'),
             'total_users': total_users,
-            'business_users': business_users,
+            'client_users': client_users,
             'total_quotes': total_quotes,
             'total_sales': 0,
             'quotes_today': quotes_today,
@@ -65,33 +61,10 @@ def dashboard():
         return render_template('admin/admin_dashboard.html', admin_data=admin_data)
         
     except Exception as e:
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head><title>Dashboard Admin</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-        </head>
-        <body>
-            <div class="container mt-4">
-                <div class="alert alert-warning">
-                    <h4>Dashboard de Administración</h4>
-                    <p>Error: {str(e)}</p>
-                </div>
-                <a href="/admin/users" class="btn btn-primary">Gestionar Usuarios</a>
-                <a href="/logout" class="btn btn-secondary">Cerrar Sesión</a>
-            </div>
-        </body>
-        </html>
-        """
+        flash(f'Error en dashboard: {str(e)}', 'danger')
+        return render_template('admin/admin_dashboard.html', admin_data={})
 
-@admin_bp.route('/test')
-@admin_required
-def test():
-    user = User.query.get(session['user_id'])
-    return jsonify({'status': 'success', 'user': user.email, 'is_admin': user.is_admin})
-
-# ==================== RUTAS DE GESTIÓN ====================
+# ==================== GESTIÓN DE USUARIOS (VERSIÓN UNIFICADA) ====================
 @admin_bp.route('/users')
 @admin_required
 def users():
@@ -102,6 +75,7 @@ def users():
         
         query = User.query
         
+        # Filtros
         search = request.args.get('search', '').strip()
         if search:
             query = query.filter(
@@ -130,36 +104,167 @@ def users():
         
         return render_template('admin/users.html', 
                              users=pagination.items, 
-                             pagination=pagination,
-                             current_user=User.query.get(session['user_id']))
+                             pagination=pagination)
         
     except Exception as e:
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head><title>Error</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        </head>
-        <body>
-            <div class="container mt-4">
-                <div class="alert alert-danger">
-                    <h4>Error cargando usuarios</h4>
-                    <p>{str(e)}</p>
-                </div>
-                <a href="/admin/dashboard" class="btn btn-primary">Volver al Dashboard</a>
-            </div>
-        </body>
-        </html>
-        """
+        flash(f'Error cargando usuarios: {str(e)}', 'danger')
+        return render_template('admin/users.html', users=[], pagination=None)
 
+@admin_bp.route('/users/view/<int:user_id>')
+@admin_required
+def view_user(user_id):
+    """Vista detallada de un usuario."""
+    try:
+        user = User.query.get_or_404(user_id)
+        user_quotes = Quote.query.filter_by(user_id=user_id).count()
+        recent_quotes = Quote.query.filter_by(user_id=user_id).order_by(Quote.created_at.desc()).limit(5).all()
+        
+        return render_template('admin/user_detail.html',
+                             user=user,
+                             user_quotes=user_quotes,
+                             recent_quotes=recent_quotes)
+        
+    except Exception as e:
+        flash(f'Error al cargar usuario: {str(e)}', 'danger')
+        return redirect(url_for('admin.users'))
+
+@admin_bp.route('/users/edit/<int:user_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_user(user_id):
+    """Editar usuario - REEMPLAZA todas las rutas individuales de verify/activate/etc."""
+    try:
+        user = User.query.get_or_404(user_id)
+        current_admin = User.query.get(session['user_id'])
+        
+        if request.method == 'POST':
+            # Campos básicos
+            user.full_name = request.form.get('full_name', user.full_name)
+            user.email = request.form.get('email', user.email)
+            user.business_name = request.form.get('business_name', user.business_name)
+            user.rfc = request.form.get('rfc', user.rfc)
+            user.curp = request.form.get('curp', user.curp)
+            
+            # Campos comerciales
+            try:
+                user.credit_limit = float(request.form.get('credit_limit', 0))
+                user.discount_percentage = float(request.form.get('discount_percentage', 0))
+            except ValueError:
+                pass
+            
+            user.payment_terms = request.form.get('payment_terms', user.payment_terms)
+            user.tax_id = request.form.get('tax_id', user.tax_id)
+            user.commercial_reference = request.form.get('commercial_reference', user.commercial_reference)
+            
+            # Campos de permisos (solo admin)
+            if current_admin.is_admin:
+                account_type = request.form.get('account_type')
+                if account_type in ['public', 'client', 'admin']:
+                    user.account_type = account_type
+                
+                user.is_active = 'is_active' in request.form
+                user.is_verified = 'is_verified' in request.form
+                user.is_admin = 'is_admin' in request.form
+            
+            # Cambio de contraseña
+            new_password = request.form.get('new_password', '').strip()
+            if new_password:
+                confirm_password = request.form.get('confirm_password', '').strip()
+                if new_password == confirm_password and len(new_password) >= 6:
+                    user.set_password(new_password)
+                    flash('Contraseña actualizada', 'success')
+                else:
+                    flash('Error en contraseña', 'warning')
+            
+            user.updated_at = datetime.now()
+            db.session.commit()
+            
+            flash('Usuario actualizado exitosamente', 'success')
+            return redirect(url_for('admin.view_user', user_id=user_id))
+        
+        return render_template('admin/user_edit.html', user=user)
+        
+    except Exception as e:
+        flash(f'Error al editar usuario: {str(e)}', 'danger')
+        db.session.rollback()
+        return redirect(url_for('admin.users'))
+
+@admin_bp.route('/users/create', methods=['GET', 'POST'])
+@admin_required
+def create_user():
+    """Crear nuevo usuario."""
+    try:
+        if request.method == 'POST':
+            email = request.form.get('email', '').strip().lower()
+            full_name = request.form.get('full_name', '').strip()
+            
+            if not email or not full_name:
+                flash('Email y nombre son obligatorios', 'danger')
+                return redirect(url_for('admin.create_user'))
+            
+            if User.query.filter_by(email=email).first():
+                flash('El email ya existe', 'danger')
+                return redirect(url_for('admin.create_user'))
+            
+            new_user = User(
+                email=email,
+                full_name=full_name,
+                business_name=request.form.get('business_name', ''),
+                rfc=request.form.get('rfc', ''),
+                curp=request.form.get('curp', ''),
+                account_type=request.form.get('account_type', 'public'),
+                is_active='is_active' in request.form,
+                is_verified='is_verified' in request.form,
+                is_admin='is_admin' in request.form,
+                credit_limit=float(request.form.get('credit_limit', 0)),
+                discount_percentage=float(request.form.get('discount_percentage', 0)),
+                payment_terms=request.form.get('payment_terms', 'CONTADO')
+            )
+            
+            temp_password = "Temp123!"
+            new_user.set_password(temp_password)
+            
+            db.session.add(new_user)
+            db.session.commit()
+            
+            flash(f'Usuario creado. Contraseña temporal: {temp_password}', 'success')
+            return redirect(url_for('admin.view_user', user_id=new_user.id))
+        
+        return render_template('admin/user_create.html')
+        
+    except Exception as e:
+        flash(f'Error al crear usuario: {str(e)}', 'danger')
+        db.session.rollback()
+        return redirect(url_for('admin.users'))
+
+@admin_bp.route('/users/delete/<int:user_id>')
+@admin_required
+def delete_user(user_id):
+    """Eliminar usuario."""
+    try:
+        user = User.query.get_or_404(user_id)
+        
+        if user.id == session.get('user_id'):
+            flash('No puedes eliminar tu propia cuenta', 'danger')
+            return redirect(url_for('admin.users'))
+        
+        email = user.email
+        db.session.delete(user)
+        db.session.commit()
+        
+        flash(f'Usuario {email} eliminado', 'success')
+        
+    except Exception as e:
+        flash(f'Error al eliminar usuario: {str(e)}', 'danger')
+        db.session.rollback()
+    
+    return redirect(url_for('admin.users'))
+
+# ==================== GESTIÓN DE COTIZACIONES (VERSIÓN UNIFICADA) ====================
 @admin_bp.route('/quotes')
 @admin_required
 def quotes():
     """Gestión de cotizaciones."""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Gestión de cotizaciones por: {user.email}")
-        
         page = request.args.get('page', 1, type=int)
         per_page = 20
         
@@ -186,10 +291,6 @@ def quotes():
             'pending': Quote.query.filter_by(status='pending').count(),
             'approved': Quote.query.filter_by(status='approved').count(),
             'rejected': Quote.query.filter_by(status='rejected').count(),
-            'in_progress': Quote.query.filter_by(status='in_progress').count(),
-            'completed': Quote.query.filter_by(status='completed').count(),
-            'invoiced': Quote.query.filter_by(status='invoiced').count(),
-            'paid': Quote.query.filter_by(status='paid').count(),
             'cancelled': Quote.query.filter_by(status='cancelled').count()
         }
         
@@ -197,531 +298,17 @@ def quotes():
                              quotes=quotes_pagination.items,
                              pagination=quotes_pagination,
                              status_filter=status_filter,
-                             current_status=status_filter,
                              search=search,
                              stats=stats)
         
     except Exception as e:
         flash(f'Error al cargar cotizaciones: {str(e)}', 'danger')
-        return render_template('admin/quotes.html', 
-                             quotes=[], 
-                             pagination=None,
-                             stats={'total': 0, 'draft': 0, 'sent': 0, 'pending': 0, 'approved': 0, 'rejected': 0, 'in_progress': 0, 'completed': 0, 'invoiced': 0, 'paid': 0, 'cancelled': 0})
-    
-# ==================== GESTIÓN DE PRODUCTOS (SOLO CATÁLOGO INGRAM) ====================
-@admin_bp.route('/products')
-@admin_required
-def products():
-    """Gestión de productos - Solo catálogo Ingram para admin"""
-    try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Catálogo Admin por: {user.email}")
-        
-        # Parámetros de búsqueda del catálogo
-        page_number = int(request.args.get("page", 1))
-        page_size = int(request.args.get("page_size", 25))
-        query = request.args.get("q", "").strip()
-        vendor = request.args.get("vendor", "").strip()
-        
-        print(f"DEBUG - Catálogo Admin - Page: {page_number}, Query: '{query}', Vendor: '{vendor}'")
-        
-        # Buscar productos en Ingram
-        productos, total_records, pagina_vacia = ProductUtils.buscar_productos_hibrido(
-            query=query, 
-            vendor=vendor, 
-            page_number=page_number, 
-            page_size=page_size, 
-            use_keywords=bool(query)
-        )
-        
-        print(f"DEBUG - Productos recibidos: {len(productos)}")
-        
-        # DEBUG DETALLADO DE LA ESTRUCTURA DE DATOS
-        if productos:
-            print(f"DEBUG - Tipo de productos: {type(productos)}")
-            print(f"DEBUG - Primer producto completo: {productos[0]}")
-            print(f"DEBUG - Claves del primer producto: {list(productos[0].keys()) if isinstance(productos[0], dict) else 'No es dict'}")
-            
-            # Buscar la clave correcta para el SKU
-            primer_producto = productos[0]
-            if isinstance(primer_producto, dict):
-                for key, value in primer_producto.items():
-                    if 'sku' in key.lower() or 'part' in key.lower() or 'number' in key.lower():
-                        print(f"DEBUG - Posible clave SKU: '{key}' = '{value}'")
-        
-        # Aplicar lógica específica para admin (precios originales)
-        productos_admin = []
-        for i, producto in enumerate(productos):
-            print(f"DEBUG - Procesando producto {i}: {type(producto)}")
-            
-            if not isinstance(producto, dict):
-                print(f"DEBUG - Producto {i} no es diccionario: {producto}")
-                continue
-                
-            producto_admin = producto.copy()
-            
-            # BUSCAR LA CLAVE CORRECTA DEL SKU - MÚLTIPLES POSIBILIDADES
-            sku = None
-            posibles_claves = ['ingramPartNumber', 'ingram_part_number', 'sku', 'partNumber', 'vendorPartNumber']
-            
-            for clave in posibles_claves:
-                if clave in producto_admin:
-                    sku = producto_admin[clave]
-                    print(f"DEBUG - Encontrado SKU en clave '{clave}': {sku}")
-                    break
-            
-            # Si no encontramos con las claves conocidas, buscar cualquier clave que contenga 'sku' o 'part'
-            if not sku:
-                for clave, valor in producto_admin.items():
-                    if 'sku' in clave.lower() or 'part' in clave.lower():
-                        sku = valor
-                        print(f"DEBUG - Encontrado SKU en clave alternativa '{clave}': {sku}")
-                        break
-            
-            # VERIFICAR QUE TENGA SKU VÁLIDO
-            if not sku:
-                print(f"DEBUG - Producto {i} sin SKU válido. Claves disponibles: {list(producto_admin.keys())}")
-                producto_admin['precio_original'] = "SKU No Encontrado"
-                producto_admin['precio_publico'] = "SKU No Encontrado"
-                producto_admin['ingram_part_number'] = "NO SKU"
-                productos_admin.append(producto_admin)
-                continue
-            
-            print(f"DEBUG - Procesando producto con SKU: {sku}")
-            
-            # Para admin, mostrar información completa y precios originales
-            try:
-                # Obtener precio original de la API
-                price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-                body = {"products": [{"ingramPartNumber": sku}]}
-                params = {
-                    "includeAvailability": "true",
-                    "includePricing": "true"
-                }
-                
-                print(f"DEBUG - Consultando precio para: {sku}")
-                precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
-                
-                if precio_res and precio_res.status_code == 200:
-                    precio_data = precio_res.json()
-                    if precio_data and isinstance(precio_data, list) and len(precio_data) > 0:
-                        first_product = precio_data[0]
-                        if first_product.get('productStatusCode') != 'E':
-                            pricing = first_product.get('pricing', {})
-                            if pricing:
-                                customer_price = pricing.get('customerPrice')
-                                if customer_price is not None:
-                                    # PRECIO ORIGINAL PARA ADMIN
-                                    precio_original = float(customer_price)
-                                    producto_admin['precio_original'] = f"${precio_original:,.2f}"
-                                    
-                                    # Calcular precio público con markup (solo para referencia)
-                                    precio_publico = round(precio_original * 1.15, 2)
-                                    producto_admin['precio_publico'] = f"${precio_publico:,.2f}"
-                                    
-                                    # Información adicional para admin
-                                    producto_admin['disponibilidad_real'] = first_product.get('totalAvailability', 0)
-                                    producto_admin['disponible'] = first_product.get('available', False)
-                                else:
-                                    producto_admin['precio_original'] = "Consultar"
-                                    producto_admin['precio_publico'] = "Consultar"
-                            else:
-                                producto_admin['precio_original'] = "Consultar"
-                                producto_admin['precio_publico'] = "Consultar"
-                        else:
-                            producto_admin['precio_original'] = "No disponible"
-                            producto_admin['precio_publico'] = "No disponible"
-                    else:
-                        producto_admin['precio_original'] = "Consultar"
-                        producto_admin['precio_publico'] = "Consultar"
-                else:
-                    producto_admin['precio_original'] = "Error API"
-                    producto_admin['precio_publico'] = "Error API"
-                    
-            except Exception as price_error:
-                print(f"Error obteniendo precio para {sku}: {price_error}")
-                producto_admin['precio_original'] = "Error"
-                producto_admin['precio_publico'] = "Error"
-            
-            # Asegurar que siempre tengamos la clave ingram_part_number para el template
-            producto_admin['ingram_part_number'] = sku
-            productos_admin.append(producto_admin)
-        
-        print(f"DEBUG - Productos después de procesar: {len(productos_admin)}")
-        
-        # Cálculos de paginación
-        total_pages = max(1, (total_records + page_size - 1) // page_size) if total_records > 0 else 1
-        page_number = max(1, min(page_number, total_pages))
-        start_record = (page_number - 1) * page_size + 1 if total_records > 0 else 0
-        end_record = min(page_number * page_size, total_records)
-        
-        return render_template('admin/products_management.html',
-                             productos_ingram=productos_admin,
-                             page_number=page_number,
-                             total_records=total_records,
-                             total_pages=total_pages,
-                             start_record=start_record,
-                             end_record=end_record,
-                             query=query,
-                             vendor=vendor,
-                             selected_vendor=vendor,
-                             pagina_vacia=pagina_vacia,
-                             local_vendors=ProductUtils.get_local_vendors(),
-                             get_image_url_enhanced=ImageHandler.get_image_url_enhanced,
-                             get_availability_text=ProductUtils.get_availability_text)
-        
-    except Exception as e:
-        print(f"ERROR en catálogo admin: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        flash(f'Error al cargar productos: {str(e)}', 'danger')
-        return render_template('admin/products_management.html', 
-                             productos_ingram=[])
-    
-# ==================== DETALLE DE PRODUCTO INGRAM ====================
-@admin_bp.route('/products/catalog/<part_number>')
-@admin_required
-def product_catalog_detail(part_number):
-    """Detalle de producto del catálogo Ingram"""
-    try:
-        # Validar que part_number no esté vacío
-        if not part_number or part_number == 'None':
-            flash('Número de parte inválido', 'danger')
-            return redirect(url_for('admin.products', view='catalog'))
-        
-        user = User.query.get(session['user_id'])
-        print(f"✅ Detalle producto catálogo por: {user.email} - SKU: {part_number}")
-        
-        # Detalle del producto
-        detail_url = f"https://api.ingrammicro.com/resellers/v6/catalog/details/{part_number}"
-        detalle_res = APIClient.make_request("GET", detail_url)
-        
-        if detalle_res.status_code != 200:
-            flash(f'Producto {part_number} no encontrado en Ingram Micro', 'warning')
-            return redirect(url_for('admin.products', view='catalog'))
-        
-        detalle = detalle_res.json()
-        
-        # Verificar que el producto tenga datos válidos
-        if not detalle or 'ingramPartNumber' not in detalle:
-            flash(f'Datos del producto {part_number} incompletos', 'warning')
-            return redirect(url_for('admin.products', view='catalog'))
+        return render_template('admin/quotes.html', quotes=[], pagination=None, stats={})
 
-        # Precio y disponibilidad - PARA ADMIN MOSTRAR PRECIO ORIGINAL
-        price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-        body = {"products": [{"ingramPartNumber": part_number}]}
-        params = {
-            "includeAvailability": "true",
-            "includePricing": "true",
-            "includeProductAttributes": "true"
-        }
-        
-        precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
-        
-        precio_info = {}
-        if precio_res and precio_res.status_code == 200:
-            precio_data = precio_res.json()
-            if precio_data and isinstance(precio_data, list) and len(precio_data) > 0:
-                precio_info = precio_data[0]
-
-        # PARA ADMIN: Mostrar precio original sin markup
-        pricing = precio_info.get("pricing") or {}
-        precio_original = pricing.get("customerPrice")
-        currency = pricing.get("currencyCode") or pricing.get("currency") or "USD"
-        
-        # Formatear precio original para admin
-        if precio_original is not None:
-            try:
-                precio_original_val = float(precio_original)
-                precio_original_formatted = ProductUtils.format_currency(precio_original_val, currency)
-                precio_publico_val = round(precio_original_val * 1.15, 2)
-                precio_publico_formatted = ProductUtils.format_currency(precio_publico_val, currency)
-            except Exception as e:
-                print(f"Error formateando precios: {e}")
-                precio_original_formatted = "Consultar"
-                precio_publico_formatted = "Consultar"
-        else:
-            precio_original_formatted = "No disponible"
-            precio_publico_formatted = "No disponible"
-
-        # Disponibilidad
-        disponibilidad = ProductUtils.get_availability_text(precio_info, detalle)
-
-        # Información de inventario
-        inventory_info = {
-            'available': precio_info.get("available", False),
-            'total_availability': precio_info.get("totalAvailability", 0),
-            'backOrderable': precio_info.get("backOrderable", False),
-            'ingram_part_number': precio_info.get("ingramPartNumber", part_number)
-        }
-
-        # Extraer atributos
-        atributos = []
-        raw_attrs = detalle.get("productAttributes") or detalle.get("attributes") or []
-        for a in raw_attrs:
-            name = a.get("name") or a.get("attributeName") or a.get("key") or None
-            value = a.get("value") or a.get("attributeValue") or a.get("val") or ""
-            if name and value:
-                atributos.append({"name": name, "value": value})
-
-        # Imagen mejorada
-        imagen_url = ImageHandler.get_image_url_enhanced(detalle)
-        
-        return render_template(
-            "admin/product_catalog_detail.html",
-            detalle=detalle,
-            precio_original=precio_original_formatted,
-            precio_publico=precio_publico_formatted,
-            disponibilidad=disponibilidad,
-            inventory_info=inventory_info,
-            atributos=atributos,
-            imagen_url=imagen_url,
-            part_number=part_number
-        )
-    
-    except Exception as e:
-        print(f"Error obteniendo detalle del producto {part_number}: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        flash(f'Error al cargar el detalle del producto: {str(e)}', 'danger')
-        return redirect(url_for('admin.products', view='catalog'))
-# ==================== RUTAS ADICIONALES ====================
-@admin_bp.route('/reports')
-@admin_required
-def reports():
-    """Reportes y analytics."""
-    user = User.query.get(session['user_id'])
-    print(f"✅ Reportes accedido por: {user.email}")
-    
-    report_data = {
-        'period_days': 30,
-        'sales_data': [],
-        'top_products': [],
-        'active_users': [],
-        'total_sales': 0,
-        'total_quotes': 0
-    }
-    return render_template('admin/reports.html', **report_data)
-
-@admin_bp.route('/verifications')
-@admin_required
-def verifications():
-    """Gestión de verificaciones de usuarios."""
-    try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Verificaciones accedido por: {user.email}")
-        
-        unverified_users = User.query.filter_by(is_verified=False).order_by(User.created_at.desc()).all()
-        return render_template('admin/verifications.html', users=unverified_users)
-    except Exception as e:
-        flash(f'Error al cargar verificaciones: {str(e)}', 'danger')
-        return render_template('admin/verifications.html', users=[])
-
-@admin_bp.route('/orders')
-@admin_required
-def orders():
-    """Gestión de órdenes."""
-    return redirect(url_for('admin.quotes'))
-
-# ==================== ACCIONES ADMINISTRATIVAS ====================
-@admin_bp.route('/approve_quote/<int:quote_id>')
-@admin_required
-def approve_quote(quote_id):
-    """Aprobar una cotización."""
-    try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Aprobando cotización {quote_id} por: {user.email}")
-        
-        quote = Quote.query.get(quote_id)
-        if quote:
-            quote.status = 'approved'
-            quote.updated_at = datetime.now()
-            db.session.commit()
-            flash(f'Cotización {quote.quote_number} aprobada exitosamente', 'success')
-        else:
-            flash('Cotización no encontrada', 'danger')
-        
-    except Exception as e:
-        flash(f'Error al aprobar cotización: {str(e)}', 'danger')
-        db.session.rollback()
-    
-    return redirect(url_for('admin.quotes'))
-
-@admin_bp.route('/reject_quote/<int:quote_id>')
-@admin_required
-def reject_quote(quote_id):
-    """Rechazar una cotización."""
-    try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Rechazando cotización {quote_id} por: {user.email}")
-        
-        quote = Quote.query.get(quote_id)
-        if quote:
-            quote.status = 'rejected'
-            quote.updated_at = datetime.now()
-            db.session.commit()
-            flash(f'Cotización {quote.quote_number} rechazada', 'warning')
-        else:
-            flash('Cotización no encontrada', 'danger')
-        
-    except Exception as e:
-        flash(f'Error al rechazar cotización: {str(e)}', 'danger')
-        db.session.rollback()
-    
-    return redirect(url_for('admin.quotes'))
-
-# ==================== GESTIÓN DE USUARIOS - ACCIONES ====================
-@admin_bp.route('/users/verify/<int:user_id>')
-@admin_required
-def verify_user(user_id):
-    """Verificar un usuario."""
-    try:
-        user = User.query.get_or_404(user_id)
-        
-        if user.is_verified:
-            flash(f'El usuario {user.email} ya está verificado', 'warning')
-        else:
-            user.is_verified = True
-            user.updated_at = datetime.now()
-            db.session.commit()
-            flash(f'Usuario {user.email} verificado exitosamente', 'success')
-        
-    except Exception as e:
-        flash(f'Error al verificar usuario: {str(e)}', 'danger')
-        db.session.rollback()
-    
-    return redirect(url_for('admin.users'))
-
-@admin_bp.route('/users/unverify/<int:user_id>')
-@admin_required
-def unverify_user(user_id):
-    """Quitar verificación a un usuario."""
-    try:
-        user = User.query.get_or_404(user_id)
-        
-        if not user.is_verified:
-            flash(f'El usuario {user.email} no está verificado', 'warning')
-        else:
-            user.is_verified = False
-            user.updated_at = datetime.now()
-            db.session.commit()
-            flash(f'Verificación removida del usuario {user.email}', 'warning')
-        
-    except Exception as e:
-        flash(f'Error al remover verificación: {str(e)}', 'danger')
-        db.session.rollback()
-    
-    return redirect(url_for('admin.users'))
-
-@admin_bp.route('/users/activate/<int:user_id>')
-@admin_required
-def activate_user(user_id):
-    """Activar un usuario."""
-    try:
-        user = User.query.get_or_404(user_id)
-        
-        if user.is_active:
-            flash(f'El usuario {user.email} ya está activo', 'warning')
-        else:
-            user.is_active = True
-            user.updated_at = datetime.now()
-            db.session.commit()
-            flash(f'Usuario {user.email} activado exitosamente', 'success')
-        
-    except Exception as e:
-        flash(f'Error al activar usuario: {str(e)}', 'danger')
-        db.session.rollback()
-    
-    return redirect(url_for('admin.users'))
-
-@admin_bp.route('/users/deactivate/<int:user_id>')
-@admin_required
-def deactivate_user(user_id):
-    """Desactivar un usuario."""
-    try:
-        user = User.query.get_or_404(user_id)
-        
-        if not user.is_active:
-            flash(f'El usuario {user.email} ya está inactivo', 'warning')
-        else:
-            user.is_active = False
-            user.updated_at = datetime.now()
-            db.session.commit()
-            flash(f'Usuario {user.email} desactivado', 'warning')
-        
-    except Exception as e:
-        flash(f'Error al desactivar usuario: {str(e)}', 'danger')
-        db.session.rollback()
-    
-    return redirect(url_for('admin.users'))
-
-@admin_bp.route('/users/delete/<int:user_id>')
-@admin_required
-def delete_user(user_id):
-    """Eliminar un usuario."""
-    try:
-        user = User.query.get_or_404(user_id)
-        
-        if user.id == session.get('user_id'):
-            flash('No puedes eliminar tu propia cuenta', 'danger')
-            return redirect(url_for('admin.users'))
-        
-        email = user.email
-        db.session.delete(user)
-        db.session.commit()
-        flash(f'Usuario {email} eliminado exitosamente', 'success')
-        
-    except Exception as e:
-        flash(f'Error al eliminar usuario: {str(e)}', 'danger')
-        db.session.rollback()
-    
-    return redirect(url_for('admin.users'))
-
-# ==================== APIs ====================
-@admin_bp.route('/api/stats')
-@admin_required
-def api_stats():
-    """API para obtener estadísticas actualizadas."""
-    try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ API stats accedido por: {user.email}")
-        
-        total_users = User.query.count()
-        pending_quotes = Quote.query.filter_by(status='pending').count()
-        monthly_revenue = 0
-        low_stock = Product.query.filter(Product.stock < 10).count()
-        
-        return jsonify({
-            'total_users': total_users,
-            'pending_quotes': pending_quotes,
-            'monthly_revenue': monthly_revenue,
-            'low_stock': low_stock
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@admin_bp.route('/api/new-quotes')
-@admin_required
-def api_new_quotes():
-    """API para verificar nuevas cotizaciones."""
-    return jsonify({'count': 0})
-
-# ==================== RUTA DE DEBUG ====================
-@admin_bp.route('/debug')
-def debug_admin():
-    """Ruta temporal para debug"""
-    return jsonify({
-        'session_user_id': session.get('user_id'),
-        'session_user_email': session.get('user_email'),
-        'session_keys': list(session.keys())
-    })
-
-# ==================== RUTAS AVANZADAS DE COTIZACIONES ====================
 @admin_bp.route('/quotes/<int:quote_id>')
 @admin_required
 def quote_detail(quote_id):
-    """Vista detallada de una cotización"""
+    """Detalle de cotización."""
     try:
         quotation = Quote.query.get_or_404(quote_id)
         history = QuoteHistory.query.filter_by(quote_id=quote_id).order_by(QuoteHistory.created_at.desc()).all()
@@ -731,13 +318,13 @@ def quote_detail(quote_id):
                              history=history)
         
     except Exception as e:
-        flash(f'Error al cargar la cotización: {str(e)}', 'danger')
+        flash(f'Error al cargar cotización: {str(e)}', 'danger')
         return redirect(url_for('admin.quotes'))
 
 @admin_bp.route('/quotes/<int:quote_id>/update_status', methods=['POST'])
 @admin_required
 def update_quote_status(quote_id):
-    """API para actualizar el estado de una cotización"""
+    """API UNIFICADA para cambiar estado de cotización - REEMPLAZA rutas individuales."""
     try:
         quotation = Quote.query.get_or_404(quote_id)
         data = request.json
@@ -745,47 +332,36 @@ def update_quote_status(quote_id):
         admin_notes = data.get('admin_notes', '')
         admin_user = User.query.get(session['user_id'])
         
-        new_status = None
-        action_description = ""
+        status_map = {
+            'send': 'sent',
+            'approve': 'approved', 
+            'reject': 'rejected',
+            'progress': 'in_progress',
+            'complete': 'completed',
+            'invoice': 'invoiced',
+            'pay': 'paid',
+            'cancel': 'cancelled'
+        }
         
-        if action == 'send':
-            new_status = 'sent'
-            action_description = "Cotización enviada al cliente"
-        elif action == 'approve':
-            new_status = 'approved'
-            quotation.approved_at = datetime.utcnow()
-            quotation.approved_by = admin_user.email
-            action_description = "Cotización aprobada"
-        elif action == 'reject':
-            new_status = 'rejected'
-            action_description = "Cotización rechazada"
-        elif action == 'progress':
-            new_status = 'in_progress'
-            action_description = "Cotización en progreso"
-        elif action == 'complete':
-            new_status = 'completed'
-            action_description = "Cotización completada"
-        elif action == 'invoice':
-            new_status = 'invoiced'
-            quotation.invoice_number = data.get('invoice_number')
-            quotation.invoice_date = datetime.utcnow()
-            action_description = f"Factura {data.get('invoice_number')} generada"
-        elif action == 'pay':
-            new_status = 'paid'
-            quotation.payment_date = datetime.utcnow()
-            quotation.payment_method = data.get('payment_method', '')
-            quotation.payment_reference = data.get('payment_reference', '')
-            action_description = "Cotización pagada"
-        elif action == 'cancel':
-            new_status = 'cancelled'
-            action_description = "Cotización cancelada"
-        
-        if new_status:
+        if action in status_map:
+            new_status = status_map[action]
             quotation.status = new_status
-            quotation.admin_notes = admin_notes
-            quotation.updated_at = datetime.utcnow()
+            quotation.updated_at = datetime.now()
             
-            # Agregar al historial
+            # Campos adicionales según acción
+            if action == 'approve':
+                quotation.approved_at = datetime.now()
+                quotation.approved_by = admin_user.email
+            elif action == 'invoice':
+                quotation.invoice_number = data.get('invoice_number')
+                quotation.invoice_date = datetime.now()
+            elif action == 'pay':
+                quotation.payment_date = datetime.now()
+                quotation.payment_method = data.get('payment_method', '')
+                quotation.payment_reference = data.get('payment_reference', '')
+            
+            # Historial
+            action_description = f"Cambiado a {new_status}"
             history = QuoteHistory(
                 quote_id=quotation.id,
                 action=action_description,
@@ -799,14 +375,11 @@ def update_quote_status(quote_id):
             
             return jsonify({
                 'success': True, 
-                'message': f'Cotización {action_description.lower()}',
+                'message': f'Estado actualizado a {new_status}',
                 'new_status': new_status
             })
         else:
-            return jsonify({
-                'success': False, 
-                'error': 'Acción no válida'
-            }), 400
+            return jsonify({'success': False, 'error': 'Acción no válida'}), 400
             
     except Exception as e:
         db.session.rollback()
@@ -815,7 +388,7 @@ def update_quote_status(quote_id):
 @admin_bp.route('/quotes/<int:quote_id>/add_note', methods=['POST'])
 @admin_required
 def add_quote_note(quote_id):
-    """API para agregar una nota al historial"""
+    """Agregar nota al historial."""
     try:
         quotation = Quote.query.get_or_404(quote_id)
         data = request.json
@@ -833,85 +406,231 @@ def add_quote_note(quote_id):
             db.session.add(history)
             db.session.commit()
             
-            return jsonify({'success': True, 'message': 'Nota agregada correctamente'})
+            return jsonify({'success': True, 'message': 'Nota agregada'})
         else:
-            return jsonify({'success': False, 'error': 'La nota no puede estar vacía'}), 400
+            return jsonify({'success': False, 'error': 'Nota vacía'}), 400
             
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ==================== RUTAS DEL CATÁLOGO PARA ADMINISTRADOR ====================
-@admin_bp.route('/catalog/search')
+@admin_bp.route('/quotes/delete/<int:quote_id>', methods=['POST'])
 @admin_required
-def admin_catalog_search():
-    """Búsqueda específica para administradores"""
+def delete_quote(quote_id):
+    """Eliminar cotización."""
     try:
-        user = User.query.get(session['user_id'])
-        search_type = request.args.get('type', 'sku')
-        query = request.args.get('query', '').strip()
-        page = request.args.get('page', 1, type=int)
+        quote = Quote.query.get_or_404(quote_id)
+        quote_number = quote.quote_number
         
-        print(f"✅ Búsqueda en catálogo admin por: {user.email} - Tipo: {search_type}, Query: {query}")
+        QuoteHistory.query.filter_by(quote_id=quote_id).delete()
+        db.session.delete(quote)
+        db.session.commit()
         
-        # Aquí puedes usar tu función existente de búsqueda
-        productos = []
-        total_results = 0
-        
-        if query:
-            # Usar tu función de búsqueda existente
-            productos, total_results, _ = ProductUtils.buscar_productos_hibrido(
-                query=query, 
-                vendor="", 
-                page_number=page, 
-                page_size=20, 
-                use_keywords=bool(query)
-            )
-            
-            # Aplicar transformaciones para admin
-            for producto in productos:
-                # Para admin, mostrar información de costo real
-                if 'precio_final' in producto:
-                    producto['precio_admin'] = producto.get('precio_base', 'Consultar')
-                    producto['markup_aplicado'] = '15%'  # O calcular basado en la diferencia
-        
-        return render_template('admin/catalog/admin_search_results.html',
-                             productos=productos,
-                             search_type=search_type,
-                             query=query,
-                             total_results=total_results,
-                             current_page=page)
+        flash(f'Cotización #{quote_number} eliminada', 'success')
         
     except Exception as e:
-        flash(f'Error en la búsqueda: {str(e)}', 'danger')
-        return render_template('admin/catalog/admin_search_results.html', 
-                             productos=[], 
-                             total_results=0,
-                             query=request.args.get('query', ''))
+        flash(f'Error al eliminar: {str(e)}', 'danger')
+        db.session.rollback()
+    
+    return redirect(url_for('admin.quotes'))
 
-# ==================== APIS ESPECÍFICAS PARA ADMIN ====================
+@admin_bp.route('/quotes/bulk_action', methods=['POST'])
+@admin_required
+def quotes_bulk_action():
+    """Acciones masivas."""
+    try:
+        action = request.form.get('bulk_action')
+        quote_ids = request.form.getlist('quote_ids')
+        admin_user = User.query.get(session['user_id'])
+        
+        if not quote_ids:
+            flash('No se seleccionaron cotizaciones', 'warning')
+            return redirect(url_for('admin.quotes'))
+        
+        quotes = Quote.query.filter(Quote.id.in_(quote_ids)).all()
+        
+        if action == 'delete':
+            for quote in quotes:
+                QuoteHistory.query.filter_by(quote_id=quote.id).delete()
+                db.session.delete(quote)
+            flash(f'{len(quotes)} cotización(es) eliminadas', 'success')
+            
+        elif action == 'cancel':
+            for quote in quotes:
+                if quote.status != 'cancelled':
+                    quote.status = 'cancelled'
+                    quote.updated_at = datetime.now()
+            flash(f'{len(quotes)} cotización(es) canceladas', 'warning')
+            
+        db.session.commit()
+        
+    except Exception as e:
+        flash(f'Error en acción masiva: {str(e)}', 'danger')
+        db.session.rollback()
+    
+    return redirect(url_for('admin.quotes'))
+
+# ==================== GESTIÓN DE PRODUCTOS (CATÁLOGO INGRAM) ====================
+@admin_bp.route('/products')
+@admin_required
+def products():
+    """Gestión de productos - Catálogo Ingram."""
+    try:
+        page_number = int(request.args.get("page", 1))
+        page_size = int(request.args.get("page_size", 25))
+        query = request.args.get("q", "").strip()
+        vendor = request.args.get("vendor", "").strip()
+        
+        productos, total_records, pagina_vacia = ProductUtils.buscar_productos_hibrido(
+            query=query, 
+            vendor=vendor, 
+            page_number=page_number, 
+            page_size=page_size, 
+            use_keywords=bool(query)
+        )
+        
+        # Procesar para admin
+        productos_admin = []
+        for producto in productos:
+            if not isinstance(producto, dict):
+                continue
+                
+            producto_admin = producto.copy()
+            sku = None
+            
+            # Buscar SKU
+            posibles_claves = ['ingramPartNumber', 'ingram_part_number', 'sku', 'partNumber', 'vendorPartNumber']
+            for clave in posibles_claves:
+                if clave in producto_admin:
+                    sku = producto_admin[clave]
+                    break
+            
+            if sku:
+                try:
+                    price_data = APIClient.get_product_price_and_availability(sku)
+                    if price_data:
+                        valid_status_codes = ['S', 'W']
+                        product_status = price_data.get('productStatusCode', '')
+                        
+                        if product_status in valid_status_codes:
+                            pricing = price_data.get('pricing', {})
+                            availability = price_data.get('totalAvailability', 0)
+                            
+                            if pricing and pricing.get('customerPrice') is not None:
+                                precio_original = float(pricing['customerPrice'])
+                                producto_admin['precio_original'] = f"${precio_original:,.2f}"
+                                precio_publico = round(precio_original * 1.15, 2)
+                                producto_admin['precio_publico'] = f"${precio_publico:,.2f}"
+                                producto_admin['disponibilidad'] = availability
+                                producto_admin['disponible'] = availability > 0
+                            else:
+                                producto_admin['precio_original'] = "Consultar"
+                                producto_admin['precio_publico'] = "Consultar"
+                        else:
+                            producto_admin['precio_original'] = "No disponible"
+                            producto_admin['precio_publico'] = "No disponible"
+                    else:
+                        producto_admin['precio_original'] = "Error API"
+                        producto_admin['precio_publico'] = "Error API"
+                except Exception:
+                    producto_admin['precio_original'] = "Error"
+                    producto_admin['precio_publico'] = "Error"
+            else:
+                producto_admin['precio_original'] = "Consultar"
+                producto_admin['precio_publico'] = "Consultar"
+                producto_admin['ingram_part_number'] = "NO SKU"
+            
+            producto_admin['ingram_part_number'] = sku or "NO SKU"
+            productos_admin.append(producto_admin)
+        
+        # Paginación
+        total_pages = max(1, (total_records + page_size - 1) // page_size) if total_records > 0 else 1
+        page_number = max(1, min(page_number, total_pages))
+        start_record = (page_number - 1) * page_size + 1 if total_records > 0 else 0
+        end_record = min(page_number * page_size, total_records)
+        
+        vendors = ProductUtils.get_local_vendors()
+        
+        return render_template('admin/products_management.html',
+                             productos_ingram=productos_admin,
+                             page_number=page_number,
+                             total_records=total_records,
+                             total_pages=total_pages,
+                             start_record=start_record,
+                             end_record=end_record,
+                             query=query,
+                             vendor=vendor,
+                             pagina_vacia=pagina_vacia,
+                             vendors=vendors, 
+                             get_image_url_enhanced=ImageHandler.get_image_url_enhanced,
+                             get_availability_text=ProductUtils.get_availability_text)
+        
+    except Exception as e:
+        flash(f'Error al cargar productos: {str(e)}', 'danger')
+        return render_template('admin/products_management.html', productos_ingram=[])
+
+# ==================== RUTAS ADICIONALES ====================
+@admin_bp.route('/reports')
+@admin_required
+def reports():
+    """Reportes."""
+    report_data = {
+        'period_days': 30,
+        'sales_data': [],
+        'top_products': [],
+        'active_users': [],
+        'total_sales': 0,
+        'total_quotes': 0
+    }
+    return render_template('admin/reports.html', **report_data)
+
+@admin_bp.route('/settings')
+@admin_required
+def settings():
+    """Configuración."""
+    system_settings = {
+        'app_name': 'Ingram eCommerce',
+        'version': '1.0.0',
+        'environment': 'Development',
+        'default_markup': 15.0,
+        'currency': 'MXN'
+    }
+    return render_template('admin/settings.html', settings=system_settings)
+
+# ==================== APIS ====================
+@admin_bp.route('/api/stats')
+@admin_required
+def api_stats():
+    """API estadísticas."""
+    try:
+        total_users = User.query.count()
+        pending_quotes = Quote.query.filter_by(status='pending').count()
+        
+        return jsonify({
+            'total_users': total_users,
+            'pending_quotes': pending_quotes,
+            'monthly_revenue': 0,
+            'low_stock': 0
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @admin_bp.route('/api/admin/catalog/search')
 @admin_required
 def api_admin_catalog_search():
-    """API para búsqueda en tiempo real del catálogo (admin)"""
+    """API búsqueda catálogo."""
     try:
-        search_type = request.args.get('type', 'sku')
         query = request.args.get('q', '').strip()
         limit = request.args.get('limit', 10, type=int)
         
         if not query or len(query) < 2:
             return jsonify({'results': []})
         
-        # Usar tu función de búsqueda existente
         productos, total, _ = ProductUtils.buscar_productos_hibrido(
-            query=query, 
-            vendor="", 
-            page_number=1, 
-            page_size=limit, 
-            use_keywords=bool(query)
+            query=query, vendor="", page_number=1, page_size=limit, use_keywords=bool(query)
         )
         
-        # Formatear resultados para autocompletar
         results = []
         for producto in productos[:limit]:
             results.append({
@@ -921,146 +640,7 @@ def api_admin_catalog_search():
                 'category': producto.get('category', '')
             })
         
-        return jsonify({
-            'success': True,
-            'results': results,
-            'count': len(results)
-        })
+        return jsonify({'success': True, 'results': results, 'count': len(results)})
         
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'results': []
-        }), 500
-
-@admin_bp.route('/api/admin/catalog/availability/<part_number>')
-@admin_required
-def api_admin_catalog_availability(part_number):
-    """API para verificar disponibilidad y precios (admin - datos originales)"""
-    try:
-        # Obtener información actualizada de precio y disponibilidad
-        price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-        body = {"products": [{"ingramPartNumber": part_number}]}
-        params = {
-            "includeAvailability": "true",
-            "includePricing": "true"
-        }
-        precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
-        
-        if precio_res.status_code != 200:
-            return jsonify({
-                'success': False,
-                'error': 'No se pudo obtener información del producto'
-            }), 404
-        
-        precio_info = precio_res.json()[0]
-        pricing = precio_info.get("pricing") or {}
-        
-        availability_data = {
-            'ingram_part_number': part_number,
-            'available': precio_info.get("available", False),
-            'total_availability': precio_info.get("totalAvailability", 0),
-            'backorder_available': precio_info.get("backOrderable", False),
-            'pricing': {
-                'customer_price': pricing.get("customerPrice"),
-                'currency': pricing.get("currencyCode", "USD"),
-                'retail_price': pricing.get("retailPrice"),
-                'special_pricing': pricing.get("specialPricing", False)
-            },
-            'warehouses': precio_info.get("warehouses", [])
-        }
-        
-        return jsonify({
-            'success': True,
-            'availability': availability_data
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-# ==================== FUNCIONES AUXILIARES PARA ADMIN ====================
-def apply_admin_pricing(productos):
-    """Aplica transformaciones de precios para la vista de administrador"""
-    productos_admin = []
-    
-    for producto in productos:
-        producto_admin = producto.copy()
-        
-        # Para admin, mostrar información de costo real
-        if 'precio_final' in producto_admin:
-            # Guardar precio público como referencia
-            producto_admin['precio_publico'] = producto_admin['precio_final']
-            
-            # Calcular y mostrar precio original (costo)
-            try:
-                if producto_admin.get('precio_base'):
-                    precio_base = float(str(producto_admin['precio_base']).replace('$', '').replace(',', ''))
-                    producto_admin['precio_original'] = f"${precio_base:.2f}"
-                    
-                    # Calcular markup aplicado
-                    precio_publico_val = float(str(producto_admin['precio_final']).replace('$', '').replace(',', ''))
-                    markup = ((precio_publico_val - precio_base) / precio_base) * 100
-                    producto_admin['markup'] = f"{markup:.1f}%"
-                else:
-                    producto_admin['precio_original'] = "Consultar"
-                    producto_admin['markup'] = "N/A"
-            except Exception as e:
-                producto_admin['precio_original'] = "Consultar"
-                producto_admin['markup'] = "Error"
-        
-        productos_admin.append(producto_admin)
-    
-    return productos_admin
-
-# ==================== CONFIGURACIÓN DEL SISTEMA ====================
-@admin_bp.route('/settings')
-@admin_required
-def settings():
-    """Configuración del sistema"""
-    try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Configuración accedida por: {user.email}")
-        
-        # Configuración básica del sistema
-        system_settings = {
-            'app_name': 'Ingram eCommerce',
-            'version': '1.0.0',
-            'environment': 'Development',
-            'maintenance_mode': False,
-            'max_users': 100,
-            'default_markup': 15.0,
-            'currency': 'MXN',
-            'api_timeout': 30,
-            'results_per_page': 25
-        }
-        
-        return render_template('admin/settings.html', 
-                             settings=system_settings,
-                             current_user=user)
-        
-    except Exception as e:
-        flash(f'Error al cargar configuración: {str(e)}', 'danger')
-        return render_template('admin/settings.html', 
-                             settings={},
-                             current_user=User.query.get(session['user_id']))
-
-@admin_bp.route('/settings/update', methods=['POST'])
-@admin_required
-def update_settings():
-    """Actualizar configuración del sistema"""
-    try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Actualizando configuración por: {user.email}")
-        
-        # Aquí procesarías los datos del formulario
-        # Por ahora solo mostramos un mensaje de éxito
-        flash('Configuración actualizada exitosamente', 'success')
-        return redirect(url_for('admin.settings'))
-        
-    except Exception as e:
-        flash(f'Error al actualizar configuración: {str(e)}', 'danger')
-        return redirect(url_for('admin.settings'))
+        return jsonify({'success': False, 'error': str(e), 'results': []}), 500

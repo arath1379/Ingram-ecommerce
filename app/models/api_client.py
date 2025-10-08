@@ -1,4 +1,4 @@
-# app/utils/api_client.py - VERSIÓN CORRECTA (SOLO APIClient)
+# app/utils/api_client.py - VERSIÓN CORREGIDA
 import time
 import uuid
 import requests
@@ -42,33 +42,47 @@ class APIClient:
             "Accept-Language": current_app.config['INGRAM_LANGUAGE'],
             "Content-Type": "application/json"
         }
-
+    
     @staticmethod
     def make_request(method, url, **kwargs):
         """Realiza una solicitud a la API de Ingram."""
+        # Convertir URLs relativas
+        if not url.startswith('http'):
+            if url.startswith('/'):
+                url = f"https://api.ingrammicro.com{url}"
+            else:
+                url = f"https://api.ingrammicro.com/{url}"
+        
+        # FIX para peticiones POST con params
+        if method.upper() == 'POST' and 'params' in kwargs:
+            params = kwargs['params']
+            if params:
+                params_str = '&'.join([f"{k}={v}" for k, v in params.items()])
+                url = f"{url}?{params_str}" if '?' not in url else f"{url}&{params_str}"
+            del kwargs['params']  # Eliminar para evitar duplicados
+        
         headers = APIClient.get_headers()
         if 'headers' in kwargs:
             headers.update(kwargs['headers'])
         kwargs['headers'] = headers
         
+        print(f"🔧 URL final: {method} {url}")  # Para debug
+        
         return requests.request(method, url, **kwargs)
-    
-    # Añade los métodos que necesita products.py
+        
+    # MÉTODO CORREGIDO para precios
     @staticmethod
     def get_product_price_and_availability(sku):
-        """Get real-time price and availability for a product"""
+        """Get real-time price and availability for a product - VERSIÓN CORREGIDA"""
         try:
-            url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
+            # URL con parámetros incluidos directamente
+            url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability?includeAvailability=true&includePricing=true&includeProductAttributes=true"
             payload = {
                 "products": [{"ingramPartNumber": sku}]
             }
-            params = {
-                "includeAvailability": "true",
-                "includePricing": "true",
-                "includeProductAttributes": "true"
-            }
             
-            response = APIClient.make_request("POST", url, json=payload, params=params)
+            # SIN params - solo json payload
+            response = APIClient.make_request("POST", url, json=payload)
             response.raise_for_status()
             
             data = response.json()

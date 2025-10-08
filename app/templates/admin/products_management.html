@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo Ingram | Admin</title>
+    <title>Catálogo Ingram | IT Data Global Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -22,10 +22,6 @@
             --success-color: #10B981;
             --warning-color: #F59E0B;
             --danger-color: #EF4444;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -41,20 +37,19 @@
             line-height: 1.6;
         }
 
-        /* Header Premium */
         .admin-header {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, #2D3E45 50%, var(--primary-color) 100%);
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
             box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
             position: sticky;
             top: 0;
             z-index: 1000;
-            backdrop-filter: blur(10px);
         }
 
         .navbar-brand {
             font-size: 1.25rem;
             font-weight: 700;
             letter-spacing: -0.5px;
+            color: white !important;
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -67,11 +62,15 @@
 
         .navbar-brand i {
             font-size: 1.5rem;
-            color: var(--primary-color);
-            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
         }
 
-        /* Breadcrumb Moderno */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
         .breadcrumb {
             background: transparent;
             padding: 0;
@@ -94,14 +93,25 @@
             font-weight: 600;
         }
 
-        /* Page Header Refinado */
         .page-header {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
-            border: 1px solid rgba(16, 185, 129, 0.1);
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
             border-radius: 20px;
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
         }
 
         .page-header h1 {
@@ -109,10 +119,7 @@
             font-weight: 800;
             letter-spacing: -1px;
             margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-color) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
         }
 
         .admin-badge {
@@ -128,53 +135,46 @@
             display: inline-block;
         }
 
-        /* Search Section Profesional */
-        .catalog-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 24px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
-        }
-
-        .catalog-header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
-            border-radius: 50%;
-        }
-
-        .catalog-header h3 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
         .search-section {
             background: var(--surface-color);
             border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 2.5rem;
+            border-radius: 20px;
+            padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .search-header h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
         }
 
         .search-input-group {
             position: relative;
-            display: flex;
-            gap: 1rem;
             margin-bottom: 1.5rem;
         }
 
+        .search-icon {
+            position: absolute;
+            left: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            z-index: 10;
+        }
+
         .search-input {
-            flex: 1;
+            width: 100%;
             padding: 1.25rem 1.25rem 1.25rem 3.75rem;
             border: 2px solid var(--border-color);
             border-radius: 16px;
@@ -191,35 +191,17 @@
             background: white;
         }
 
-        .search-icon {
-            position: absolute;
-            left: 1.5rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            font-size: 1.25rem;
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .search-btn {
-            padding: 1.25rem 3rem;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            border: none;
-            border-radius: 16px;
-            color: white;
-            font-weight: 700;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .search-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.4);
-        }
-
-        .form-select {
+        .form-select, .form-control {
             padding: 0.875rem 1.25rem;
             border: 2px solid var(--border-color);
             border-radius: 12px;
@@ -228,14 +210,57 @@
             background: var(--background-color);
         }
 
-        .form-select:focus {
+        .form-select:focus, .form-control:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
             outline: none;
             background: white;
         }
 
-        /* Product Cards Premium */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border: none;
+            font-weight: 700;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border: 2px solid rgba(59, 130, 246, 0.2);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            color: #1E40AF;
+            font-weight: 500;
+            margin-bottom: 2rem;
+        }
+
         .product-card {
             background: var(--surface-color);
             border: 1px solid var(--border-color);
@@ -314,7 +339,7 @@
             margin-bottom: 1rem;
         }
 
-        .product-sku, .product-vendor {
+        .product-info-item {
             font-size: 0.875rem;
             color: var(--text-secondary);
             margin-bottom: 0.5rem;
@@ -323,57 +348,43 @@
             gap: 0.5rem;
         }
 
-        .product-sku strong, .product-vendor strong {
+        .product-info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .product-info-item strong {
             color: var(--text-primary);
             font-weight: 600;
         }
 
+        .product-info-item i {
+            width: 16px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
         .price-section {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.03) 100%);
             border-radius: 12px;
             padding: 1.25rem;
             margin-bottom: 1rem;
-            border: 1px solid rgba(239, 68, 68, 0.1);
+            border: 2px solid rgba(16, 185, 129, 0.2);
         }
 
-        .price-admin {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--danger-color);
-            margin-bottom: 0.25rem;
-            letter-spacing: -0.5px;
-        }
-
-        .price-public {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            text-decoration: line-through;
-            font-weight: 500;
-        }
-
-        .availability-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
-        .availability-badge i {
+        .price-label {
             font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
         }
 
-        .bg-success {
-            background: linear-gradient(135deg, var(--success-color), #059669) !important;
-            color: white;
-        }
-
-        .bg-warning {
-            background: linear-gradient(135deg, var(--warning-color), #D97706) !important;
-            color: white;
+        .price-amount {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            letter-spacing: -0.5px;
         }
 
         .btn-details {
@@ -388,6 +399,9 @@
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
         }
 
         .btn-details:hover {
@@ -397,27 +411,6 @@
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
         }
 
-        .btn-disabled {
-            border-color: var(--danger-color);
-            color: var(--danger-color);
-            cursor: not-allowed;
-        }
-
-        /* Alert Mejorado */
-        .alert-info {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 16px;
-            padding: 1.25rem 1.5rem;
-            color: #1E40AF;
-            font-weight: 500;
-        }
-
-        .alert-info i {
-            color: #3B82F6;
-        }
-
-        /* Paginación Moderna */
         .pagination {
             gap: 0.5rem;
         }
@@ -436,6 +429,7 @@
             background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             border-color: var(--primary-color);
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            color: white;
         }
 
         .page-item .page-link:hover {
@@ -445,7 +439,6 @@
             transform: translateY(-2px);
         }
 
-        /* Estado vacío */
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -461,58 +454,45 @@
         }
 
         .empty-state h4 {
-            color: var(--text-secondary);
+            color: var(--text-primary);
             font-weight: 700;
             margin-bottom: 0.75rem;
         }
 
-        /* Botones Mejorados */
-        .btn-outline-primary {
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
+        .empty-state p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
         }
 
-        .btn-outline-primary:hover {
-            background: var(--primary-color);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            border: none;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
-            transition: all 0.3s ease;
+        .animate-in {
+            animation: slideIn 0.4s ease-out;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(16, 185, 129, 0.4);
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
-            .search-input-group {
-                flex-direction: column;
+            .main-container {
+                padding: 0 1rem;
             }
 
-            .search-btn {
-                width: 100%;
+            .page-header {
+                padding: 1.5rem;
             }
 
             .page-header h1 {
                 font-size: 1.5rem;
             }
 
-            .catalog-header {
+            .search-section {
                 padding: 1.5rem;
             }
         }
@@ -521,7 +501,7 @@
 <body>
     <!-- Header -->
     <nav class="navbar navbar-expand-lg navbar-dark admin-header">
-        <div class="container-fluid" style="max-width: 1400px; margin: 0 auto; padding: 1rem 1.5rem;">
+        <div class="container-fluid main-container" style="padding: 1rem 1.5rem;">
             <a class="navbar-brand" href="/admin/dashboard">
                 <i class="fas fa-microchip"></i>
                 <span>IT Data Global - Admin</span>
@@ -530,17 +510,17 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="container-fluid py-4" style="max-width: 1400px; margin: 0 auto; padding: 0 1.5rem;">
+    <div class="main-container py-4">
         <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb">
+        <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/admin/dashboard"><i class="fas fa-home me-1"></i>Dashboard</a></li>
-                <li class="breadcrumb-item active">Catálogo Ingram</li>
+                <li class="breadcrumb-item active">Catálogo Ingram Micro</li>
             </ol>
         </nav>
 
         <!-- Page Header -->
-        <div class="page-header">
+        <div class="page-header animate-in">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
                 <div>
                     <h1 class="mb-2">
@@ -549,7 +529,7 @@
                     </h1>
                     <p class="text-muted mb-0">
                         <span class="admin-badge me-2">Vista Administrador</span> 
-                        Consulta productos y precios de costo en tiempo real
+                        Consulta productos en tiempo real desde la API
                     </p>
                 </div>
                 <a href="/admin/dashboard" class="btn btn-outline-primary">
@@ -558,48 +538,46 @@
             </div>
         </div>
 
-        <!-- Barra de búsqueda -->
-        <div class="catalog-header">
-            <div class="row align-items-center position-relative">
-                <div class="col-md-8">
-                    <h3 class="text-white mb-2">
-                        <i class="fas fa-search me-2"></i>
-                        Buscar en Catálogo
-                    </h3>
-                    <p class="text-white mb-0 opacity-90">Encuentra productos por SKU, descripción o fabricante</p>
-                </div>
+        <!-- Search Section -->
+        <div class="search-section animate-in">
+            <div class="search-header">
+                <h3>
+                    <i class="fas fa-search me-2"></i>
+                    Buscar Productos
+                </h3>
+                <p class="mb-0 opacity-90">Encuentra productos por SKU, VPN, descripción o fabricante</p>
             </div>
-        </div>
 
-        <!-- Formulario de búsqueda -->
-        <div class="search-section">
             <form method="GET" action="{{ url_for('admin.products') }}">
                 <div class="search-input-group">
                     <i class="fas fa-search search-icon"></i>
                     <input type="text" class="search-input" name="q" 
-                           value="{{ query }}" placeholder="Ingresa SKU, VPN, descripción o fabricante...">
-                    <button type="submit" class="search-btn">
-                        <i class="fas fa-search me-2"></i>Buscar
-                    </button>
+                        value="{{ query if query else '' }}" 
+                        placeholder="Ingresa SKU, VPN, descripción o fabricante...">
                 </div>
                 
-                <div class="row g-3">
+                <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary mb-2">
-                            <i class="fas fa-building me-1"></i>Fabricante
+                        <label class="form-label">
+                            <i class="fas fa-building"></i>
+                            Filtrar por Fabricante
                         </label>
                         <select class="form-select" name="vendor">
                             <option value="">Todos los fabricantes</option>
-                            {% for vendor_option in local_vendors %}
-                                <option value="{{ vendor_option }}" {% if vendor_option == vendor %}selected{% endif %}>
-                                    {{ vendor_option }}
-                                </option>
-                            {% endfor %}
+                            {% if vendors %}
+                                {% for vendor_option in vendors %}
+                                    <option value="{{ vendor_option }}" 
+                                            {% if vendor_option == vendor %}selected{% endif %}>
+                                        {{ vendor_option }}
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-semibold text-secondary mb-2">
-                            <i class="fas fa-list me-1"></i>Resultados por página
+                        <label class="form-label">
+                            <i class="fas fa-list"></i>
+                            Resultados por página
                         </label>
                         <select class="form-select" name="page_size">
                             <option value="25" {% if request.args.get('page_size', '25') == '25' %}selected{% endif %}>25 productos</option>
@@ -607,89 +585,105 @@
                             <option value="100" {% if request.args.get('page_size', '25') == '100' %}selected{% endif %}>100 productos</option>
                         </select>
                     </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>Buscar
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
 
-        <!-- Resultados -->
+        <!-- Results Info - ACTUALIZADA -->
         {% if query or vendor %}
-        <div class="alert alert-info mb-4">
+        <div class="alert alert-info animate-in">
             <i class="fas fa-info-circle me-2"></i>
-            Mostrando <strong>{{ start_record }}-{{ end_record }}</strong> de <strong>{{ total_records }}</strong> resultados
-            {% if query %}para <strong>"{{ query }}"</strong>{% endif %}
-            {% if vendor %}del fabricante <strong>{{ vendor }}</strong>{% endif %}
+            {% if productos_ingram %}
+                Mostrando <strong>{{ start_record }} - {{ end_record }}</strong> de <strong>{{ total_records }}</strong> productos
+                {% if query %}para <strong>"{{ query }}"</strong>{% endif %}
+                {% if vendor %}del fabricante <strong>{{ vendor }}</strong>{% endif %}
+                (Página {{ page_number }} de {{ total_pages }})
+            {% else %}
+                No se encontraron productos
+                {% if query %}para <strong>"{{ query }}"</strong>{% endif %}
+                {% if vendor %}del fabricante <strong>{{ vendor }}</strong>{% endif %}
+            {% endif %}
         </div>
         {% endif %}
 
-        {% if productos_ingram %}
-        <div class="row g-4">
+        <!-- Products Grid -->
+        {% if productos_ingram and productos_ingram|length > 0 %}
+        <div class="row g-4 animate-in">
             {% for producto in productos_ingram %}
             <div class="col-xl-3 col-lg-4 col-md-6">
                 <div class="product-card">
-                    <!-- Imagen -->
+                    <!-- Image -->
                     <div class="product-image-container">
-                        <img src="{{ get_image_url_enhanced(producto) }}" 
-                             alt="{{ producto.description }}"
-                             class="product-image">
-                    </div>
-
-                    <!-- Título -->
-                    <h5 class="product-title">{{ producto.description }}</h5>
-                    
-                    <!-- Meta información -->
-                    <div class="product-meta">
-                        <div class="product-sku">
-                            <i class="fas fa-barcode"></i>
-                            <span><strong>SKU:</strong> {{ producto.ingram_part_number }}</span>
-                        </div>
-                        <div class="product-vendor">
-                            <i class="fas fa-building"></i>
-                            <span><strong>Marca:</strong> {{ producto.vendor_name }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Precios -->
-                    <div class="price-section">
-                        <div class="price-admin">
-                            {{ producto.precio_original if producto.precio_original else 'Consultar' }}
-                        </div>
-                        {% if producto.precio_publico and producto.precio_publico != 'Consultar' and producto.precio_publico != 'Error' %}
-                        <div class="price-public">
-                            Precio público: {{ producto.precio_publico }}
-                        </div>
+                        {% if producto.links and producto.links|length > 0 %}
+                            <img src="{{ producto.links[0].href }}" 
+                                 alt="{{ producto.description }}"
+                                 class="product-image"
+                                 onerror="this.src='https://via.placeholder.com/200x200?text=Sin+Imagen'">
+                        {% else %}
+                            <img src="https://via.placeholder.com/200x200?text=Sin+Imagen" 
+                                 alt="{{ producto.description }}"
+                                 class="product-image">
                         {% endif %}
                     </div>
 
-                    <!-- Disponibilidad -->
-                    <div class="mb-3">
-                        <span class="availability-badge {% if producto.disponible %}bg-success{% else %}bg-warning{% endif %}">
-                            <i class="fas fa-{% if producto.disponible %}check-circle{% else %}clock{% endif %}"></i>
-                            {% if producto.disponibilidad_real is defined %}
-                                {{ producto.disponibilidad_real }} disponibles
-                            {% else %}
-                                {{ get_availability_text(producto) }}
-                            {% endif %}
-                        </span>
+                    <!-- Title -->
+                    <h5 class="product-title">{{ producto.description }}</h5>
+                    
+                    <!-- Meta -->
+                    <div class="product-meta">
+                        <div class="product-info-item">
+                            <i class="fas fa-barcode"></i>
+                            <span><strong>SKU:</strong> {{ producto.ingramPartNumber }}</span>
+                        </div>
+                        {% if producto.vendorPartNumber %}
+                        <div class="product-info-item">
+                            <i class="fas fa-hashtag"></i>
+                            <span><strong>VPN:</strong> {{ producto.vendorPartNumber }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="product-info-item">
+                            <i class="fas fa-building"></i>
+                            <span><strong>Marca:</strong> {{ producto.vendorName }}</span>
+                        </div>
                     </div>
 
-                    <!-- Acciones -->
-                    {% if producto.ingram_part_number and producto.ingram_part_number != 'None' and producto.ingram_part_number != 'NO SKU' %}
-                    <a href="/admin/products/catalog/{{ producto.ingram_part_number }}" 
+                    <!-- Price Section - ACTUALIZADA -->
+                    <div class="price-section">
+                        <div class="price-label">Precio de Costo</div>
+                        <div class="price-amount">
+                            {% if producto.precio_original and producto.precio_original != "Consultar" and producto.precio_original != "Error" and producto.precio_original != "No disponible" and producto.precio_original != "Sin precio" and producto.precio_original != "Sin datos" %}
+                                {{ producto.precio_original }}
+                            {% else %}
+                                Consultar
+                            {% endif %}
+                        </div>
+                        
+                        {% if producto.precio_publico and producto.precio_publico != producto.precio_original and producto.precio_publico != "Consultar" and producto.precio_publico != "Error" and producto.precio_publico != "No disponible" %}
+                        <div class="mt-2">
+                            <small class="price-label">Precio Sugerido al Público</small>
+                            <div class="text-success fw-bold">{{ producto.precio_publico }}</div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+
+                    <!-- Actions -->
+                    <a href="/admin/products/catalog/{{ producto.ingramPartNumber }}" 
                        class="btn-details">
                         <i class="fas fa-info-circle me-2"></i>Ver Detalles
                     </a>
-                    {% else %}
-                    <button class="btn-details btn-disabled" disabled>
-                        <i class="fas fa-exclamation-triangle me-2"></i>SKU Inválido
-                    </button>
-                    {% endif %}
                 </div>
             </div>
             {% endfor %}
         </div>
 
-        <!-- Paginación -->
-        {% if total_pages > 1 %}
+        <!-- Pagination - ACTUALIZADA -->
+        {% if page_number and total_pages and total_pages > 1 %}
         <nav aria-label="Page navigation" class="mt-5">
             <ul class="pagination justify-content-center">
                 {% if page_number > 1 %}
@@ -722,24 +716,24 @@
         {% endif %}
 
         {% else %}
-        <!-- Estado vacío -->
-        <div class="empty-state">
+        <!-- Empty State -->
+        <div class="empty-state animate-in">
             <i class="fas fa-search fa-4x"></i>
             <h4>
-                {% if query or vendor %}
+                {% if query or request.args.get('vendorName') %}
                     No se encontraron productos
                 {% else %}
                     Busca productos en el catálogo
                 {% endif %}
             </h4>
-            <p class="text-muted mb-4">
-                {% if query or vendor %}
+            <p class="text-muted">
+                {% if query or request.args.get('vendorName') %}
                     Intenta con otros términos de búsqueda o ajusta los filtros
                 {% else %}
-                    Utiliza el buscador superior para encontrar productos del catálogo Ingram
+                    Utiliza el buscador superior para encontrar productos del catálogo Ingram Micro
                 {% endif %}
             </p>
-            {% if query or vendor %}
+            {% if query or request.args.get('vendorName') %}
             <a href="{{ url_for('admin.products') }}" class="btn btn-primary">
                 <i class="fas fa-redo me-2"></i>Limpiar búsqueda
             </a>
@@ -749,5 +743,14 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animación de entrada escalonada
+            const animatedElements = document.querySelectorAll('.animate-in');
+            animatedElements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
 </body>
 </html>

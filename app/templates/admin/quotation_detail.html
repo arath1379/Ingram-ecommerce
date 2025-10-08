@@ -587,6 +587,24 @@
         .status-indicator.inactive {
             background: var(--danger-color);
         }
+
+        /* Product info styles */
+        .product-sku {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: var(--background-color);
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 0.25rem;
+        }
+
+        .product-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -774,7 +792,6 @@
                 <div class="info-value" style="color: var(--primary-color);">${{ "%.2f"|format(quotation.total_amount) }}</div>
                 <div class="text-muted small mt-1">
                     <i class="fas fa-coins me-1"></i>Moneda: {{ quotation.currency }}<br>
-                    <i class="fas fa-percent me-1"></i>Markup: {{ quotation.markup_percentage }}%
                 </div>
             </div>
         </div>
@@ -802,18 +819,37 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {% set subtotal = namespace(value=0) %}
                                     {% for item in quotation.items %}
                                     <tr>
                                         <td>
                                             <div class="fw-bold">
                                                 {% if item.product %}
-                                                    {{ item.product.name }}
+                                                    {{ item.product.name or item.product.description or 'Producto' }}
+                                                {% elif item.product_data %}
+                                                    {{ item.product_data.get('description', 'Producto') }}
                                                 {% else %}
-                                                    Producto no encontrado
+                                                    Producto #{{ item.product_id }}
                                                 {% endif %}
                                             </div>
+                                            
+                                            <!-- Información adicional del producto -->
+                                            {% if item.product_data %}
+                                                {% if item.product_data.get('ingram_part_number') %}
+                                                    <div class="product-sku">
+                                                        <i class="fas fa-barcode me-1"></i>
+                                                        SKU: {{ item.product_data.get('ingram_part_number') }}
+                                                    </div>
+                                                {% endif %}
+                                                {% if item.product_data.get('description') and not item.product %}
+                                                    <div class="product-description">
+                                                        {{ item.product_data.get('description')|truncate(100) }}
+                                                    </div>
+                                                {% endif %}
+                                            {% endif %}
+                                            
                                             {% if item.notes %}
-                                                <small class="text-muted">
+                                                <small class="text-muted d-block mt-1">
                                                     <i class="fas fa-sticky-note me-1"></i>{{ item.notes }}
                                                 </small>
                                             {% endif %}
@@ -826,6 +862,7 @@
                                             ${{ "%.2f"|format(item.total_price) }}
                                         </td>
                                     </tr>
+                                    {% set subtotal.value = subtotal.value + item.total_price %}
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -837,18 +874,26 @@
                         </div>
                         {% endif %}
 
-                        <!-- Totales -->
+                        <!-- Totales CORREGIDOS -->
                         <div class="total-section">
                             <div class="row align-items-center">
                                 <div class="col-md-6">
                                     <div class="mb-2">
                                         <span class="text-muted me-2">Subtotal:</span>
-                                        <span class="fw-bold">${{ "%.2f"|format(quotation.total_amount / (1 + quotation.markup_percentage/100)) }}</span>
+                                        <span class="fw-bold">${{ "%.2f"|format(subtotal.value) }}</span>
                                     </div>
+                                    {% if quotation.markup_percentage and quotation.markup_percentage > 0 %}
                                     <div class="mb-2">
-                                        <span class="text-muted me-2">Markup ({{ quotation.markup_percentage }}%):</span>
-                                        <span class="fw-bold">${{ "%.2f"|format(quotation.total_amount * (quotation.markup_percentage/100) / (1 + quotation.markup_percentage/100)) }}</span>
+                                        <span class="text-muted me-2">IVA(16%):</span>
+                                        <span class="fw-bold">${{ "%.2f"|format(subtotal.value * (quotation.markup_percentage/100)) }}</span>
                                     </div>
+                                    {% endif %}
+                                    {% if quotation.tax_amount and quotation.tax_amount > 0 %}
+                                    <div class="mb-2">
+                                        <span class="text-muted me-2">Impuestos:</span>
+                                        <span class="fw-bold">${{ "%.2f"|format(quotation.tax_amount) }}</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 text-md-end mt-3 mt-md-0">
                                     <div class="text-muted mb-1">Total</div>
@@ -1109,9 +1154,9 @@
             .catch(error => {
                 alert('Error de conexión: ' + error);
                 btn.disabled = false;
-                btn.innerHTML = originalHTML;
-            });
-        }
+                    btn.innerHTML = originalHTML;
+                });
+            }
 
         // Limpiar modal al cerrar
         document.getElementById('statusModal').addEventListener('hidden.bs.modal', function () {

@@ -188,29 +188,15 @@ def add_to_cart_route():
         
         detalle = detalle_res.json()
         
-        # Obtener precio
+        # Obtener precio usando método corregido
         real_price = 0
         try:
-            price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-            body = {"products": [{"ingramPartNumber": part_number}]}
-            params = {
-                "includeAvailability": "true",
-                "includePricing": "true",
-                "includeProductAttributes": "true"
-            }
-            
-            precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
-            
-            if precio_res and precio_res.status_code == 200:
-                precio_data = precio_res.json()
-                if precio_data and isinstance(precio_data, list) and len(precio_data) > 0:
-                    first_product = precio_data[0]
-                    if first_product.get('productStatusCode') != 'E':
-                        pricing = first_product.get('pricing', {})
-                        if pricing:
-                            customer_price = pricing.get('customerPrice')
-                            if customer_price is not None:
-                                real_price = float(customer_price)
+            price_data = APIClient.get_product_price_and_availability(part_number)
+            if price_data:
+                pricing = price_data.get('pricing', {})
+                customer_price = pricing.get('customerPrice')
+                if customer_price is not None:
+                    real_price = float(customer_price)
         except Exception as api_error:
             print(f"DEBUG - Excepción en API de precios: {api_error}")
         
@@ -685,16 +671,9 @@ def public_product_detail(part_number):
         
         detalle = detalle_res.json()
 
-        # Precio y disponibilidad
-        price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
-        body = {"products": [{"ingramPartNumber": part_number}]}
-        params = {
-            "includeAvailability": "true",
-            "includePricing": "true",
-            "includeProductAttributes": "true"
-        }
-        precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
-        precio_info = precio_res.json()[0] if precio_res.status_code == 200 else {}
+        # Precio y disponibilidad - USANDO MÉTODO CORREGIDO
+        price_data = APIClient.get_product_price_and_availability(part_number)
+        precio_info = price_data if price_data else {}
 
         # Calcular precio final con markup del 15% (precio público)
         pricing = precio_info.get("pricing") or {}
