@@ -6,7 +6,7 @@ class Cart(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(100), nullable=False, index=True)
-    status = db.Column(db.String(20), default='active')  # active, completed, abandoned
+    status = db.Column(db.String(20), default='active')
     total_amount = db.Column(db.Float, default=0.0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -15,13 +15,11 @@ class Cart(db.Model):
     items = db.relationship('CartItem', backref='cart', lazy=True, cascade='all, delete-orphan')
     
     def calculate_total(self):
-        """Calcular el total del carrito sumando todos los items"""
         self.total_amount = sum(item.total_price for item in self.items)
         self.updated_at = datetime.utcnow()
         return self.total_amount
     
     def to_dict(self):
-        """Convertir carrito a diccionario"""
         return {
             'id': self.id,
             'user_id': self.user_id,
@@ -48,13 +46,11 @@ class CartItem(db.Model):
     product = db.relationship('Product', backref='cart_items')
     
     def calculate_total(self):
-        """Calcular el total del item"""
         self.total_price = self.unit_price * self.quantity
         self.updated_at = datetime.utcnow()
         return self.total_price
     
     def to_dict(self):
-        """Convertir item a diccionario"""
         return {
             'id': self.id,
             'cart_id': self.cart_id,

@@ -286,12 +286,26 @@
             border: none;
         }
 
+        /* CORRECCIÓN: Estilos homogeneizados para tfoot */
         .table tfoot tr {
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+            border-top: 2px solid var(--border-color);
+        }
+
+        .table tfoot td {
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            vertical-align: middle;
+        }
+
+        .table tfoot tr:last-child {
             background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
             border-top: 3px solid var(--primary-color);
         }
 
-        .table tfoot td {
+        .table tfoot tr:last-child td {
             padding: 1.5rem 1rem;
             font-size: 1.1rem;
         }
@@ -530,21 +544,22 @@
                             </div>
                             <div class="card-body">
                                 <p><strong>Subtotal:</strong> 
-                                    <span style="color: var(--text-primary);">
+                                    <span style="color: var(--text-primary); font-weight: 600;">
                                         ${{ "%.2f"|format(subtotal or 0) }} MXN
                                     </span>
                                 </p>
                                 <p><strong>IVA (16%):</strong> 
-                                    <span style="color: var(--text-secondary);">
+                                    <span style="color: var(--text-secondary); font-weight: 600;">
                                         ${{ "%.2f"|format(tax_amount or 0) }} MXN
                                     </span>
                                 </p>
-                                <p><strong>Total con IVA:</strong> 
-                                    <span style="color: var(--primary-color); font-size: 1.5rem; font-weight: 700;">
+                                <p style="border-top: 2px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
+                                    <strong>Total con IVA:</strong> 
+                                    <span style="color: var(--primary-color); font-size: 1.5rem; font-weight: 700; display: block; margin-top: 0.5rem;">
                                         ${{ "%.2f"|format(total_amount or 0) }} MXN
                                     </span>
                                 </p>
-                                <p><strong>Total de Productos:</strong> {{ quote_items|length }}</p>
+                                <p><strong>Total de Productos:</strong> <span style="font-weight: 600;">{{ quote_items|length }}</span></p>
                                 
                                 {% if quote.status == 'draft' %}
                                 <div class="mt-3">
@@ -576,9 +591,9 @@
                                         <tr>
                                             <th><i class="fas fa-barcode"></i> SKU</th>
                                             <th><i class="fas fa-align-left"></i> Descripción</th>
-                                            <th><i class="fas fa-hashtag"></i> Cantidad</th>
-                                            <th><i class="fas fa-dollar-sign"></i> Precio Unitario</th>
-                                            <th><i class="fas fa-calculator"></i> Total Producto</th>
+                                            <th class="text-center"><i class="fas fa-hashtag"></i> Cantidad</th>
+                                            <th class="text-end"><i class="fas fa-dollar-sign"></i> Precio Unitario</th>
+                                            <th class="text-end"><i class="fas fa-calculator"></i> Total Producto</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -590,13 +605,13 @@
                                                 </strong>
                                             </td>
                                             <td>{{ item.product.description }}</td>
-                                            <td>
+                                            <td class="text-center">
                                                 <strong>{{ item.quantity }}</strong>
                                             </td>
-                                            <td>
+                                            <td class="text-end">
                                                 ${{ "%.2f"|format(item.unit_price or 0) }} MXN
                                             </td>
-                                            <td>
+                                            <td class="text-end">
                                                 <strong style="color: var(--text-primary);">
                                                     ${{ "%.2f"|format((item.unit_price or 0) * item.quantity) }} MXN
                                                 </strong>
@@ -606,31 +621,32 @@
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colspan="3"></td>
-                                            <td class="text-end">
+                                            <td colspan="4" class="text-end">
                                                 <strong>Subtotal:</strong>
                                             </td>
-                                            <td>
-                                                <strong>${{ "%.2f"|format(subtotal or 0) }} MXN</strong>
+                                            <td class="text-end">
+                                                <strong style="color: var(--text-primary);">
+                                                    ${{ "%.2f"|format(subtotal or 0) }} MXN
+                                                </strong>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td colspan="3"></td>
-                                            <td class="text-end">
+                                            <td colspan="4" class="text-end">
                                                 <strong>IVA (16%):</strong>
                                             </td>
-                                            <td>
-                                                <strong>${{ "%.2f"|format(tax_amount or 0) }} MXN</strong>
+                                            <td class="text-end">
+                                                <strong style="color: var(--text-secondary);">
+                                                    ${{ "%.2f"|format(tax_amount or 0) }} MXN
+                                                </strong>
                                             </td>
                                         </tr>
-                                        <tr style="background: linear-gradient(135deg, #FFF7ED, #FFEDD5);">
-                                            <td colspan="3"></td>
-                                            <td class="text-end">
+                                        <tr>
+                                            <td colspan="4" class="text-end">
                                                 <strong style="font-size: 1.1rem;">
                                                     <i class="fas fa-receipt"></i> TOTAL:
                                                 </strong>
                                             </td>
-                                            <td>
+                                            <td class="text-end">
                                                 <strong style="font-size: 1.2rem; color: var(--primary-color);">
                                                     ${{ "%.2f"|format(total_amount or 0) }} MXN
                                                 </strong>

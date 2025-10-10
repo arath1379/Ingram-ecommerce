@@ -34,9 +34,6 @@ class User(db.Model):
     favorites = db.relationship('Favorite', backref='user', lazy=True, cascade='all, delete-orphan')
     quotes = db.relationship('Quote', backref='user', lazy=True, cascade='all, delete-orphan')
     
-    # ✅ CORREGIDO: Relación con Purchase usando backref
-    purchases = db.relationship('Purchase', backref='user', lazy=True, foreign_keys='Purchase.user_id')
-
     def has_role(self, role_name):
         if role_name == 'admin':
             return self.is_admin and self.is_active

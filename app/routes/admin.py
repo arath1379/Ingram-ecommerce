@@ -1207,12 +1207,15 @@ def purchases():
         
         status_filter = request.args.get('status', '')
         search = request.args.get('search', '').strip()
-        tab = request.args.get('tab', 'purchases')  # 'purchases' o 'carts'
+        tab = request.args.get('tab', 'purchases')
         
-        # Query para Purchase
-        from app.models import Purchase, Cart
+        # ✅ CORREGIDO: Cargar relaciones con joinedload
+        from sqlalchemy.orm import joinedload
         
-        query = Purchase.query
+        # Query para Purchase con relaciones
+        query = Purchase.query.options(
+            joinedload(Purchase.items).joinedload(PurchaseItem.product)
+        )
         
         if status_filter:
             query = query.filter(Purchase.status == status_filter)
@@ -1221,15 +1224,21 @@ def purchases():
             query = query.filter(
                 (Purchase.order_number.contains(search)) |
                 (Purchase.customer_email.contains(search)) |
-                (Purchase.customer_name.contains(search))
+                (Purchase.customer_name.contains(search)) |
+                (Purchase.items.any(PurchaseItem.product_name.contains(search))) |
+                (Purchase.items.any(PurchaseItem.product_sku.contains(search)))
             )
         
         purchases_pagination = query.order_by(Purchase.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
         
-        # Obtener carritos activos
-        active_carts = Cart.query.filter(Cart.status == 'active').order_by(Cart.updated_at.desc()).all()
+        # ✅ CORREGIDO: Cargar carritos con información de productos
+        from app.models import Cart, CartItem
+        
+        active_carts = Cart.query.options(
+            joinedload(Cart.items).joinedload(CartItem.product)
+        ).filter(Cart.status == 'active').order_by(Cart.updated_at.desc()).all()
         
         # Estadísticas
         stats = {
@@ -1256,6 +1265,7 @@ def purchases():
                              active_carts=active_carts)
         
     except Exception as e:
+        print(f"❌ Error en purchases: {str(e)}")
         flash(f'Error al cargar compras: {str(e)}', 'danger')
         return render_template('admin/purchases.html', 
                              purchases=[], 
@@ -1405,3 +1415,162 @@ def api_purchases_stats():
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin_bp.route('/api/carts/<int:cart_id>/delete', methods=['DELETE'])
+@admin_required
+def delete_cart(cart_id):
+    """Eliminar un carrito"""
+    try:
+        from app.models import Cart
+        
+        cart = Cart.query.get_or_404(cart_id)
+        
+        # Eliminar items del carrito primero
+        for item in cart.items:
+            db.session.delete(item)
+        
+        # Eliminar el carrito
+        db.session.delete(cart)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Carrito eliminado correctamente'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    
+# ==================== RUTAS DE VISUALIZACIÓN Y EDICIÓN DE USUARIOS ====================
+
+@admin_bp.route('/users/view/<int:user_id>')
+@admin_required
+def view_user(user_id):
+    """Ver detalles de un usuario específico"""
+    try:
+        user = User.query.get_or_404(user_id)
+        
+        # Obtener estadísticas del usuario
+        user_stats = {
+            'total_quotes': Quote.query.filter_by(user_id=user_id).count(),
+            'pending_quotes': Quote.query.filter_by(user_id=user_id, status='pending').count(),
+            'approved_quotes': Quote.query.filter_by(user_id=user_id, status='approved').count(),
+            'total_purchases': Purchase.query.filter_by(user_id=user_id).count(),
+            'total_favorites': len(user.favorites)
+        }
+        
+        # Obtener últimas cotizaciones del usuario
+        recent_quotes = Quote.query.filter_by(user_id=user_id).order_by(Quote.created_at.desc()).limit(5).all()
+        
+        return render_template('admin/user_detail.html',
+                             user=user,
+                             user_stats=user_stats,
+                             recent_quotes=recent_quotes)
+        
+    except Exception as e:
+        flash(f'Error al cargar detalles del usuario: {str(e)}', 'danger')
+        return redirect(url_for('admin.users'))
+
+@admin_bp.route('/users/edit/<int:user_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_user(user_id):
+    """Editar información de un usuario"""
+    try:
+        user = User.query.get_or_404(user_id)
+        
+        if request.method == 'POST':
+            # Procesar formulario de edición
+            user.full_name = request.form.get('full_name', user.full_name)
+            user.business_name = request.form.get('business_name', user.business_name)
+            user.email = request.form.get('email', user.email)
+            user.rfc = request.form.get('rfc', user.rfc)
+            user.curp = request.form.get('curp', user.curp)
+            user.tax_id = request.form.get('tax_id', user.tax_id)
+            user.payment_terms = request.form.get('payment_terms', user.payment_terms)
+            user.credit_limit = float(request.form.get('credit_limit', user.credit_limit or 0))
+            user.discount_percentage = float(request.form.get('discount_percentage', user.discount_percentage or 0))
+            user.commercial_reference = request.form.get('commercial_reference', user.commercial_reference)
+            
+            # Campos booleanos
+            user.is_active = 'is_active' in request.form
+            user.is_verified = 'is_verified' in request.form
+            user.is_admin = 'is_admin' in request.form
+            
+            # Tipo de cuenta
+            account_type = request.form.get('account_type')
+            if account_type in ['public', 'client', 'admin']:
+                user.account_type = account_type
+            
+            user.updated_at = datetime.utcnow()
+            db.session.commit()
+            
+            flash(f'Usuario {user.email} actualizado exitosamente', 'success')
+            return redirect(url_for('admin.view_user', user_id=user.id))
+        
+        # GET - Mostrar formulario de edición
+        return render_template('admin/user_edit.html', user=user)
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al editar usuario: {str(e)}', 'danger')
+        return redirect(url_for('admin.users'))
+
+@admin_bp.route('/users/create', methods=['GET', 'POST'])
+@admin_required
+def create_user():
+    """Crear un nuevo usuario"""
+    try:
+        if request.method == 'POST':
+            # Validar datos del formulario
+            email = request.form.get('email')
+            password = request.form.get('password')
+            account_type = request.form.get('account_type', 'public')
+            
+            if not email or not password:
+                flash('Email y contraseña son requeridos', 'danger')
+                return render_template('admin/user_create.html')
+            
+            # Verificar si el email ya existe
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                flash('El email ya está registrado', 'danger')
+                return render_template('admin/user_create.html')
+            
+            # Crear nuevo usuario
+            new_user = User(
+                email=email,
+                full_name=request.form.get('full_name'),
+                business_name=request.form.get('business_name'),
+                account_type=account_type,
+                rfc=request.form.get('rfc'),
+                curp=request.form.get('curp'),
+                tax_id=request.form.get('tax_id'),
+                payment_terms=request.form.get('payment_terms', 'CONTADO'),
+                credit_limit=float(request.form.get('credit_limit', 0)),
+                discount_percentage=float(request.form.get('discount_percentage', 0)),
+                commercial_reference=request.form.get('commercial_reference'),
+                is_active=True,
+                is_verified=account_type == 'client',
+                is_admin=account_type == 'admin'
+            )
+            
+            # Establecer contraseña
+            new_user.set_password(password)
+            
+            db.session.add(new_user)
+            db.session.commit()
+            
+            flash(f'Usuario {email} creado exitosamente', 'success')
+            return redirect(url_for('admin.view_user', user_id=new_user.id))
+        
+        # GET - Mostrar formulario de creación
+        return render_template('admin/user_create.html')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al crear usuario: {str(e)}', 'danger')
+        return render_template('admin/user_create.html')

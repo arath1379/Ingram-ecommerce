@@ -1,456 +1,1245 @@
-{% extends "admin/base_admin.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compra {{ purchase.order_number }} | IT Data Global</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #10B981;
+            --primary-dark: #059669;
+            --secondary-color: #1C2A2F;
+            --accent-color: #F15A29;
+            --surface-color: #FFFFFF;
+            --background-color: #F8FAFC;
+            --border-color: #E2E8F0;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --danger-color: #EF4444;
+            --info-color: #3B82F6;
+        }
 
-{% block title %}Compra {{ purchase.order_number }} - Administrador{% endblock %}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-{% block content %}
-<div class="container-fluid">
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header profesional */
+        .admin-header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.025em;
+            color: white !important;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .navbar-brand i {
+            font-size: 1.5rem;
+            color: var(--surface-color);
+        }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.25rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--primary-color);
+        }
+
+        /* Breadcrumb moderno */
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+        }
+
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-item a:hover {
+            color: var(--primary-dark);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-secondary);
+        }
+
+        /* Contenedor principal */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header de página */
+        .page-header {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 400;
+            margin: 0;
+        }
+
+        /* Tarjetas modernas */
+        .modern-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .modern-card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header-modern {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem;
+        }
+
+        .card-header-modern h5 {
+            margin: 0;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-body-modern {
+            padding: 1.5rem;
+        }
+
+        /* Tabla moderna */
+        .table {
+            margin: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            border: none;
+            padding: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .table td {
+            border: none;
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #F1F5F9;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(16, 185, 129, 0.05);
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table tfoot th, .table tfoot td {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            font-weight: 700;
+            border-top: 2px solid var(--border-color);
+        }
+
+        /* Badges modernos */
+        .badge {
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            letter-spacing: 0.025em;
+        }
+
+        .badge-status {
+            font-size: 1rem;
+            padding: 0.75rem 1.25rem;
+        }
+
+        .badge-pending {
+            background: linear-gradient(135deg, var(--warning-color), #D97706);
+            color: white;
+        }
+
+        .badge-confirmed {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            color: white;
+        }
+
+        .badge-paid {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .badge-shipped {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            color: white;
+        }
+
+        .badge-delivered {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .badge-cancelled {
+            background: linear-gradient(135deg, var(--danger-color), #DC2626);
+            color: white;
+        }
+
+        .badge-refunded {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            color: white;
+        }
+
+        /* Botones modernos */
+        .btn {
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, var(--info-color), #1D4ED8);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color), #D97706);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), #DC2626);
+            color: white;
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid var(--border-color);
+            color: var(--text-secondary);
+            background: white;
+        }
+
+        .btn-outline-secondary:hover {
+            background: #F1F5F9;
+            border-color: #D1D5DB;
+        }
+
+        /* Timeline moderna */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+            margin-top: 1rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--primary-color) 0%, rgba(16, 185, 129, 0.2) 100%);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding-left: 1rem;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -33px;
+            top: 5px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid var(--surface-color);
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .timeline-marker.bg-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        }
+
+        .timeline-marker.bg-success {
+            background: linear-gradient(135deg, #10B981, #059669);
+        }
+
+        .timeline-marker.bg-info {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+        }
+
+        .timeline-marker.bg-warning {
+            background: linear-gradient(135deg, var(--warning-color), #D97706);
+        }
+
+        .timeline-content {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-content:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .timeline-content h6 {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Info sections */
+        .info-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Status card */
+        .status-card {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            border-radius: 16px;
+        }
+
+        .status-card h5 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        /* Modal moderno */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #FAFBFC 0%, #F1F5F9 100%);
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 16px 16px 0 0;
+            padding: 1.5rem;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background: var(--surface-color);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            outline: none;
+        }
+
+        /* Alertas flotantes */
+        .floating-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 0 1rem;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .timeline {
+                padding-left: 30px;
+            }
+
+            .timeline::before {
+                left: 6px;
+            }
+
+            .timeline-marker {
+                left: -27px;
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        /* Animaciones */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideIn 0.4s ease-out;
+        }
+    </style>
+</head>
+<body>
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 text-gray-800">
-                <i class="fas fa-shopping-cart fa-fw me-2"></i>Compra #{{ purchase.order_number }}
-            </h1>
-            <p class="text-muted mb-0">Detalle completo de la compra</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a href="{{ url_for('admin.purchases') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>Volver a Compras
+    <nav class="navbar navbar-expand-lg navbar-dark admin-header">
+        <div class="container-fluid main-container">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-microchip"></i>
+                <span>IT Data Global - Admin</span>
             </a>
-        </div>
-    </div>
-
-    <div class="row">
-        <!-- Información Principal -->
-        <div class="col-lg-8">
-            <!-- Información del Pedido -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-box me-1"></i>Detalles del Pedido
-                    </h6>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-cog me-2"></i>
+                        <span>{{ session.user_email }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/admin/dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </a></li>
+                    </ul>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Producto</th>
-                                    <th>SKU</th>
-                                    <th>Cantidad</th>
-                                    <th>Precio Unitario</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in items %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ item.product_name }}</strong>
-                                        {% if item.product_description %}
-                                        <br><small class="text-muted">{{ item.product_description[:100] }}...</small>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ item.product_sku }}</td>
-                                    <td>{{ item.quantity }}</td>
-                                    <td>${{ "%.2f"|format(item.unit_price) }}</td>
-                                    <td><strong>${{ "%.2f"|format(item.total_price) }}</strong></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot class="table-light">
-                                <tr>
-                                    <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
-                                    <td><strong>${{ "%.2f"|format(purchase.subtotal) }}</strong></td>
-                                </tr>
-                                {% if purchase.tax_amount > 0 %}
-                                <tr>
-                                    <td colspan="4" class="text-end"><strong>Impuestos:</strong></td>
-                                    <td><strong>${{ "%.2f"|format(purchase.tax_amount) }}</strong></td>
-                                </tr>
-                                {% endif %}
-                                {% if purchase.shipping_cost > 0 %}
-                                <tr>
-                                    <td colspan="4" class="text-end"><strong>Envío:</strong></td>
-                                    <td><strong>${{ "%.2f"|format(purchase.shipping_cost) }}</strong></td>
-                                </tr>
-                                {% endif %}
-                                <tr>
-                                    <td colspan="4" class="text-end"><strong>Total:</strong></td>
-                                    <td><strong class="text-primary">${{ "%.2f"|format(purchase.total_amount) }}</strong></td>
-                                </tr>
-                            </tfoot>
-                        </table>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <div class="main-container py-4">
+        <!-- Navegación -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/admin/purchases">Compras</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ purchase.order_number }}</li>
+            </ol>
+        </nav>
+
+        <!-- Header de la página -->
+        <div class="page-header animate-in">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Compra #{{ purchase.order_number }}</span>
+                    </h1>
+                    <p class="page-subtitle">Detalle completo de la compra</p>
+                </div>
+                <a href="/admin/purchases" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a Compras
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Columna principal -->
+            <div class="col-lg-8">
+                <!-- Detalles del Pedido -->
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-box text-primary"></i>
+                            Detalles del Pedido
+                        </h5>
+                    </div>
+                    <div class="card-body-modern p-0">
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>SKU</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-end">Precio Unit.</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in items %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">{{ item.product_name }}</div>
+                                            {% if item.product_description %}
+                                            <small class="text-muted">{{ item.product_description[:100] }}...</small>
+                                            {% endif %}
+                                        </td>
+                                        <td><code>{{ item.product_sku }}</code></td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary">{{ item.quantity }}</span>
+                                        </td>
+                                        <td class="text-end">${{ "%.2f"|format(item.unit_price) }}</td>
+                                        <td class="text-end fw-bold">${{ "%.2f"|format(item.total_price) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4" class="text-end">Subtotal:</td>
+                                        <td class="text-end fw-bold">${{ "%.2f"|format(purchase.subtotal) }}</td>
+                                    </tr>
+                                    {% if purchase.tax_amount > 0 %}
+                                    <tr>
+                                        <td colspan="4" class="text-end">Impuestos (16%):</td>
+                                        <td class="text-end fw-bold">${{ "%.2f"|format(purchase.tax_amount) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if purchase.shipping_cost > 0 %}
+                                    <tr>
+                                        <td colspan="4" class="text-end">Envío:</td>
+                                        <td class="text-end fw-bold">${{ "%.2f"|format(purchase.shipping_cost) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if purchase.discount_amount > 0 %}
+                                    <tr>
+                                        <td colspan="4" class="text-end">Descuento:</td>
+                                        <td class="text-end fw-bold text-success">-${{ "%.2f"|format(purchase.discount_amount) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <th colspan="4" class="text-end">Total:</th>
+                                        <th class="text-end" style="color: var(--primary-color); font-size: 1.25rem;">${{ "%.2f"|format(purchase.total_amount) }}</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial -->
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-history text-primary"></i>
+                            Historial de la Compra
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        {% if purchase.history %}
+                        <div class="timeline">
+                            {% for history in purchase.history %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-{{ 
+                                    'primary' if 'pagada' in history.action.lower() or 'paid' in history.action.lower()
+                                    else 'success' if 'enviada' in history.action.lower() or 'shipped' in history.action.lower()
+                                    else 'info' if 'entregada' in history.action.lower() or 'delivered' in history.action.lower()
+                                    else 'warning' 
+                                }}"></div>
+                                <div class="timeline-content">
+                                    <h6>{{ history.action }}</h6>
+                                    <p class="text-muted mb-2">{{ history.description }}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>{{ history.user_name or 'Sistema' }} • 
+                                        <i class="fas fa-clock me-1"></i>{{ history.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No hay historial disponible para esta compra</p>
+                        </div>
+                        {% endif %}
+
+                        <!-- Agregar Nota -->
+                        <div class="mt-4 pt-4 border-top">
+                            <form id="addNoteForm">
+                                <div class="mb-3">
+                                    <label for="noteText" class="form-label">
+                                        <i class="fas fa-sticky-note me-2"></i>Agregar nota al historial
+                                    </label>
+                                    <textarea class="form-control" id="noteText" rows="3" 
+                                              placeholder="Escribe una nota sobre esta compra..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>Agregar Nota
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Historial -->
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-history me-1"></i>Historial de la Compra
-                    </h6>
-                </div>
-                <div class="card-body">
-                    {% if purchase.history %}
-                    <div class="timeline">
-                        {% for history in purchase.history %}
-                        <div class="timeline-item mb-3">
-                            <div class="timeline-marker bg-{{ 
-                                'primary' if 'pagada' in history.action.lower() 
-                                else 'success' if 'enviada' in history.action.lower() 
-                                else 'info' if 'entregada' in history.action.lower() 
-                                else 'warning' 
-                            }}"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">{{ history.action }}</h6>
-                                <p class="text-muted mb-1">{{ history.description }}</p>
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Estado Actual -->
+                <div class="modern-card animate-in">
+                    <div class="card-body-modern">
+                        <div class="status-card">
+                            <h5>Estado Actual</h5>
+                            <span class="badge badge-status badge-{{ 
+                                'pending' if purchase.status == 'pending' 
+                                else 'confirmed' if purchase.status == 'confirmed'
+                                else 'paid' if purchase.status == 'paid' 
+                                else 'shipped' if purchase.status == 'shipped' 
+                                else 'delivered' if purchase.status == 'delivered' 
+                                else 'cancelled' if purchase.status == 'cancelled'
+                                else 'refunded' if purchase.status == 'refunded'
+                                else 'pending'
+                            }}">
+                                {% if purchase.status == 'pending' %}
+                                    <i class="fas fa-clock me-2"></i>Pendiente
+                                {% elif purchase.status == 'confirmed' %}
+                                    <i class="fas fa-check-circle me-2"></i>Confirmada
+                                {% elif purchase.status == 'paid' %}
+                                    <i class="fas fa-dollar-sign me-2"></i>Pagada
+                                {% elif purchase.status == 'shipped' %}
+                                    <i class="fas fa-truck me-2"></i>Enviada
+                                {% elif purchase.status == 'delivered' %}
+                                    <i class="fas fa-box-open me-2"></i>Entregada
+                                {% elif purchase.status == 'cancelled' %}
+                                    <i class="fas fa-ban me-2"></i>Cancelada
+                                {% elif purchase.status == 'refunded' %}
+                                    <i class="fas fa-undo me-2"></i>Reembolsada
+                                {% else %}
+                                    {{ purchase.status|title }}
+                                {% endif %}
+                            </span>
+                            <div class="mt-3">
                                 <small class="text-muted">
-                                    Por {{ history.user_name }} - 
-                                    {{ history.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                    <i class="fas fa-calendar-plus me-1"></i>
+                                    Creado: {{ purchase.created_at.strftime('%d/%m/%Y %H:%M') }}
                                 </small>
                             </div>
                         </div>
-                        {% endfor %}
                     </div>
-                    {% else %}
-                    <p class="text-muted text-center py-3">No hay historial disponible para esta compra.</p>
-                    {% endif %}
+                </div>
 
-                    <!-- Agregar Nota -->
-                    <div class="mt-4">
-                        <form id="addNoteForm">
-                            <div class="mb-3">
-                                <label for="noteText" class="form-label">Agregar nota al historial</label>
-                                <textarea class="form-control" id="noteText" rows="3" 
-                                          placeholder="Escribe una nota sobre esta compra..."></textarea>
+                <!-- Información del Cliente -->
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-user text-primary"></i>
+                            Información del Cliente
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="info-section">
+                            <div class="info-label">Nombre:</div>
+                            <div class="info-value">{{ purchase.customer_name }}</div>
+                        </div>
+                        <div class="info-section">
+                            <div class="info-label">Email:</div>
+                            <div class="info-value">
+                                <a href="mailto:{{ purchase.customer_email }}">{{ purchase.customer_email }}</a>
                             </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-plus me-1"></i>Agregar Nota
+                        </div>
+                        {% if purchase.customer_phone %}
+                        <div class="info-section">
+                            <div class="info-label">Teléfono:</div>
+                            <div class="info-value">
+                                <a href="tel:{{ purchase.customer_phone }}">{{ purchase.customer_phone }}</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Dirección de Envío -->
+                {% if purchase.shipping_address %}
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-map-marker-alt text-primary"></i>
+                            Dirección de Envío
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        <address class="mb-0" style="line-height: 1.8;">
+                            {{ purchase.shipping_address|replace('\n', '<br>')|safe }}<br>
+                            {{ purchase.shipping_city }}, {{ purchase.shipping_state }}<br>
+                            CP: {{ purchase.shipping_zipcode }}<br>
+                            {{ purchase.shipping_country }}
+                        </address>
+                        {% if purchase.tracking_number %}
+                        <div class="mt-3 pt-3 border-top">
+                            <div class="info-label">Número de Rastreo:</div>
+                            <div class="info-value">
+                                <code style="background: #F1F5F9; padding: 0.5rem 0.75rem; border-radius: 8px; display: inline-block;">
+                                    {{ purchase.tracking_number }}
+                                </code>
+                            </div>
+                            {% if purchase.shipping_carrier %}
+                            <div class="info-label mt-2">Transportista:</div>
+                            <div class="info-value">
+                                <span class="badge bg-secondary">{{ purchase.shipping_carrier }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Información de Pago -->
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-credit-card text-primary"></i>
+                            Información de Pago
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="info-section">
+                            <div class="info-label">Método de Pago:</div>
+                            <div class="info-value">
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-credit-card me-1"></i>
+                                    {{ purchase.payment_method|title }}
+                                </span>
+                            </div>
+                        </div>
+                        {% if purchase.payment_reference %}
+                        <div class="info-section">
+                            <div class="info-label">Referencia:</div>
+                            <div class="info-value">
+                                <code style="background: #F1F5F9; padding: 0.5rem 0.75rem; border-radius: 8px; display: inline-block;">
+                                    {{ purchase.payment_reference }}
+                                </code>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="info-section">
+                            <div class="info-label">Estado del Pago:</div>
+                            <div class="info-value">
+                                <span class="badge {{ 'badge-paid' if purchase.payment_status == 'completed' else 'badge-pending' }}">
+                                    <i class="fas {{ 'fa-check-circle' if purchase.payment_status == 'completed' else 'fa-clock' }} me-1"></i>
+                                    {{ purchase.payment_status|title }}
+                                </span>
+                            </div>
+                        </div>
+                        {% if purchase.paid_at %}
+                        <div class="info-section">
+                            <div class="info-label">Fecha de Pago:</div>
+                            <div class="info-value">
+                                <i class="fas fa-calendar-check me-1"></i>
+                                {{ purchase.paid_at.strftime('%d/%m/%Y %H:%M') }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Acciones Rápidas -->
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-cogs text-primary"></i>
+                            Acciones Rápidas
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="d-grid gap-2">
+                            {% if purchase.status == 'pending' %}
+                            <button class="btn btn-success" onclick="updateStatus('confirmed')">
+                                <i class="fas fa-check-circle me-2"></i>Confirmar Orden
                             </button>
-                        </form>
+                            {% endif %}
+
+                            {% if purchase.status == 'confirmed' %}
+                            <button class="btn btn-success" onclick="updateStatus('paid')">
+                                <i class="fas fa-dollar-sign me-2"></i>Marcar como Pagada
+                            </button>
+                            {% endif %}
+
+                            {% if purchase.status == 'paid' %}
+                            <button class="btn btn-info" onclick="showShippingModal()">
+                                <i class="fas fa-truck me-2"></i>Marcar como Enviada
+                            </button>
+                            {% endif %}
+
+                            {% if purchase.status == 'shipped' %}
+                            <button class="btn btn-primary" onclick="updateStatus('delivered')">
+                                <i class="fas fa-box-open me-2"></i>Marcar como Entregada
+                            </button>
+                            {% endif %}
+
+                            {% if purchase.status not in ['cancelled', 'refunded', 'delivered'] %}
+                            <button class="btn btn-warning" onclick="confirmAction('cancel')">
+                                <i class="fas fa-ban me-2"></i>Cancelar Orden
+                            </button>
+                            {% endif %}
+
+                            {% if purchase.status == 'paid' and purchase.status != 'refunded' %}
+                            <button class="btn btn-danger" onclick="confirmAction('refund')">
+                                <i class="fas fa-undo me-2"></i>Procesar Reembolso
+                            </button>
+                            {% endif %}
+
+                            <a href="/admin/purchases/{{ purchase.id }}/export-pdf" class="btn btn-outline-primary">
+                                <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+                            </a>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Notas del Administrador -->
+                {% if purchase.admin_notes %}
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-sticky-note text-primary"></i>
+                            Notas del Administrador
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        <div style="background: #FEF3C7; padding: 1rem; border-radius: 12px; border-left: 4px solid #F59E0B;">
+                            <p class="mb-0" style="color: #92400E;">{{ purchase.admin_notes }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Notas del Cliente -->
+                {% if purchase.customer_notes %}
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-comment text-primary"></i>
+                            Notas del Cliente
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        <div style="background: #DBEAFE; padding: 1rem; border-radius: 12px; border-left: 4px solid #3B82F6;">
+                            <p class="mb-0" style="color: #1E40AF;">{{ purchase.customer_notes }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
+    </div>
 
-        <!-- Sidebar - Información del Cliente y Acciones -->
-        <div class="col-lg-4">
-            <!-- Información del Cliente -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-user me-1"></i>Información del Cliente
-                    </h6>
+    <!-- Modal para información de envío -->
+    <div class="modal fade" id="shippingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-truck me-2"></i>Actualizar Información de Envío
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <strong>Nombre:</strong><br>
-                        {{ purchase.customer_name }}
-                    </div>
-                    <div class="mb-3">
-                        <strong>Email:</strong><br>
-                        <a href="mailto:{{ purchase.customer_email }}">{{ purchase.customer_email }}</a>
-                    </div>
-                    {% if purchase.customer_phone %}
-                    <div class="mb-3">
-                        <strong>Teléfono:</strong><br>
-                        {{ purchase.customer_phone }}
-                    </div>
-                    {% endif %}
+                <div class="modal-body">
+                    <form id="shippingForm">
+                        <div class="mb-3">
+                            <label for="trackingNumber" class="form-label">Número de Rastreo:</label>
+                            <input type="text" class="form-control" id="trackingNumber" 
+                                   placeholder="Ingrese el número de tracking" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shippingCarrier" class="form-label">Transportista:</label>
+                            <select class="form-select" id="shippingCarrier">
+                                <option value="DHL">DHL</option>
+                                <option value="FedEx">FedEx</option>
+                                <option value="UPS">UPS</option>
+                                <option value="Estafeta">Estafeta</option>
+                                <option value="Redpack">Redpack</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shippingNotes" class="form-label">Notas adicionales (opcional):</label>
+                            <textarea class="form-control" id="shippingNotes" rows="3"
+                                      placeholder="Agregue notas sobre el envío..."></textarea>
+                        </div>
+                    </form>
                 </div>
-            </div>
-
-            <!-- Información de Envío -->
-            {% if purchase.shipping_address %}
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-truck me-1"></i>Dirección de Envío
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <address class="mb-0">
-                        {{ purchase.shipping_address|replace('\n', '<br>')|safe }}<br>
-                        {{ purchase.shipping_city }}, {{ purchase.shipping_state }}<br>
-                        {{ purchase.shipping_zipcode }}<br>
-                        {{ purchase.shipping_country }}
-                    </address>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Información de Pago -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-credit-card me-1"></i>Información de Pago
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-2">
-                        <strong>Método:</strong> {{ purchase.payment_method|title }}
-                    </div>
-                    {% if purchase.payment_reference %}
-                    <div class="mb-2">
-                        <strong>Referencia:</strong> {{ purchase.payment_reference }}
-                    </div>
-                    {% endif %}
-                    <div class="mb-2">
-                        <strong>Estado Pago:</strong>
-                        <span class="badge bg-{{ 'success' if purchase.payment_status == 'completed' else 'warning' }}">
-                            {{ purchase.payment_status|title }}
-                        </span>
-                    </div>
-                    {% if purchase.paid_at %}
-                    <div class="mb-0">
-                        <strong>Pagado:</strong><br>
-                        {{ purchase.paid_at.strftime('%d/%m/%Y %H:%M') }}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Acciones Rápidas -->
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-cogs me-1"></i>Acciones
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        {% if purchase.status == 'pending' %}
-                        <button class="btn btn-success" onclick="updateStatus('paid')">
-                            <i class="fas fa-check me-1"></i>Marcar como Pagada
-                        </button>
-                        {% endif %}
-
-                        {% if purchase.status == 'paid' %}
-                        <button class="btn btn-info" onclick="showShippingModal()">
-                            <i class="fas fa-shipping-fast me-1"></i>Marcar como Enviada
-                        </button>
-                        {% endif %}
-
-                        {% if purchase.status == 'shipped' %}
-                        <button class="btn btn-primary" onclick="updateStatus('delivered')">
-                            <i class="fas fa-home me-1"></i>Marcar como Entregada
-                        </button>
-                        {% endif %}
-
-                        {% if purchase.status not in ['cancelled', 'refunded'] %}
-                        <button class="btn btn-warning" onclick="updateStatus('cancelled')">
-                            <i class="fas fa-times me-1"></i>Cancelar Compra
-                        </button>
-                        {% endif %}
-
-                        {% if purchase.status == 'paid' and purchase.status != 'refunded' %}
-                        <button class="btn btn-danger" onclick="updateStatus('refunded')">
-                            <i class="fas fa-undo me-1"></i>Reembolsar
-                        </button>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Estado Actual -->
-            <div class="card shadow mt-4">
-                <div class="card-body text-center">
-                    <h5>Estado Actual</h5>
-                    <span class="badge bg-{{ 
-                        'warning' if purchase.status == 'pending' 
-                        else 'success' if purchase.status == 'paid' 
-                        else 'info' if purchase.status == 'shipped' 
-                        else 'primary' if purchase.status == 'delivered' 
-                        else 'danger' 
-                    }} fs-6 px-3 py-2">
-                        {{ purchase.status|title }}
-                    </span>
-                    <div class="mt-2">
-                        <small class="text-muted">
-                            Creado: {{ purchase.created_at.strftime('%d/%m/%Y %H:%M') }}
-                        </small>
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="processShipping()">
+                        <i class="fas fa-check me-2"></i>Confirmar Envío
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Modal para información de envío -->
-<div class="modal fade" id="shippingModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Información de Envío</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="shippingForm">
-                    <div class="mb-3">
-                        <label for="trackingNumber" class="form-label">Número de Seguimiento</label>
-                        <input type="text" class="form-control" id="trackingNumber" 
-                               placeholder="Ingresa el número de tracking">
-                    </div>
-                    <div class="mb-3">
-                        <label for="shippingCarrier" class="form-label">Transportista</label>
-                        <input type="text" class="form-control" id="shippingCarrier" 
-                               placeholder="Ej: DHL, FedEx, UPS">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="processShipping()">Confirmar Envío</button>
+    <!-- Modal de Confirmación -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalTitle">Confirmar Acción</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmModalMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmActionBtn">
+                        <i class="fas fa-check me-2"></i>Confirmar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-function updateStatus(newStatus) {
-    if (confirm(`¿Estás seguro de que quieres cambiar el estado a "${newStatus}"?`)) {
-        fetch(`/admin/purchases/{{ purchase.id }}/update_status`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                status: newStatus,
-                admin_notes: 'Estado actualizado desde el detalle'
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert('Estado actualizado correctamente', 'success');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showAlert('Error: ' + data.error, 'danger');
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables globales
+        let currentAction = null;
+
+        // Actualizar estado
+        function updateStatus(newStatus) {
+            const statusNames = {
+                'confirmed': 'Confirmada',
+                'paid': 'Pagada',
+                'delivered': 'Entregada'
+            };
+
+            if (confirm(`¿Está seguro de marcar esta compra como "${statusNames[newStatus]}"?`)) {
+                fetch(`/admin/purchases/{{ purchase.id }}/update_status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        status: newStatus,
+                        admin_notes: `Estado actualizado a ${statusNames[newStatus]} desde el detalle`
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Estado actualizado correctamente', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('Error: ' + data.error, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error de conexión: ' + error.message, 'danger');
+                });
             }
-        })
-        .catch(error => {
-            showAlert('Error de conexión', 'danger');
+        }
+
+        // Mostrar modal de envío
+        function showShippingModal() {
+            const modal = new bootstrap.Modal(document.getElementById('shippingModal'));
+            modal.show();
+        }
+
+        // Procesar envío
+        function processShipping() {
+            const trackingNumber = document.getElementById('trackingNumber').value.trim();
+            const shippingCarrier = document.getElementById('shippingCarrier').value;
+            const shippingNotes = document.getElementById('shippingNotes').value.trim();
+            
+            if (!trackingNumber) {
+                showAlert('Por favor ingrese el número de rastreo', 'warning');
+                return;
+            }
+
+            fetch(`/admin/purchases/{{ purchase.id }}/update_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: 'shipped',
+                    tracking_number: trackingNumber,
+                    shipping_carrier: shippingCarrier,
+                    admin_notes: shippingNotes || `Enviado con ${shippingCarrier}. Tracking: ${trackingNumber}`
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('shippingModal'));
+                    modal.hide();
+                    showAlert('Información de envío actualizada correctamente', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error de conexión: ' + error.message, 'danger');
+            });
+        }
+
+        // Confirmar acción (cancelar o reembolsar)
+        function confirmAction(action) {
+            currentAction = action;
+            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            const title = document.getElementById('confirmModalTitle');
+            const message = document.getElementById('confirmModalMessage');
+            const btn = document.getElementById('confirmActionBtn');
+
+            if (action === 'cancel') {
+                title.textContent = 'Cancelar Orden';
+                message.textContent = '¿Está seguro de que desea cancelar esta orden? Esta acción no se puede deshacer.';
+                btn.innerHTML = '<i class="fas fa-ban me-2"></i>Cancelar Orden';
+                btn.onclick = () => executeAction('cancelled');
+            } else if (action === 'refund') {
+                title.textContent = 'Procesar Reembolso';
+                message.textContent = '¿Está seguro de que desea procesar el reembolso de esta orden? Esta acción no se puede deshacer.';
+                btn.innerHTML = '<i class="fas fa-undo me-2"></i>Procesar Reembolso';
+                btn.onclick = () => executeAction('refunded');
+            }
+
+            modal.show();
+        }
+
+        // Ejecutar acción
+        function executeAction(newStatus) {
+            fetch(`/admin/purchases/{{ purchase.id }}/update_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: newStatus,
+                    admin_notes: `Orden ${newStatus === 'cancelled' ? 'cancelada' : 'reembolsada'} por el administrador`
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+                    modal.hide();
+                    showAlert(`Orden ${newStatus === 'cancelled' ? 'cancelada' : 'reembolsada'} correctamente`, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error de conexión: ' + error.message, 'danger');
+            });
+        }
+
+        // Agregar nota
+        document.getElementById('addNoteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const noteText = document.getElementById('noteText').value.trim();
+            if (!noteText) {
+                showAlert('Por favor escriba una nota', 'warning');
+                return;
+            }
+
+            fetch(`/admin/purchases/{{ purchase.id }}/add_note`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    note: noteText
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Nota agregada correctamente', 'success');
+                    document.getElementById('noteText').value = '';
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error de conexión: ' + error.message, 'danger');
+            });
         });
-    }
-}
 
-function showShippingModal() {
-    const modal = new bootstrap.Modal(document.getElementById('shippingModal'));
-    modal.show();
-}
-
-function processShipping() {
-    const trackingNumber = document.getElementById('trackingNumber').value;
-    const shippingCarrier = document.getElementById('shippingCarrier').value;
-    
-    if (!trackingNumber || !shippingCarrier) {
-        showAlert('Por favor completa todos los campos', 'warning');
-        return;
-    }
-
-    fetch(`/admin/purchases/{{ purchase.id }}/update_status`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            status: 'shipped',
-            tracking_number: trackingNumber,
-            shipping_carrier: shippingCarrier,
-            admin_notes: `Enviado con ${shippingCarrier}. Tracking: ${trackingNumber}`
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('shippingModal'));
-            modal.hide();
-            showAlert('Compra marcada como enviada', 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showAlert('Error: ' + data.error, 'danger');
+        // Mostrar alerta flotante
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show floating-alert animate-in`;
+            alertDiv.innerHTML = `
+                <strong>${type === 'success' ? '✓' : type === 'danger' ? '✗' : '⚠'}</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 300);
+            }, 5000);
         }
-    })
-    .catch(error => {
-        showAlert('Error de conexión', 'danger');
-    });
-}
 
-// Agregar nota
-document.getElementById('addNoteForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const noteText = document.getElementById('noteText').value.trim();
-    if (!noteText) {
-        showAlert('Por favor escribe una nota', 'warning');
-        return;
-    }
+        // Limpiar modales al cerrar
+        document.getElementById('shippingModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('shippingForm').reset();
+        });
 
-    fetch(`/admin/purchases/{{ purchase.id }}/add_note`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            note: noteText
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Nota agregada correctamente', 'success');
-            document.getElementById('noteText').value = '';
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showAlert('Error: ' + data.error, 'danger');
-        }
-    })
-    .catch(error => {
-        showAlert('Error de conexión', 'danger');
-    });
-});
-
-function showAlert(message, type) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.body.appendChild(alertDiv);
-    
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
-}
-</script>
-
-<style>
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
-.timeline-item {
-    position: relative;
-}
-.timeline-marker {
-    position: absolute;
-    left: -30px;
-    top: 5px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-}
-.timeline-content {
-    padding-bottom: 10px;
-    border-left: 2px solid #e3e6f0;
-    padding-left: 20px;
-}
-</style>
-{% endblock %}
+        document.getElementById('confirmModal').addEventListener('hidden.bs.modal', function () {
+            currentAction = null;
+        });
+    </script>
+</body>
+</html>
