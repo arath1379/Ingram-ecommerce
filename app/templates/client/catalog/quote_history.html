@@ -472,6 +472,7 @@
                                                     <a href="/quote/{{ quote.id }}" class="btn btn-outline-primary">
                                                         <i class="fas fa-eye"></i> Ver
                                                     </a>
+                                                    
                                                     {% if quote.status in ['draft', 'rejected'] %}
                                                     <form method="POST" action="/quote/duplicate/{{ quote.id }}" class="d-inline">
                                                         <button type="submit" class="btn btn-outline-secondary">
@@ -479,10 +480,30 @@
                                                         </button>
                                                     </form>
                                                     {% endif %}
+                                                    
                                                     {% if quote.status == 'draft' %}
                                                     <form method="POST" action="/quote/request-approval/{{ quote.id }}" class="d-inline">
                                                         <button type="submit" class="btn btn-outline-success">
                                                             <i class="fas fa-paper-plane"></i> Enviar
+                                                        </button>
+                                                    </form>
+                                                    {% endif %}
+
+                                                    <!-- NUEVAS ACCIONES: ELIMINAR Y CANCELAR -->
+                                                    {% if quote.status == 'draft' %}
+                                                    <form method="POST" action="/quote/delete/{{ quote.id }}" class="d-inline" 
+                                                        onsubmit="return confirm('¿Está seguro de ELIMINAR permanentemente esta cotización?');">
+                                                        <button type="submit" class="btn btn-outline-danger">
+                                                            <i class="fas fa-trash"></i> Eliminar
+                                                        </button>
+                                                    </form>
+                                                    {% endif %}
+                                                    
+                                                    {% if quote.status in ['draft', 'pending', 'sent'] %}
+                                                    <form method="POST" action="/quote/cancel/{{ quote.id }}" class="d-inline"
+                                                        onsubmit="return confirm('¿Está seguro de CANCELAR esta cotización?');">
+                                                        <button type="submit" class="btn btn-outline-warning">
+                                                            <i class="fas fa-ban"></i> Cancelar
                                                         </button>
                                                     </form>
                                                     {% endif %}
@@ -518,14 +539,22 @@
                                 </ul>
                             </nav>
                             {% endif %}
-                        {% else %}
+                       {% else %}
                             <div class="text-center py-5">
                                 <i class="fas fa-file-invoice-dollar fa-4x mb-3"></i>
                                 <h4>No hay cotizaciones</h4>
                                 <p class="text-muted">Aún no has creado ninguna cotización.</p>
-                                <a href="/products/catalogo-completo-cards" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Crear Primera Cotización
-                                </a>
+                                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                    <a href="/catalogo-completo-cards" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Crear Primera Cotización
+                                    </a>
+                                    <!-- Botón para cancelar cotización actual si existe -->
+                                    <form method="POST" action="/quote/cancel-current" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-warning">
+                                            <i class="fas fa-ban"></i> Cancelar Cotización Actual
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         {% endif %}
                     </div>

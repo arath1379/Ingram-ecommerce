@@ -1,0 +1,456 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Compra {{ purchase.order_number }} - Administrador{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 text-gray-800">
+                <i class="fas fa-shopping-cart fa-fw me-2"></i>Compra #{{ purchase.order_number }}
+            </h1>
+            <p class="text-muted mb-0">Detalle completo de la compra</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.purchases') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver a Compras
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-lg-8">
+            <!-- Información del Pedido -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-box me-1"></i>Detalles del Pedido
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>SKU</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Unitario</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.product_name }}</strong>
+                                        {% if item.product_description %}
+                                        <br><small class="text-muted">{{ item.product_description[:100] }}...</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.product_sku }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>${{ "%.2f"|format(item.unit_price) }}</td>
+                                    <td><strong>${{ "%.2f"|format(item.total_price) }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
+                                    <td><strong>${{ "%.2f"|format(purchase.subtotal) }}</strong></td>
+                                </tr>
+                                {% if purchase.tax_amount > 0 %}
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>Impuestos:</strong></td>
+                                    <td><strong>${{ "%.2f"|format(purchase.tax_amount) }}</strong></td>
+                                </tr>
+                                {% endif %}
+                                {% if purchase.shipping_cost > 0 %}
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>Envío:</strong></td>
+                                    <td><strong>${{ "%.2f"|format(purchase.shipping_cost) }}</strong></td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                                    <td><strong class="text-primary">${{ "%.2f"|format(purchase.total_amount) }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history me-1"></i>Historial de la Compra
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if purchase.history %}
+                    <div class="timeline">
+                        {% for history in purchase.history %}
+                        <div class="timeline-item mb-3">
+                            <div class="timeline-marker bg-{{ 
+                                'primary' if 'pagada' in history.action.lower() 
+                                else 'success' if 'enviada' in history.action.lower() 
+                                else 'info' if 'entregada' in history.action.lower() 
+                                else 'warning' 
+                            }}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">{{ history.action }}</h6>
+                                <p class="text-muted mb-1">{{ history.description }}</p>
+                                <small class="text-muted">
+                                    Por {{ history.user_name }} - 
+                                    {{ history.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-3">No hay historial disponible para esta compra.</p>
+                    {% endif %}
+
+                    <!-- Agregar Nota -->
+                    <div class="mt-4">
+                        <form id="addNoteForm">
+                            <div class="mb-3">
+                                <label for="noteText" class="form-label">Agregar nota al historial</label>
+                                <textarea class="form-control" id="noteText" rows="3" 
+                                          placeholder="Escribe una nota sobre esta compra..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Agregar Nota
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar - Información del Cliente y Acciones -->
+        <div class="col-lg-4">
+            <!-- Información del Cliente -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user me-1"></i>Información del Cliente
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Nombre:</strong><br>
+                        {{ purchase.customer_name }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Email:</strong><br>
+                        <a href="mailto:{{ purchase.customer_email }}">{{ purchase.customer_email }}</a>
+                    </div>
+                    {% if purchase.customer_phone %}
+                    <div class="mb-3">
+                        <strong>Teléfono:</strong><br>
+                        {{ purchase.customer_phone }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Información de Envío -->
+            {% if purchase.shipping_address %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-truck me-1"></i>Dirección de Envío
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <address class="mb-0">
+                        {{ purchase.shipping_address|replace('\n', '<br>')|safe }}<br>
+                        {{ purchase.shipping_city }}, {{ purchase.shipping_state }}<br>
+                        {{ purchase.shipping_zipcode }}<br>
+                        {{ purchase.shipping_country }}
+                    </address>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información de Pago -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-credit-card me-1"></i>Información de Pago
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Método:</strong> {{ purchase.payment_method|title }}
+                    </div>
+                    {% if purchase.payment_reference %}
+                    <div class="mb-2">
+                        <strong>Referencia:</strong> {{ purchase.payment_reference }}
+                    </div>
+                    {% endif %}
+                    <div class="mb-2">
+                        <strong>Estado Pago:</strong>
+                        <span class="badge bg-{{ 'success' if purchase.payment_status == 'completed' else 'warning' }}">
+                            {{ purchase.payment_status|title }}
+                        </span>
+                    </div>
+                    {% if purchase.paid_at %}
+                    <div class="mb-0">
+                        <strong>Pagado:</strong><br>
+                        {{ purchase.paid_at.strftime('%d/%m/%Y %H:%M') }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cogs me-1"></i>Acciones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if purchase.status == 'pending' %}
+                        <button class="btn btn-success" onclick="updateStatus('paid')">
+                            <i class="fas fa-check me-1"></i>Marcar como Pagada
+                        </button>
+                        {% endif %}
+
+                        {% if purchase.status == 'paid' %}
+                        <button class="btn btn-info" onclick="showShippingModal()">
+                            <i class="fas fa-shipping-fast me-1"></i>Marcar como Enviada
+                        </button>
+                        {% endif %}
+
+                        {% if purchase.status == 'shipped' %}
+                        <button class="btn btn-primary" onclick="updateStatus('delivered')">
+                            <i class="fas fa-home me-1"></i>Marcar como Entregada
+                        </button>
+                        {% endif %}
+
+                        {% if purchase.status not in ['cancelled', 'refunded'] %}
+                        <button class="btn btn-warning" onclick="updateStatus('cancelled')">
+                            <i class="fas fa-times me-1"></i>Cancelar Compra
+                        </button>
+                        {% endif %}
+
+                        {% if purchase.status == 'paid' and purchase.status != 'refunded' %}
+                        <button class="btn btn-danger" onclick="updateStatus('refunded')">
+                            <i class="fas fa-undo me-1"></i>Reembolsar
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado Actual -->
+            <div class="card shadow mt-4">
+                <div class="card-body text-center">
+                    <h5>Estado Actual</h5>
+                    <span class="badge bg-{{ 
+                        'warning' if purchase.status == 'pending' 
+                        else 'success' if purchase.status == 'paid' 
+                        else 'info' if purchase.status == 'shipped' 
+                        else 'primary' if purchase.status == 'delivered' 
+                        else 'danger' 
+                    }} fs-6 px-3 py-2">
+                        {{ purchase.status|title }}
+                    </span>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            Creado: {{ purchase.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para información de envío -->
+<div class="modal fade" id="shippingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Información de Envío</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="shippingForm">
+                    <div class="mb-3">
+                        <label for="trackingNumber" class="form-label">Número de Seguimiento</label>
+                        <input type="text" class="form-control" id="trackingNumber" 
+                               placeholder="Ingresa el número de tracking">
+                    </div>
+                    <div class="mb-3">
+                        <label for="shippingCarrier" class="form-label">Transportista</label>
+                        <input type="text" class="form-control" id="shippingCarrier" 
+                               placeholder="Ej: DHL, FedEx, UPS">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="processShipping()">Confirmar Envío</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateStatus(newStatus) {
+    if (confirm(`¿Estás seguro de que quieres cambiar el estado a "${newStatus}"?`)) {
+        fetch(`/admin/purchases/{{ purchase.id }}/update_status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                status: newStatus,
+                admin_notes: 'Estado actualizado desde el detalle'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Estado actualizado correctamente', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert('Error: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error de conexión', 'danger');
+        });
+    }
+}
+
+function showShippingModal() {
+    const modal = new bootstrap.Modal(document.getElementById('shippingModal'));
+    modal.show();
+}
+
+function processShipping() {
+    const trackingNumber = document.getElementById('trackingNumber').value;
+    const shippingCarrier = document.getElementById('shippingCarrier').value;
+    
+    if (!trackingNumber || !shippingCarrier) {
+        showAlert('Por favor completa todos los campos', 'warning');
+        return;
+    }
+
+    fetch(`/admin/purchases/{{ purchase.id }}/update_status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            status: 'shipped',
+            tracking_number: trackingNumber,
+            shipping_carrier: shippingCarrier,
+            admin_notes: `Enviado con ${shippingCarrier}. Tracking: ${trackingNumber}`
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('shippingModal'));
+            modal.hide();
+            showAlert('Compra marcada como enviada', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error de conexión', 'danger');
+    });
+}
+
+// Agregar nota
+document.getElementById('addNoteForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const noteText = document.getElementById('noteText').value.trim();
+    if (!noteText) {
+        showAlert('Por favor escribe una nota', 'warning');
+        return;
+    }
+
+    fetch(`/admin/purchases/{{ purchase.id }}/add_note`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            note: noteText
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Nota agregada correctamente', 'success');
+            document.getElementById('noteText').value = '';
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error de conexión', 'danger');
+    });
+});
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+.timeline-item {
+    position: relative;
+}
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+.timeline-content {
+    padding-bottom: 10px;
+    border-left: 2px solid #e3e6f0;
+    padding-left: 20px;
+}
+</style>
+{% endblock %}

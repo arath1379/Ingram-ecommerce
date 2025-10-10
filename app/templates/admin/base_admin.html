@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin - IT Data Global{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: #F1F3F4;
+            color: #1C2A2F;
+        }
+
+        .sidebar {
+            background: #1C2A2F;
+            background-image: linear-gradient(180deg, #1C2A2F 0%, #10B981 100%);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            padding-top: 70px;
+            box-shadow: 4px 0 20px rgba(28, 42, 47, 0.3);
+            z-index: 100;
+        }
+
+        .sidebar .nav-item .nav-link {
+            color: rgba(255, 255, 255, 0.85);
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-weight: 500;
+        }
+
+        .sidebar .nav-item .nav-link:hover {
+            color: #FFFFFF;
+            background-color: rgba(16, 185, 129, 0.2);
+            border-left-color: #10B981;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-item .nav-link i {
+            margin-right: 0.75rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .nav-item.active .nav-link,
+        .sidebar .nav-item .nav-link.active {
+            color: #FFFFFF;
+            background-color: rgba(16, 185, 129, 0.3);
+            border-left-color: #10B981;
+        }
+
+        .navbar {
+            background: #FFFFFF;
+            box-shadow: 0 4px 20px rgba(28, 42, 47, 0.1);
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 250px;
+            z-index: 1000;
+            height: 70px;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: #1C2A2F;
+            font-size: 1.25rem;
+        }
+
+        .navbar-brand i {
+            color: #10B981;
+        }
+
+        .navbar-brand:hover {
+            color: #10B981;
+        }
+
+        .navbar .nav-link {
+            color: #6C757D;
+            transition: color 0.3s ease;
+        }
+
+        .navbar .nav-link:hover {
+            color: #10B981;
+        }
+
+        main {
+            margin-left: 250px;
+            margin-top: 70px;
+            padding: 2rem;
+            min-height: calc(100vh - 70px);
+        }
+
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(28, 42, 47, 0.08);
+            background: #FFFFFF;
+            margin-bottom: 1.5rem;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        }
+
+        .dropdown-menu {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.15);
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background: #F0FDF4;
+            color: #10B981;
+        }
+
+        .dropdown-item i {
+            color: #10B981;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .alert-danger {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .alert-info {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        .alert-warning {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                left: -250px;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .navbar {
+                left: 0;
+            }
+
+            main {
+                margin-left: 0;
+            }
+
+            #sidebarToggleTop {
+                display: block !important;
+            }
+        }
+
+        @media (min-width: 769px) {
+            #sidebarToggleTop {
+                display: none !important;
+            }
+        }
+
+        /* Botón toggle sidebar */
+        #sidebarToggleTop {
+            background: none;
+            border: none;
+            color: #1C2A2F;
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+        }
+
+        #sidebarToggleTop:hover {
+            color: #10B981;
+        }
+    </style>
+    
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand navbar-light">
+        <div class="container-fluid">
+            <!-- Sidebar Toggle (Mobile) -->
+            <button class="btn btn-link d-md-none" id="sidebarToggleTop">
+                <i class="fa fa-bars"></i>
+            </button>
+
+            <!-- Brand -->
+            <a class="navbar-brand" href="{{ url_for('admin.dashboard') }}">
+                <i class="fas fa-microchip me-2"></i>
+                <strong>IT Data Global Admin</strong>
+            </a>
+
+            <!-- Topbar Navbar -->
+            <ul class="navbar-nav ms-auto">
+                <!-- Nav Item - User Information -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                        <span class="me-2 d-none d-lg-inline">
+                            {{ session.get('user_email', 'Administrador') }}
+                        </span>
+                        <i class="fas fa-user-circle fa-lg"></i>
+                    </a>
+                    <!-- Dropdown - User Information -->
+                    <div class="dropdown-menu dropdown-menu-end shadow">
+                        <a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                            <i class="fas fa-tachometer-alt fa-sm fa-fw me-2"></i>
+                            Dashboard
+                        </a>
+                        <a class="dropdown-item" href="{{ url_for('admin.settings') }}">
+                            <i class="fas fa-cogs fa-sm fa-fw me-2"></i>
+                            Configuración
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                            <i class="fas fa-sign-out-alt fa-sm fa-fw me-2"></i>
+                            Cerrar Sesión
+                        </a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="position-sticky pt-3">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" 
+                       href="{{ url_for('admin.dashboard') }}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin.users' %}active{% endif %}" 
+                       href="{{ url_for('admin.users') }}">
+                        <i class="fas fa-users"></i>
+                        Usuarios
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin.quotes' %}active{% endif %}" 
+                       href="{{ url_for('admin.quotes') }}">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        Cotizaciones
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin.purchases' or 'purchases' in request.endpoint %}active{% endif %}" 
+                       href="{{ url_for('admin.purchases') }}">
+                        <i class="fas fa-shopping-cart"></i>
+                        Compras Directas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin.products' %}active{% endif %}" 
+                       href="{{ url_for('admin.products') }}">
+                        <i class="fas fa-boxes"></i>
+                        Catálogo
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin.reports' %}active{% endif %}" 
+                       href="{{ url_for('admin.reports') }}">
+                        <i class="fas fa-chart-bar"></i>
+                        Reportes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin.settings' %}active{% endif %}" 
+                       href="{{ url_for('admin.settings') }}">
+                        <i class="fas fa-cogs"></i>
+                        Configuración
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Page Content -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Bootstrap & jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Sidebar Toggle Script -->
+    <script>
+        // Toggle sidebar en móvil
+        document.getElementById('sidebarToggleTop').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('show');
+        });
+
+        // Cerrar sidebar al hacer clic fuera en móvil
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarToggleTop');
+            
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
+                    sidebar.classList.remove('show');
+                }
+            }
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

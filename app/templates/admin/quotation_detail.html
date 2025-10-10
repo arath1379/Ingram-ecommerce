@@ -434,6 +434,11 @@
             color: white;
         }
 
+        .btn-warning {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+        }
+
         .btn-info {
             background: linear-gradient(135deg, #3B82F6, #1D4ED8);
             color: white;
@@ -605,6 +610,39 @@
             margin-top: 0.25rem;
             line-height: 1.4;
         }
+
+        /* Action buttons container */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Print styles */
+        @media print {
+            .admin-header,
+            .breadcrumb,
+            .btn,
+            .modern-card:last-child,
+            nav {
+                display: none !important;
+            }
+            
+            .page-header {
+                box-shadow: none;
+                border: 1px solid #000;
+            }
+            
+            .modern-card {
+                page-break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            
+            body {
+                background: white;
+            }
+        }
     </style>
 </head>
 <body>
@@ -688,7 +726,7 @@
                         </span>
                     </div>
                 </div>
-                <div class="d-flex gap-2 flex-wrap">
+                <div class="action-buttons">
                     <a href="/admin/quotes" class="btn btn-outline-primary">
                         <i class="fas fa-arrow-left"></i>Volver
                     </a>
@@ -720,6 +758,17 @@
                             <i class="fas fa-dollar-sign"></i>Marcar Pagada
                         </button>
                     {% endif %}
+
+                    <!-- BOTONES DE ELIMINAR Y CANCELAR AGREGADOS -->
+                    {% if quotation.status != 'cancelled' %}
+                    <button class="btn btn-warning" onclick="cancelQuote()">
+                        <i class="fas fa-ban"></i>Cancelar
+                    </button>
+                    {% endif %}
+                    
+                    <button class="btn btn-danger" onclick="deleteQuote()">
+                        <i class="fas fa-trash"></i>Eliminar
+                    </button>
                 </div>
             </div>
         </div>
@@ -1154,9 +1203,58 @@
             .catch(error => {
                 alert('Error de conexión: ' + error);
                 btn.disabled = false;
-                    btn.innerHTML = originalHTML;
-                });
+                btn.innerHTML = originalHTML;
+            });
+        }
+
+        // === FUNCIONES PARA ELIMINAR Y CANCELAR ===
+        function cancelQuote() {
+            if (!confirm('¿Está seguro de cancelar esta cotización?')) {
+                return;
             }
+            
+            // Crear formulario dinámico para cancelación
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/quotes/cancel/{{ quotation.id }}`;
+            
+            // Agregar token CSRF si es necesario
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = csrfToken.getAttribute('content');
+                form.appendChild(csrfInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function deleteQuote() {
+            if (!confirm('⚠️ ADVERTENCIA: ¿Está seguro de ELIMINAR esta cotización?\n\nEsta acción NO se puede deshacer.')) {
+                return;
+            }
+            
+            // Crear formulario dinámico para eliminación
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/quotes/delete/{{ quotation.id }}`;
+            
+            // Agregar token CSRF si es necesario
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = csrfToken.getAttribute('content');
+                form.appendChild(csrfInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
 
         // Limpiar modal al cerrar
         document.getElementById('statusModal').addEventListener('hidden.bs.modal', function () {
@@ -1173,31 +1271,5 @@
             document.body.classList.remove('printing');
         };
     </script>
-
-    <style media="print">
-        /* Estilos para impresión */
-        .admin-header,
-        .breadcrumb,
-        .btn,
-        .modern-card:last-child,
-        nav {
-            display: none !important;
-        }
-        
-        .page-header {
-            box-shadow: none;
-            border: 1px solid #000;
-        }
-        
-        .modern-card {
-            page-break-inside: avoid;
-            box-shadow: none;
-            border: 1px solid #ddd;
-        }
-        
-        body {
-            background: white;
-        }
-    </style>
 </body>
 </html>

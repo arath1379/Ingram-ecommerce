@@ -117,30 +117,119 @@
             border-radius: 16px;
             padding: 2rem;
             box-shadow: 0 4px 16px rgba(28, 42, 47, 0.1);
-            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #10B981;
+            transform: scaleY(0);
             transition: transform 0.3s ease;
         }
 
         .stat-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 32px rgba(28, 42, 47, 0.15);
+        }
+
+        .stat-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 1rem;
         }
 
         .stat-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            border-radius: 12px;
+            color: #FFFFFF;
+            font-size: 1.5rem;
+        }
+
+        .stat-badge {
+            background: #E8F5E9;
             color: #10B981;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .stat-content {
+            margin-top: 1rem;
         }
 
         .stat-number {
             font-size: 2.5rem;
             font-weight: 700;
             color: #1C2A2F;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
+            line-height: 1;
         }
 
         .stat-label {
             color: #6C757D;
             font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .stat-footer {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #F1F3F4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-change {
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .stat-change.positive {
+            color: #10B981;
+        }
+
+        .stat-change.negative {
+            color: #EF4444;
+        }
+
+        .stat-link {
+            color: #10B981;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: color 0.2s ease;
+        }
+
+        .stat-link:hover {
+            color: #0D9669;
         }
 
         .actions-grid {
@@ -165,8 +254,11 @@
         .action-title {
             font-size: 1.5rem;
             font-weight: 600;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             color: #1C2A2F;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .action-list {
@@ -188,17 +280,27 @@
             gap: 1rem;
             text-decoration: none;
             color: #1C2A2F;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
+            padding: 0.5rem;
+            border-radius: 8px;
         }
 
         .action-link:hover {
             color: #10B981;
+            background: #F0FDF4;
+            transform: translateX(5px);
         }
 
         .action-icon {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             width: 40px;
-            text-align: center;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #F0FDF4;
+            border-radius: 8px;
+            color: #10B981;
         }
 
         .recent-activity {
@@ -213,6 +315,9 @@
             font-weight: 600;
             margin-bottom: 1.5rem;
             color: #1C2A2F;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .activity-list {
@@ -223,19 +328,26 @@
             display: flex;
             align-items: center;
             gap: 1rem;
-            padding: 1rem 0;
-            border-bottom: 1px solid #F1F3F4;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
         }
 
-        .activity-item:last-child {
-            border-bottom: none;
+        .activity-item:hover {
+            background: #F0FDF4;
         }
 
         .activity-icon {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            border-radius: 12px;
+            color: #FFFFFF;
             font-size: 1.2rem;
-            color: #10B981;
-            width: 30px;
-            text-align: center;
         }
 
         .activity-content {
@@ -244,11 +356,30 @@
 
         .activity-text {
             margin-bottom: 0.25rem;
+            font-weight: 500;
+            color: #1C2A2F;
         }
 
         .activity-time {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #6C757D;
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, #F1F3F4 25%, #E5E7EB 50%, #F1F3F4 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s ease-in-out infinite;
+            border-radius: 4px;
+            height: 1.5rem;
+        }
+
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
         }
 
         @media (max-width: 768px) {
@@ -266,6 +397,15 @@
             
             .welcome-title {
                 font-size: 2rem;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
             }
         }
     </style>
@@ -307,51 +447,124 @@
 
         <!-- Estadísticas Principales -->
         <div class="stats-grid">
+            <!-- Usuarios -->
             <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-users"></i>
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
                 </div>
-                <div class="stat-number">{{ admin_data.total_users }}</div>
-                <div class="stat-label">Usuarios Registrados</div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ admin_data.total_users }}</div>
+                    <div class="stat-label">Usuarios Registrados</div>
+                </div>
+                <div class="stat-footer">
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        +{{ admin_data.new_users_month }}
+                    </div>
+                    <a href="/admin/users" class="stat-link">
+                        Ver todos <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
             </div>
 
+            <!-- Clientes Empresariales -->
             <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-building"></i>
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
                 </div>
-                <div class="stat-number">{{ admin_data.client_users }}</div>
-                <div class="stat-label">Clientes Empresariales</div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ admin_data.client_users }}</div>
+                    <div class="stat-label">Clientes Empresariales</div>
+                </div>
+                <div class="stat-footer">
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        Este mes
+                    </div>
+                    <a href="/admin/users?type=client" class="stat-link">
+                        Ver clientes <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
             </div>
 
+            <!-- Cotizaciones -->
             <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-file-invoice"></i>
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
                 </div>
-                <div class="stat-number">{{ admin_data.total_quotes }}</div>
-                <div class="stat-label">Total Cotizaciones</div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ admin_data.total_quotes }}</div>
+                    <div class="stat-label">Total Cotizaciones</div>
+                </div>
+                <div class="stat-footer">
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        +{{ admin_data.quotes_today }} hoy
+                    </div>
+                    <a href="/admin/quotes" class="stat-link">
+                        Ver todas <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Compras Directas -->
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="stat-badge">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                        <span id="purchaseStatus">Cargando...</span>
+                    </div>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="directPurchasesCount">
+                        <div class="loading-skeleton" style="width: 80px;"></div>
+                    </div>
+                    <div class="stat-label">Compras Directas</div>
+                </div>
+                <div class="stat-footer">
+                    <div class="stat-change positive" id="purchasesChange">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                        Cargando...
+                    </div>
+                    <a href="/admin/purchases" class="stat-link">
+                        Ver compras <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
             </div>
         </div>
 
         <!-- Acciones Rápidas -->
         <div class="actions-grid">
             <div class="action-card">
-                <h3 class="action-title">⚡ Gestión de Usuarios</h3>
+                <h3 class="action-title">
+                    <i class="fas fa-users-cog"></i>
+                    Gestión de Usuarios
+                </h3>
                 <ul class="action-list">
                     <li class="action-item">
                         <a href="/admin/users" class="action-link">
-                            <span class="action-icon"><i class="fas fa-list"></i></span>
+                            <div class="action-icon"><i class="fas fa-list"></i></div>
                             <span>Ver todos los usuarios</span>
                         </a>
                     </li>
                     <li class="action-item">
                         <a href="/admin/users?type=client" class="action-link">
-                            <span class="action-icon"><i class="fas fa-building"></i></span>
+                            <div class="action-icon"><i class="fas fa-building"></i></div>
                             <span>Clientes empresariales</span>
                         </a>
                     </li>
                     <li class="action-item">
                         <a href="/admin/users?status=unverified" class="action-link">
-                            <span class="action-icon"><i class="fas fa-user-clock"></i></span>
+                            <div class="action-icon"><i class="fas fa-user-clock"></i></div>
                             <span>Usuarios pendientes</span>
                         </a>
                     </li>
@@ -359,23 +572,26 @@
             </div>
 
             <div class="action-card">
-                <h3 class="action-title">📊 Gestión de Cotizaciones</h3>
+                <h3 class="action-title">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    Gestión de Cotizaciones
+                </h3>
                 <ul class="action-list">
                     <li class="action-item">
                         <a href="/admin/quotes" class="action-link">
-                            <span class="action-icon"><i class="fas fa-list"></i></span>
+                            <div class="action-icon"><i class="fas fa-list"></i></div>
                             <span>Ver todas las cotizaciones</span>
                         </a>
                     </li>
                     <li class="action-item">
                         <a href="/admin/quotes?status=pending" class="action-link">
-                            <span class="action-icon"><i class="fas fa-clock"></i></span>
+                            <div class="action-icon"><i class="fas fa-clock"></i></div>
                             <span>Cotizaciones pendientes</span>
                         </a>
                     </li>
                     <li class="action-item">
                         <a href="/admin/quotes?status=approved" class="action-link">
-                            <span class="action-icon"><i class="fas fa-check-circle"></i></span>
+                            <div class="action-icon"><i class="fas fa-check-circle"></i></div>
                             <span>Cotizaciones aprobadas</span>
                         </a>
                     </li>
@@ -383,23 +599,53 @@
             </div>
 
             <div class="action-card">
-                <h3 class="action-title">🔧 Configuración del Sistema</h3>
+                <h3 class="action-title">
+                    <i class="fas fa-shopping-bag"></i>
+                    Gestión de Compras
+                </h3>
+                <ul class="action-list">
+                    <li class="action-item">
+                        <a href="/admin/purchases" class="action-link">
+                            <div class="action-icon"><i class="fas fa-shopping-cart"></i></div>
+                            <span>Ver todas las compras</span>
+                        </a>
+                    </li>
+                    <li class="action-item">
+                        <a href="/admin/purchases?status=pending" class="action-link">
+                            <div class="action-icon"><i class="fas fa-hourglass-half"></i></div>
+                            <span>Compras pendientes</span>
+                        </a>
+                    </li>
+                    <li class="action-item">
+                        <a href="/admin/purchases?status=completed" class="action-link">
+                            <div class="action-icon"><i class="fas fa-check-double"></i></div>
+                            <span>Compras completadas</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="action-card">
+                <h3 class="action-title">
+                    <i class="fas fa-cogs"></i>
+                    Configuración del Sistema
+                </h3>
                 <ul class="action-list">
                     <li class="action-item">
                         <a href="/admin/products" class="action-link">
-                            <span class="action-icon"><i class="fas fa-boxes"></i></span>
+                            <div class="action-icon"><i class="fas fa-boxes"></i></div>
                             <span>Productos</span>
                         </a>
                     </li>
                     <li class="action-item">
                         <a href="/admin/settings" class="action-link">
-                            <span class="action-icon"><i class="fas fa-cog"></i></span>
+                            <div class="action-icon"><i class="fas fa-sliders-h"></i></div>
                             <span>Configuración general</span>
                         </a>
                     </li>
                     <li class="action-item">
                         <a href="/admin/reports" class="action-link">
-                            <span class="action-icon"><i class="fas fa-chart-bar"></i></span>
+                            <div class="action-icon"><i class="fas fa-chart-line"></i></div>
                             <span>Reportes y estadísticas</span>
                         </a>
                     </li>
@@ -409,11 +655,14 @@
 
         <!-- Actividad Reciente -->
         <div class="recent-activity">
-            <h3 class="section-title">📈 Actividad Reciente</h3>
+            <h3 class="section-title">
+                <i class="fas fa-chart-line"></i>
+                Actividad Reciente
+            </h3>
             <ul class="activity-list">
                 <li class="activity-item">
                     <div class="activity-icon">
-                        <i class="fas fa-user-plus"></i>
+                        <i class="fas fa-file-invoice"></i>
                     </div>
                     <div class="activity-content">
                         <div class="activity-text">{{ admin_data.quotes_today }} cotizaciones creadas hoy</div>
@@ -422,7 +671,7 @@
                 </li>
                 <li class="activity-item">
                     <div class="activity-icon">
-                        <i class="fas fa-chart-line"></i>
+                        <i class="fas fa-user-plus"></i>
                     </div>
                     <div class="activity-content">
                         <div class="activity-text">{{ admin_data.new_users_month }} nuevos usuarios este mes</div>
@@ -440,7 +689,7 @@
                 </li>
                 <li class="activity-item">
                     <div class="activity-icon">
-                        <i class="fas fa-database"></i>
+                        <i class="fas fa-server"></i>
                     </div>
                     <div class="activity-content">
                         <div class="activity-text">Sistema funcionando correctamente</div>
@@ -452,6 +701,51 @@
     </div>
 
     <script>
+        // Cargar estadísticas de compras
+        async function loadPurchaseStats() {
+            try {
+                const response = await fetch('/admin/api/purchases/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Actualizar número de compras
+                    document.getElementById('directPurchasesCount').textContent = data.stats.total_purchases || 0;
+                    
+                    // Actualizar estado
+                    document.getElementById('purchaseStatus').textContent = 'Activo';
+                    
+                    // Actualizar cambio (ejemplo con compras de hoy)
+                    const changeElement = document.getElementById('purchasesChange');
+                    const todayPurchases = data.stats.today_purchases || 0;
+                    
+                    if (todayPurchases > 0) {
+                        changeElement.innerHTML = `
+                            <i class="fas fa-arrow-up"></i>
+                            +${todayPurchases} hoy
+                        `;
+                        changeElement.className = 'stat-change positive';
+                    } else {
+                        changeElement.innerHTML = `
+                            <i class="fas fa-minus"></i>
+                            Sin cambios
+                        `;
+                        changeElement.className = 'stat-change';
+                    }
+                } else {
+                    throw new Error(data.error || 'Error al cargar datos');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('directPurchasesCount').textContent = '0';
+                document.getElementById('purchaseStatus').textContent = 'Error';
+                document.getElementById('purchasesChange').innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i>
+                    Error al cargar
+                `;
+                document.getElementById('purchasesChange').className = 'stat-change negative';
+            }
+        }
+
         // Actualizar la hora cada minuto
         function updateTime() {
             const now = new Date();
@@ -463,10 +757,15 @@
             });
         }
         
-        setInterval(updateTime, 60000);
-        
-        // Efectos de hover mejorados
+        // Ejecutar al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
+            // Cargar estadísticas de compras
+            loadPurchaseStats();
+            
+            // Actualizar tiempo cada minuto
+            setInterval(updateTime, 60000);
+            
+            // Efectos de hover mejorados
             const cards = document.querySelectorAll('.stat-card, .action-card');
             cards.forEach(card => {
                 card.addEventListener('mouseenter', function() {

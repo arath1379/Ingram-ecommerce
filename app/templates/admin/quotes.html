@@ -421,6 +421,8 @@
             justify-content: center;
             transition: all 0.2s ease;
             padding: 0;
+            border: 2px solid;
+            background: transparent;
         }
 
         .btn-action:hover {
@@ -431,6 +433,30 @@
             display: flex;
             gap: 0.25rem;
             justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Estilos para botones de acción adicionales */
+        .btn-outline-warning {
+            border-color: var(--warning-color);
+            color: var(--warning-color);
+        }
+
+        .btn-outline-warning:hover {
+            background-color: var(--warning-color);
+            border-color: var(--warning-color);
+            color: white;
+        }
+
+        .btn-outline-danger {
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .btn-outline-danger:hover {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+            color: white;
         }
 
         /* Información de cliente */
@@ -569,6 +595,10 @@
 
             .btn-group-modern {
                 flex-wrap: wrap;
+            }
+
+            .table-responsive {
+                font-size: 0.875rem;
             }
         }
 
@@ -882,6 +912,21 @@
                                                 <i class="fas fa-dollar-sign"></i>
                                             </button>
                                         {% endif %}
+
+                                        <!-- BOTONES DE ELIMINAR Y CANCELAR - NUEVOS -->
+                                        {% if quote.status != 'cancelled' %}
+                                        <button class="btn btn-outline-warning btn-action" 
+                                                onclick="cancelQuote({{ quote.id }})"
+                                                title="Cancelar cotización" data-bs-toggle="tooltip">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                        {% endif %}
+                                        
+                                        <button class="btn btn-outline-danger btn-action" 
+                                                onclick="deleteQuote({{ quote.id }})"
+                                                title="Eliminar permanentemente" data-bs-toggle="tooltip">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -1103,6 +1148,55 @@
             .catch(error => {
                 alert('Error de conexión: ' + error);
             });
+        }
+
+        // === FUNCIONES PARA ELIMINAR Y CANCELAR ===
+        function cancelQuote(quoteId) {
+            if (!confirm('¿Está seguro de cancelar esta cotización?')) {
+                return;
+            }
+            
+            // Crear formulario dinámico para cancelación
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/quotes/cancel/${quoteId}`;
+            
+            // Agregar token CSRF si es necesario
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = csrfToken.getAttribute('content');
+                form.appendChild(csrfInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function deleteQuote(quoteId) {
+            if (!confirm('⚠️ ADVERTENCIA: ¿Está seguro de ELIMINAR esta cotización?\n\nEsta acción NO se puede deshacer.')) {
+                return;
+            }
+            
+            // Crear formulario dinámico para eliminación
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/quotes/delete/${quoteId}`;
+            
+            // Agregar token CSRF si es necesario
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = csrfToken.getAttribute('content');
+                form.appendChild(csrfInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
         }
         
         // Limpiar modal cuando se cierre

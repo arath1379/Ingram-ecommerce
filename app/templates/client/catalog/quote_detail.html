@@ -451,7 +451,7 @@
                 IT Data Global
             </a>
             <div class="nav-links">
-                <a href="/catalog" class="nav-link">
+                <a href="/catalogo-completo-cards" class="nav-link">
                     <i class="fas fa-boxes"></i>
                     Catálogo
                 </a>
@@ -525,16 +525,26 @@
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
                                     <i class="fas fa-chart-bar" style="color: var(--primary-color);"></i>
-                                    Resumen
+                                    Resumen Financiero
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <p><strong>Total de Productos:</strong> {{ quote_items|length }}</p>
-                                <p><strong>Total:</strong> 
+                                <p><strong>Subtotal:</strong> 
+                                    <span style="color: var(--text-primary);">
+                                        ${{ "%.2f"|format(subtotal or 0) }} MXN
+                                    </span>
+                                </p>
+                                <p><strong>IVA (16%):</strong> 
+                                    <span style="color: var(--text-secondary);">
+                                        ${{ "%.2f"|format(tax_amount or 0) }} MXN
+                                    </span>
+                                </p>
+                                <p><strong>Total con IVA:</strong> 
                                     <span style="color: var(--primary-color); font-size: 1.5rem; font-weight: 700;">
                                         ${{ "%.2f"|format(total_amount or 0) }} MXN
                                     </span>
                                 </p>
+                                <p><strong>Total de Productos:</strong> {{ quote_items|length }}</p>
                                 
                                 {% if quote.status == 'draft' %}
                                 <div class="mt-3">
@@ -555,7 +565,7 @@
                     <div class="card-header">
                         <h5 class="card-title mb-0">
                             <i class="fas fa-box-open" style="color: var(--primary-color);"></i>
-                            Productos Cotizados
+                            Productos Cotizados ({{ quote_items|length }})
                         </h5>
                     </div>
                     <div class="card-body">
@@ -564,31 +574,60 @@
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th><i class="fas fa-barcode"></i> Producto</th>
+                                            <th><i class="fas fa-barcode"></i> SKU</th>
                                             <th><i class="fas fa-align-left"></i> Descripción</th>
                                             <th><i class="fas fa-hashtag"></i> Cantidad</th>
                                             <th><i class="fas fa-dollar-sign"></i> Precio Unitario</th>
-                                            <th><i class="fas fa-calculator"></i> Total</th>
+                                            <th><i class="fas fa-calculator"></i> Total Producto</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for item in quote_items %}
                                         <tr>
                                             <td>
-                                                <strong style="color: var(--primary-color);">{{ item.product.ingram_part_number }}</strong>
+                                                <strong style="color: var(--primary-color);">
+                                                    {{ item.product.ingram_part_number }}
+                                                </strong>
                                             </td>
                                             <td>{{ item.product.description }}</td>
-                                            <td><strong>{{ item.quantity }}</strong></td>
-                                            <td>${{ "%.2f"|format(item.unit_price or 0) }} MXN</td>
-                                            <td><strong style="color: var(--text-primary);">${{ "%.2f"|format(item.total_price or 0) }} MXN</strong></td>
+                                            <td>
+                                                <strong>{{ item.quantity }}</strong>
+                                            </td>
+                                            <td>
+                                                ${{ "%.2f"|format(item.unit_price or 0) }} MXN
+                                            </td>
+                                            <td>
+                                                <strong style="color: var(--text-primary);">
+                                                    ${{ "%.2f"|format((item.unit_price or 0) * item.quantity) }} MXN
+                                                </strong>
+                                            </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colspan="4" class="text-end">
+                                            <td colspan="3"></td>
+                                            <td class="text-end">
+                                                <strong>Subtotal:</strong>
+                                            </td>
+                                            <td>
+                                                <strong>${{ "%.2f"|format(subtotal or 0) }} MXN</strong>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="3"></td>
+                                            <td class="text-end">
+                                                <strong>IVA (16%):</strong>
+                                            </td>
+                                            <td>
+                                                <strong>${{ "%.2f"|format(tax_amount or 0) }} MXN</strong>
+                                            </td>
+                                        </tr>
+                                        <tr style="background: linear-gradient(135deg, #FFF7ED, #FFEDD5);">
+                                            <td colspan="3"></td>
+                                            <td class="text-end">
                                                 <strong style="font-size: 1.1rem;">
-                                                    <i class="fas fa-receipt"></i> Total General:
+                                                    <i class="fas fa-receipt"></i> TOTAL:
                                                 </strong>
                                             </td>
                                             <td>
@@ -624,18 +663,6 @@
                     el.style.opacity = '1';
                     el.style.transform = 'translateY(0)';
                 }, index * 150);
-            });
-
-            // Efectos hover mejorados para las filas de la tabla
-            const tableRows = document.querySelectorAll('.table tbody tr');
-            tableRows.forEach(row => {
-                row.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateX(8px)';
-                });
-                
-                row.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateX(0)';
-                });
             });
 
             console.log('Detalle de cotización cargado correctamente');
