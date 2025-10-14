@@ -442,22 +442,30 @@
                 <div>
                     <h1 class="page-title">
                         <i class="fas fa-chart-bar"></i>
-                        <span>Reportes y Analisis</span>
+                        <span>Reportes y Análisis</span>
                     </h1>
                     <p class="page-subtitle">Visualiza estadísticas y genera reportes del sistema</p>
                 </div>
-                <a href="/admin/dashboard" class="btn btn-outline-primary">
-                    <i class="fas fa-arrow-left"></i>Volver
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="#" onclick="refreshStats(); return false;" class="btn btn-outline-info">
+                        <i class="fas fa-sync-alt"></i>Actualizar
+                    </a>
+                    <a href="/admin/dashboard" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i>Volver
+                    </a>
+                </div>
             </div>
         </div>
 
-        <!-- Alert -->
+        <!-- Alert con información del periodo -->
         <div class="alert-modern animate-in">
             <i class="fas fa-info-circle"></i>
             <div class="alert-content">
-                <div class="alert-title">Módulo en Desarrollo</div>
-                <p class="alert-text">Los reportes avanzados están en desarrollo. Actualmente puedes acceder a las vistas básicas de usuarios y cotizaciones.</p>
+                <div class="alert-title">Reporte Generado</div>
+                <p class="alert-text">
+                    Datos actualizados al {{ report_generated.strftime('%d/%m/%Y %H:%M:%S') }}. 
+                    Periodo de análisis: últimos {{ period_days }} días.
+                </p>
             </div>
         </div>
 
@@ -472,11 +480,11 @@
                 <p class="report-description">Estadísticas completas de usuarios registrados, verificación y actividad en la plataforma</p>
                 <div class="report-stats">
                     <div class="stat-item">
-                        <div class="stat-number">150+</div>
+                        <div class="stat-number">{{ total_users }}</div>
                         <div class="stat-label">Total</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">85%</div>
+                        <div class="stat-number">{{ active_percentage }}%</div>
                         <div class="stat-label">Activos</div>
                     </div>
                 </div>
@@ -494,12 +502,12 @@
                 <p class="report-description">Análisis detallado de cotizaciones generadas, estados, conversiones y seguimiento</p>
                 <div class="report-stats">
                     <div class="stat-item">
-                        <div class="stat-number">234</div>
+                        <div class="stat-number">{{ total_quotes }}</div>
                         <div class="stat-label">Total</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">42%</div>
-                        <div class="stat-label">Aprobadas</div>
+                        <div class="stat-number">{{ conversion_rate }}%</div>
+                        <div class="stat-label">Conversión</div>
                     </div>
                 </div>
                 <a href="/admin/quotes" class="btn btn-outline-success w-100">
@@ -514,22 +522,30 @@
                 </div>
                 <h3 class="report-title">
                     Reporte de Ventas
-                    <span class="badge-coming-soon">Próximamente</span>
+                    {% if total_purchases == 0 %}
+                    <span class="badge-coming-soon">Sin Datos</span>
+                    {% endif %}
                 </h3>
                 <p class="report-description">Métricas de ventas, ingresos, tendencias y análisis de rendimiento comercial</p>
                 <div class="report-stats">
                     <div class="stat-item">
-                        <div class="stat-number">---</div>
+                        <div class="stat-number">{{ total_purchases }}</div>
                         <div class="stat-label">Ventas</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">---</div>
+                        <div class="stat-number">${{ "%.0f"|format(total_revenue) }}</div>
                         <div class="stat-label">Ingresos</div>
                     </div>
                 </div>
+                {% if total_purchases > 0 %}
+                <a href="/admin/purchases" class="btn btn-outline-info w-100">
+                    <i class="fas fa-eye"></i>Ver Reporte
+                </a>
+                {% else %}
                 <button class="btn btn-outline-info w-100" disabled>
-                    <i class="fas fa-lock"></i>En Desarrollo
+                    <i class="fas fa-lock"></i>Sin Datos
                 </button>
+                {% endif %}
             </div>
 
             <!-- Reporte de Productos -->
@@ -537,26 +553,166 @@
                 <div class="report-icon warning">
                     <i class="fas fa-boxes"></i>
                 </div>
-                <h3 class="report-title">
-                    Reporte de Productos
-                    <span class="badge-coming-soon">Próximamente</span>
-                </h3>
+                <h3 class="report-title">Reporte de Productos</h3>
                 <p class="report-description">Catálogo de productos más consultados, categorías y análisis de demanda</p>
                 <div class="report-stats">
                     <div class="stat-item">
-                        <div class="stat-number">---</div>
+                        <div class="stat-number">{{ total_products }}</div>
                         <div class="stat-label">Productos</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">---</div>
+                        <div class="stat-number">{{ unique_categories }}</div>
                         <div class="stat-label">Categorías</div>
                     </div>
                 </div>
-                <button class="btn btn-outline-warning w-100" disabled>
-                    <i class="fas fa-lock"></i>En Desarrollo
-                </button>
+                <a href="/admin/products" class="btn btn-outline-warning w-100">
+                    <i class="fas fa-eye"></i>Ver Catálogo
+                </a>
             </div>
         </div>
+
+        <!-- Sección de detalles adicionales -->
+        <div class="row mt-4">
+            <!-- Top 5 Usuarios Más Activos -->
+            <div class="col-md-6 mb-4">
+                <div class="report-card animate-in" style="text-align: left;">
+                    <h4 class="report-title" style="text-align: center;">
+                        <i class="fas fa-trophy text-warning"></i> Top 5 Usuarios Más Activos
+                    </h4>
+                    {% if top_users and top_users|length > 0 %}
+                    <div class="list-group list-group-flush">
+                        {% for user in top_users %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ user.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ user.email }}</small>
+                                {% if user.is_verified %}
+                                <i class="fas fa-check-circle text-success ms-1" title="Verificado"></i>
+                                {% endif %}
+                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ user.quotes }} cotizaciones</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted py-4">No hay datos disponibles</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Productos Más Cotizados -->
+            <div class="col-md-6 mb-4">
+                <div class="report-card animate-in" style="text-align: left;">
+                    <h4 class="report-title" style="text-align: center;">
+                        <i class="fas fa-star text-warning"></i> Productos Más Cotizados
+                    </h4>
+                    {% if top_products and top_products|length > 0 %}
+                    <div class="list-group list-group-flush">
+                        {% for product in top_products[:5] %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <strong>{{ product.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">SKU: {{ product.sku }}</small>
+                                    {% if product.category %}
+                                    <br><small class="text-muted">{{ product.category }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-success">{{ product.times_quoted }}x</span>
+                                    <br>
+                                    <small class="text-muted">{{ product.total_quantity }} unidades</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted py-4">No hay datos disponibles</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Cotizaciones Recientes -->
+        <div class="report-card animate-in" style="text-align: left;">
+            <h4 class="report-title" style="text-align: center;">
+                <i class="fas fa-clock"></i> Últimas 10 Cotizaciones
+            </h4>
+            {% if recent_quotes and recent_quotes|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quote in recent_quotes %}
+                        <tr>
+                            <td><strong>{{ quote.quote_number }}</strong></td>
+                            <td>{{ quote.user_email }}</td>
+                            <td>{{ quote.created_at.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if quote.status == 'pending' %}
+                                <span class="badge bg-warning">Pendiente</span>
+                                {% elif quote.status == 'approved' %}
+                                <span class="badge bg-success">Aprobada</span>
+                                {% elif quote.status == 'rejected' %}
+                                <span class="badge bg-danger">Rechazada</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ quote.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ quote.items_count }}</td>
+                            <td><strong>${{ "%.2f"|format(quote.total) }}</strong></td>
+                            <td>
+                                <a href="/admin/quotes/{{ quote.id }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-3">
+                <a href="/admin/quotes" class="btn btn-primary">
+                    <i class="fas fa-list"></i> Ver Todas las Cotizaciones
+                </a>
+            </div>
+            {% else %}
+            <p class="text-center text-muted py-4">No hay cotizaciones recientes</p>
+            {% endif %}
+        </div>
+
+        <!-- Distribución por Estado de Cotizaciones -->
+        {% if status_distribution %}
+        <div class="report-card animate-in mt-4" style="text-align: left;">
+            <h4 class="report-title" style="text-align: center;">
+                <i class="fas fa-chart-pie"></i> Distribución por Estado
+            </h4>
+            <div class="row text-center">
+                {% for status, count in status_distribution.items() %}
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="p-3 border rounded">
+                        <h3 class="stat-number">{{ count }}</h3>
+                        <p class="stat-label mb-0">{{ status|title }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -580,7 +736,65 @@
                     this.style.transform = '';
                 });
             });
+
+            // Animación de contadores
+            animateCounters();
         });
+
+        function animateCounters() {
+            const counters = document.querySelectorAll('.stat-number');
+            counters.forEach(counter => {
+                const text = counter.textContent.trim();
+                
+                // Solo animar números puros (sin símbolos)
+                if (/^\d+$/.test(text)) {
+                    const target = parseInt(text);
+                    const duration = 1000;
+                    const step = target / (duration / 16);
+                    let current = 0;
+                    
+                    counter.textContent = '0';
+                    
+                    const timer = setInterval(() => {
+                        current += step;
+                        if (current >= target) {
+                            counter.textContent = target;
+                            clearInterval(timer);
+                        } else {
+                            counter.textContent = Math.floor(current);
+                        }
+                    }, 16);
+                }
+            });
+        }
+
+        function refreshStats() {
+            // Mostrar indicador de carga
+            const btn = event.target.closest('.btn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
+            btn.disabled = true;
+
+            // Hacer petición para actualizar estadísticas
+            fetch('/admin/api/reports/refresh')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Recargar la página para mostrar datos actualizados
+                        location.reload();
+                    } else {
+                        alert('Error al actualizar: ' + data.error);
+                        btn.innerHTML = originalHTML;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al conectar con el servidor');
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                });
+        }
     </script>
 </body>
 </html>

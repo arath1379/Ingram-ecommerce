@@ -255,7 +255,7 @@ class PurchaseItem(db.Model):
             unit_price=unit_price,
             total_price=total_price,
             product_image=product.get_image_url(),
-            product_url=f"/producto/{product.ingram_part_number}"
+            product_url=f"/product/{product.ingram_part_number}"
         )
         
         metadata = {

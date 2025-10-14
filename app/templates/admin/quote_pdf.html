@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cotización #{{ quotation.quote_number }} - IT Data Global</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 2cm;
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 10px;
+                color: #666;
+            }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.4;
+            color: #333;
+            font-size: 12px;
+        }
+        
+        .header {
+            border-bottom: 3px solid #10B981;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .company-info {
+            float: left;
+            width: 50%;
+        }
+        
+        .quote-info {
+            float: right;
+            width: 45%;
+            text-align: right;
+        }
+        
+        .clear {
+            clear: both;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #10B981;
+            margin-bottom: 10px;
+        }
+        
+        h1 {
+            color: #1C2A2F;
+            font-size: 24px;
+            margin: 30px 0 20px 0;
+            border-bottom: 2px solid #10B981;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            color: #1C2A2F;
+            font-size: 16px;
+            margin: 20px 0 10px 0;
+        }
+        
+        .client-info, .quote-details {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th {
+            background: #1C2A2F;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        
+        .total-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #10B981;
+            color: white;
+            border-radius: 8px;
+            text-align: right;
+        }
+        
+        .total-amount {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .notes {
+            margin-top: 30px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #10B981;
+            color: white;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado -->
+    <div class="header">
+        <div class="company-info">
+            <div class="logo">IT DATA GLOBAL</div>
+            <div><strong>Soluciones Tecnológicas Integrales</strong></div>
+            <div>Tel: +52 55 1234 5678</div>
+            <div>Email: info@itdataglobal.com</div>
+            <div>www.itdataglobal.com</div>
+        </div>
+        
+        <div class="quote-info">
+            <h2>COTIZACIÓN</h2>
+            <div><strong>Número:</strong> {{ quotation.quote_number }}</div>
+            <div><strong>Fecha:</strong> {{ quotation.created_at.strftime('%d/%m/%Y') }}</div>
+            <div><strong>Estado:</strong> <span class="status-badge">{{ quotation.status|upper }}</span></div>
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <!-- Información del Cliente -->
+    <div class="client-info">
+        <h2>INFORMACIÓN DEL CLIENTE</h2>
+        <div><strong>Nombre:</strong> 
+            {% if quotation.user %}
+                {{ quotation.user.full_name or quotation.user.business_name or quotation.user.email }}
+            {% else %}
+                {{ quotation.contact_name or 'Cliente' }}
+            {% endif %}
+        </div>
+        {% if quotation.user and quotation.user.email %}
+        <div><strong>Email:</strong> {{ quotation.user.email }}</div>
+        {% endif %}
+        {% if quotation.contact_email %}
+        <div><strong>Contacto:</strong> {{ quotation.contact_email }}</div>
+        {% endif %}
+        {% if quotation.business_name %}
+        <div><strong>Empresa:</strong> {{ quotation.business_name }}</div>
+        {% endif %}
+    </div>
+
+    <!-- Detalles de la Cotización -->
+    <h1>DETALLES DE LA COTIZACIÓN</h1>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Producto/Servicio</th>
+                <th width="80">Cantidad</th>
+                <th width="100" class="text-right">Precio Unitario</th>
+                <th width="120" class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set subtotal = namespace(value=0) %}
+            {% for item in quotation.items %}
+            <tr>
+                <td>
+                    <div><strong>
+                        {% if item.product %}
+                            {{ item.product.name or item.product.description or 'Producto' }}
+                        {% elif item.product_data %}
+                            {{ item.product_data.get('description', 'Producto') }}
+                        {% else %}
+                            Producto #{{ item.product_id }}
+                        {% endif %}
+                    </strong></div>
+                    {% if item.product_data and item.product_data.get('ingram_part_number') %}
+                    <div style="font-size: 10px; color: #666;">
+                        SKU: {{ item.product_data.get('ingram_part_number') }}
+                    </div>
+                    {% endif %}
+                    {% if item.notes %}
+                    <div style="font-size: 10px; color: #666; font-style: italic;">
+                        {{ item.notes }}
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ item.quantity }}</td>
+                <td class="text-right">${{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="text-right"><strong>${{ "%.2f"|format(item.total_price) }}</strong></td>
+            </tr>
+            {% set subtotal.value = subtotal.value + item.total_price %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Totales -->
+    <div class="total-section">
+        <div style="margin-bottom: 10px;">
+            <span style="font-size: 14px;">Subtotal:</span>
+            <span style="font-size: 14px; margin-left: 20px;">${{ "%.2f"|format(subtotal.value) }}</span>
+        </div>
+        
+        {% if quotation.tax_amount and quotation.tax_amount > 0 %}
+        <div style="margin-bottom: 10px;">
+            <span style="font-size: 14px;">Impuestos:</span>
+            <span style="font-size: 14px; margin-left: 20px;">${{ "%.2f"|format(quotation.tax_amount) }}</span>
+        </div>
+        {% endif %}
+        
+        <div>
+            <span style="font-size: 16px;"><strong>TOTAL:</strong></span>
+            <span class="total-amount">${{ "%.2f"|format(quotation.total_amount) }}</span>
+        </div>
+        <div style="font-size: 12px; margin-top: 5px;">
+            Moneda: {{ quotation.currency }}
+        </div>
+    </div>
+
+    <!-- Notas -->
+    {% if quotation.notes or quotation.admin_notes %}
+    <div class="notes">
+        <h2>NOTAS</h2>
+        {% if quotation.notes %}
+        <div style="margin-bottom: 15px;">
+            <strong>Notas del Cliente:</strong><br>
+            {{ quotation.notes }}
+        </div>
+        {% endif %}
+        {% if quotation.admin_notes %}
+        <div>
+            <strong>Notas del Administrador:</strong><br>
+            {{ quotation.admin_notes }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Términos y Condiciones -->
+    <div style="margin-top: 40px; font-size: 10px; color: #666;">
+        <h2>TÉRMINOS Y CONDICIONES</h2>
+        <p>• Precios sujetos a cambio sin previo aviso</p>
+        <p>• Tiempo de entrega: 3-5 días hábiles</p>
+        <p>• Forma de pago: Transferencia bancaria o tarjeta de crédito</p>
+        <p>• Garantía: 1 año en equipos nuevos</p>
+        <p>• Validez de cotización: 15 días</p>
+    </div>
+
+    <!-- Pie de página -->
+    <div class="footer">
+        <p>IT Data Global • www.itdataglobal.com • info@itdataglobal.com • Tel: +52 55 1234 5678</p>
+        <p>Documento generado el {{ quotation.updated_at.strftime('%d/%m/%Y a las %H:%M') if quotation.updated_at else quotation.created_at.strftime('%d/%m/%Y a las %H:%M') }}</p>
+    </div>
+</body>
+</html>

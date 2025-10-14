@@ -272,7 +272,6 @@ def remove_from_favorites(user_id, part_number):
         db.session.commit()
 
 # ==================== DASHBOARD CLIENTE ====================
-
 @client_routes_bp.route('/dashboard/client')
 @login_required_sessions
 def client_dashboard():
@@ -286,12 +285,31 @@ def client_dashboard():
             flash('Acceso no autorizado', 'error')
             return redirect('/dashboard')
         
-        # Obtener estadísticas de cotizaciones
+        # Obtener estadísticas de cotizaciones - CORREGIDO
         total_quotes = Quote.query.filter_by(user_id=user_id).count()
+        
+        # Incluir todos los estados que están pendientes de revisión
         pending_quotes = Quote.query.filter_by(user_id=user_id).filter(
-            Quote.status.in_(['draft', 'sent', 'pending'])
+            Quote.status.in_(['draft', 'sent', 'pending', 'under_review', 'waiting_approval'])
         ).count()
+        
         approved_quotes = Quote.query.filter_by(user_id=user_id, status='approved').count()
+        
+        # DEBUG: Imprimir para verificar
+        print(f"=== DASHBOARD DEBUG ===")
+        print(f"User: {user_id} ({user.email})")
+        print(f"Total quotes: {total_quotes}")
+        print(f"Pending quotes: {pending_quotes}")
+        print(f"Approved quotes: {approved_quotes}")
+        
+        # Ver las cotizaciones específicas
+        pending_list = Quote.query.filter_by(user_id=user_id).filter(
+            Quote.status.in_(['draft', 'sent', 'pending', 'under_review', 'waiting_approval'])
+        ).all()
+        
+        print(f"Pending quotes details:")
+        for quote in pending_list:
+            print(f"  - Quote {quote.id}: {quote.quote_number} - Status: {quote.status}")
         
         # Obtener favoritos
         favorites_count = Favorite.query.filter_by(user_id=user_id).count()
@@ -306,8 +324,6 @@ def client_dashboard():
             'pending_quotes': pending_quotes,
             'approved_quotes': approved_quotes,
             'favorites_count': favorites_count,
-            'discount': 15,  # Ejemplo de descuento
-            'credit_limit': 50000,  # Ejemplo de límite de crédito
             'now': datetime.now(),
             'user_type': 'client'
         }
@@ -316,6 +332,8 @@ def client_dashboard():
         
     except Exception as e:
         print(f"Error cargando dashboard cliente: {str(e)}")
+        import traceback
+        traceback.print_exc()
         flash('Error al cargar el dashboard', 'error')
         return redirect('/')
 
@@ -490,7 +508,6 @@ def producto_detalle(part_number=None, sku=None):
         return render_template("errors/500.html", message="Error al cargar el detalle del producto"), 500
 
 # ==================== RUTAS DE COTIZACIONES ====================
-
 @client_routes_bp.route("/agregar-cotizacion", methods=["GET", "POST"])
 def agregar_cotizacion():
     """Añadir producto a cotización - CON BASE DE DATOS"""
@@ -638,7 +655,6 @@ def mi_cotizacion():
         return render_template("error.html", error=f"Error al cargar cotización: {str(e)}")
 
 # ==================== RUTAS DE FAVORITOS ====================
-
 @client_routes_bp.route('/agregar-favorito', methods=["POST"])
 def agregar_favorito():
     """Añadir/eliminar producto de favoritos - CON BASE DE DATOS"""
@@ -683,8 +699,7 @@ def agregar_favorito():
         print(f"Error con favoritos: {str(e)}")
         return render_template("error.html", error=f"Error con favoritos: {str(e)}")
 
-@client_routes_bp.route('/mis-favoritos', methods=["GET"])
-@client_routes_bp.route('/favorites', methods=["GET"])
+@client_routes_bp.route('/favoritos', methods=["GET"])
 def mis_favoritos():
     """Página de favoritos del usuario - CON BASE DE DATOS"""
     try:
@@ -715,14 +730,13 @@ def eliminar_favorito():
         remove_from_favorites(user_id, part_number)
         
         session['flash_message'] = "Producto eliminado de favoritos"
-        return redirect('/mis-favoritos')
+        return redirect('/favoritos')
         
     except Exception as e:
         session['flash_message'] = f"Error al eliminar favorito: {str(e)}"
-        return redirect('/mis-favoritos')
+        return redirect('/favoritos')
 
 # ==================== RUTAS DE HISTORIAL DE COTIZACIONES ====================
-
 @client_routes_bp.route('/quote/history')
 @login_required_sessions
 def quote_history():

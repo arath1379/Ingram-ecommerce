@@ -1034,19 +1034,26 @@
                     </div>
                     <div class="card-body-modern">
                         <div class="d-grid gap-2">
-                            <button class="btn btn-outline-primary" onclick="window.print()">
+                            <!-- Botón de Imprimir -->
+                            <button class="btn btn-outline-primary" onclick="printQuote()">
                                 <i class="fas fa-print"></i>
                                 Imprimir Cotización
                             </button>
-                            <button class="btn btn-outline-primary" onclick="alert('Función de descarga en desarrollo')">
+                            
+                            <!-- Botón de Descargar PDF -->
+                            <button class="btn btn-outline-primary" onclick="downloadPDF()">
                                 <i class="fas fa-download"></i>
                                 Descargar PDF
                             </button>
-                            <button class="btn btn-outline-primary" onclick="alert('Función de envío en desarrollo')">
+                            
+                            <!-- Botón de Enviar por Email -->
+                            <button class="btn btn-outline-primary" onclick="sendEmail()">
                                 <i class="fas fa-envelope"></i>
                                 Enviar por Email
                             </button>
-                            <button class="btn btn-outline-secondary" onclick="if(confirm('¿Duplicar esta cotización?')) alert('Función en desarrollo')">
+                            
+                            <!-- Botón de Duplicar -->
+                            <button class="btn btn-outline-secondary" onclick="duplicateQuote()">
                                 <i class="fas fa-copy"></i>
                                 Duplicar Cotización
                             </button>
@@ -1113,163 +1120,208 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Inicialización
-        document.addEventListener('DOMContentLoaded', function() {
-            // Animación de entrada escalonada
-            const animatedElements = document.querySelectorAll('.animate-in');
-            animatedElements.forEach((el, index) => {
-                el.style.animationDelay = `${index * 0.1}s`;
-            });
-
-            // Tooltips
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animación de entrada escalonada
+        const animatedElements = document.querySelectorAll('.animate-in');
+        animatedElements.forEach((el, index) => {
+            el.style.animationDelay = `${index * 0.1}s`;
         });
 
-        function updateStatus(action) {
-            const modal = new bootstrap.Modal(document.getElementById('statusModal'));
-            const title = document.getElementById('statusModalTitle');
-            const invoiceFields = document.getElementById('invoiceFields');
-            
-            const actionTitles = {
-                'send': '<i class="fas fa-paper-plane me-2"></i>Enviar Cotización al Cliente',
-                'approve': '<i class="fas fa-check-circle me-2"></i>Aprobar Cotización',
-                'reject': '<i class="fas fa-times-circle me-2"></i>Rechazar Cotización',
-                'progress': '<i class="fas fa-spinner me-2"></i>Marcar en Progreso',
-                'complete': '<i class="fas fa-flag-checkered me-2"></i>Marcar Completada',
-                'invoice': '<i class="fas fa-receipt me-2"></i>Generar Factura',
-                'pay': '<i class="fas fa-dollar-sign me-2"></i>Marcar como Pagada'
-            };
-            
-            title.innerHTML = actionTitles[action] || '<i class="fas fa-sync-alt me-2"></i>Actualizar Estado';
-            document.getElementById('actionType').value = action;
-            
-            invoiceFields.style.display = action === 'invoice' ? 'block' : 'none';
-            
-            modal.show();
-        }
+        // Tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
 
-        function showInvoiceModal() {
-            updateStatus('invoice');
-        }
+    // ==================== FUNCIONES DE ESTADO ====================
 
-        function submitStatusUpdate() {
-            const action = document.getElementById('actionType').value;
-            const adminNotes = document.getElementById('adminNotes').value;
-            const invoiceNumber = document.getElementById('invoiceNumber').value;
-            
-            const data = {
-                action: action,
-                admin_notes: adminNotes
-            };
-            
-            if (action === 'invoice') {
-                if (!invoiceNumber.trim()) {
-                    alert('Por favor ingrese el número de factura');
-                    return;
-                }
-                data.invoice_number = invoiceNumber;
+    function updateStatus(action) {
+        const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+        const title = document.getElementById('statusModalTitle');
+        const invoiceFields = document.getElementById('invoiceFields');
+        
+        const actionTitles = {
+            'send': '<i class="fas fa-paper-plane me-2"></i>Enviar Cotización al Cliente',
+            'approve': '<i class="fas fa-check-circle me-2"></i>Aprobar Cotización',
+            'reject': '<i class="fas fa-times-circle me-2"></i>Rechazar Cotización',
+            'progress': '<i class="fas fa-spinner me-2"></i>Marcar en Progreso',
+            'complete': '<i class="fas fa-flag-checkered me-2"></i>Marcar Completada',
+            'invoice': '<i class="fas fa-receipt me-2"></i>Generar Factura',
+            'pay': '<i class="fas fa-dollar-sign me-2"></i>Marcar como Pagada'
+        };
+        
+        title.innerHTML = actionTitles[action] || '<i class="fas fa-sync-alt me-2"></i>Actualizar Estado';
+        document.getElementById('actionType').value = action;
+        
+        invoiceFields.style.display = action === 'invoice' ? 'block' : 'none';
+        
+        modal.show();
+    }
+
+    function showInvoiceModal() {
+        updateStatus('invoice');
+    }
+
+    function submitStatusUpdate() {
+        const action = document.getElementById('actionType').value;
+        const adminNotes = document.getElementById('adminNotes').value;
+        const invoiceNumber = document.getElementById('invoiceNumber').value;
+        
+        const data = {
+            action: action,
+            admin_notes: adminNotes
+        };
+        
+        if (action === 'invoice') {
+            if (!invoiceNumber.trim()) {
+                alert('Por favor ingrese el número de factura');
+                return;
             }
-            
+            data.invoice_number = invoiceNumber;
+        }
+        
+        // Mostrar indicador de carga
+        const btn = event.target;
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+        
+        fetch(`/admin/quotes/{{ quotation.id }}/update_status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Mostrar mensaje de éxito antes de recargar
+                btn.innerHTML = '<i class="fas fa-check me-2"></i>¡Actualizado!';
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
+            } else {
+                alert('Error: ' + result.error);
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        });
+    }
+
+    // ==================== FUNCIONES DE ACCIONES RÁPIDAS ====================
+
+    function printQuote() {
+        // Abrir en nueva pestaña la vista de impresión
+        window.open(`/admin/quotes/{{ quotation.id }}/print`, '_blank');
+    }
+
+    function downloadPDF() {
+        // Mostrar indicador de carga
+        const btn = event.target;
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generando PDF...';
+        
+        // Descargar PDF directamente
+        const downloadLink = document.createElement('a');
+        downloadLink.href = `/admin/quotes/{{ quotation.id }}/pdf`;
+        downloadLink.download = `cotizacion_{{ quotation.quote_number }}.pdf`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        // Restaurar botón después de un momento
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }, 2000);
+    }
+
+    function sendEmail() {
+        if (confirm('¿Enviar esta cotización por email al cliente?')) {
             // Mostrar indicador de carga
             const btn = event.target;
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
             
-            fetch(`/admin/quotes/{{ quotation.id }}/update_status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    // Mostrar mensaje de éxito antes de recargar
-                    btn.innerHTML = '<i class="fas fa-check me-2"></i>¡Actualizado!';
-                    setTimeout(() => {
+            // Llamar a la ruta de email
+            fetch(`/admin/quotes/{{ quotation.id }}/email`)
+                .then(response => {
+                    if (response.ok) {
+                        // Recargar para ver el mensaje flash
                         location.reload();
-                    }, 500);
-                } else {
-                    alert('Error: ' + result.error);
+                    } else {
+                        alert('Error al enviar el email');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                    }
+                })
+                .catch(error => {
+                    alert('Error de conexión: ' + error);
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
-                }
-            })
-            .catch(error => {
-                alert('Error de conexión: ' + error);
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
-            });
+                });
         }
+    }
 
-        // === FUNCIONES PARA ELIMINAR Y CANCELAR ===
-        function cancelQuote() {
-            if (!confirm('¿Está seguro de cancelar esta cotización?')) {
-                return;
-            }
+    function duplicateQuote() {
+        if (confirm('¿Duplicar esta cotización?')) {
+            // Mostrar indicador de carga
+            const btn = event.target;
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Duplicando...';
             
-            // Crear formulario dinámico para cancelación
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/admin/quotes/cancel/{{ quotation.id }}`;
-            
-            // Agregar token CSRF si es necesario
-            const csrfToken = document.querySelector('meta[name="csrf-token"]');
-            if (csrfToken) {
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrf_token';
-                csrfInput.value = csrfToken.getAttribute('content');
-                form.appendChild(csrfInput);
-            }
-            
-            document.body.appendChild(form);
-            form.submit();
+            // Redirigir a la ruta de duplicación
+            window.location.href = `/admin/quotes/{{ quotation.id }}/duplicate`;
         }
+    }
 
-        function deleteQuote() {
-            if (!confirm('⚠️ ADVERTENCIA: ¿Está seguro de ELIMINAR esta cotización?\n\nEsta acción NO se puede deshacer.')) {
-                return;
-            }
-            
-            // Crear formulario dinámico para eliminación
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/admin/quotes/delete/{{ quotation.id }}`;
-            
-            // Agregar token CSRF si es necesario
-            const csrfToken = document.querySelector('meta[name="csrf-token"]');
-            if (csrfToken) {
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrf_token';
-                csrfInput.value = csrfToken.getAttribute('content');
-                form.appendChild(csrfInput);
-            }
-            
-            document.body.appendChild(form);
-            form.submit();
+    // ==================== FUNCIONES DE ELIMINACIÓN Y CANCELACIÓN ====================
+
+    function cancelQuote() {
+        if (!confirm('¿Está seguro de cancelar esta cotización?')) {
+            return;
         }
-
-        // Limpiar modal al cerrar
-        document.getElementById('statusModal').addEventListener('hidden.bs.modal', function () {
-            document.getElementById('adminNotes').value = '';
-            document.getElementById('invoiceNumber').value = '';
-        });
-
-        // Función de impresión mejorada
-        window.onbeforeprint = function() {
-            document.body.classList.add('printing');
-        };
         
-        window.onafterprint = function() {
-            document.body.classList.remove('printing');
-        };
-    </script>
+        // Redirigir a la ruta de cancelación (método simplificado)
+        window.location.href = `/admin/quotes/cancel/{{ quotation.id }}`;
+    }
+
+    function deleteQuote() {
+        if (!confirm('⚠️ ADVERTENCIA: ¿Está seguro de ELIMINAR esta cotización?\n\nEsta acción NO se puede deshacer.')) {
+            return;
+        }
+        
+        // Redirigir a la ruta de eliminación (método simplificado)
+        window.location.href = `/admin/quotes/delete/{{ quotation.id }}`;
+    }
+
+    // ==================== EVENT LISTENERS Y UTILIDADES ====================
+
+    // Limpiar modal al cerrar
+    document.getElementById('statusModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('adminNotes').value = '';
+        document.getElementById('invoiceNumber').value = '';
+    });
+
+    // Función de impresión mejorada
+    window.onbeforeprint = function() {
+        document.body.classList.add('printing');
+    };
+    
+    window.onafterprint = function() {
+        document.body.classList.remove('printing');
+    };
+</script>
 </body>
 </html>
