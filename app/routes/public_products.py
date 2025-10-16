@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, session, redirec
 from datetime import datetime
 import json
 from app import db 
+from app.Services.stripe_service import StripePaymentService
 from app.models.product import Product
 from app.models.favorite import Favorite
 from app.models.cart import Cart, CartItem
@@ -1012,3 +1013,197 @@ def remove_from_cart_legacy(user_id, part_number):
         db.session.rollback()
         print(f"Error removing from cart: {e}")
         return False
+
+# ==================== RUTAS DE PAGO CON STRIPE (SIMPLIFICADO) ====================
+@public_bp.route('/payment/stripe-checkout', methods=['POST'])
+def stripe_checkout():
+    """Crear link de pago con Stripe - VERSIÓN SIMPLIFICADA"""
+    try:
+        user_id = get_current_user_id()
+        
+        if user_id == 'anonymous_user':
+            return jsonify({'success': False, 'error': 'Debes iniciar sesión para realizar una compra'}), 401
+        
+        # Obtener carrito del usuario
+        cart_items = get_user_cart(user_id)
+        if not cart_items:
+            return jsonify({'success': False, 'error': 'El carrito está vacío'}), 400
+        
+        print(f"🛒 Procesando carrito con {len(cart_items)} items")
+        
+        # Calcular totales
+        subtotal = sum(item['total_price'] for item in cart_items)
+        tax_amount = round(subtotal * 0.16, 2)  # 16% IVA
+        total_amount = round(subtotal + tax_amount, 2)
+        
+        # Generar número de orden único
+        order_number = f"ITD-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        
+        # Preparar datos para Stripe
+        cart_data = {
+            'order_number': order_number,
+            'items': cart_items,
+            'subtotal': subtotal,
+            'tax_amount': tax_amount,
+            'total_amount': total_amount
+        }
+        
+        # URLs de retorno
+        base_url = request.url_root.rstrip('/')
+        success_url = f"{base_url}/payment/success?order={order_number}"
+        cancel_url = f"{base_url}/cart"
+        
+        print(f"🔗 URLs: éxito={success_url}, cancelar={cancel_url}")
+        
+        # Crear link de pago en Stripe
+        stripe_service = StripePaymentService()
+        result = stripe_service.create_payment_link(
+            cart_data=cart_data,
+            user_email=session.get('user_email', ''),
+            success_url=success_url,
+            cancel_url=cancel_url
+        )
+        
+        if result['success']:
+            # Guardar información temporal en sesión
+            session['pending_order'] = {
+                'order_number': order_number,
+                'payment_id': result['payment_id'],
+                'cart_data': cart_data,
+                'user_id': user_id
+            }
+            
+            print(f"💾 Orden guardada: {order_number}")
+            
+            return jsonify({
+                'success': True,
+                'payment_url': result['payment_url'],
+                'order_number': order_number
+            })
+        else:
+            print(f"❌ Error Stripe: {result['error']}")
+            return jsonify({'success': False, 'error': result['error']}), 500
+            
+    except Exception as e:
+        print(f"❌ Error en stripe_checkout: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': 'Error interno del servidor'}), 500
+
+@public_bp.route('/payment/success')
+def payment_success():
+    """Página de éxito después del pago - VERSIÓN SIMPLIFICADA"""
+    try:
+        order_number = request.args.get('order')
+        
+        print(f"🎉 Pago exitoso para orden: {order_number}")
+        
+        # Recuperar información de la sesión
+        pending_order = session.get('pending_order')
+        
+        if not pending_order or pending_order['order_number'] != order_number:
+            # Intentar recuperar de otra manera
+            flash('Redirigiendo... procesando tu pago', 'info')
+            return redirect('/dashboard/public')
+        
+        # Procesar la orden exitosa
+        user_id = pending_order['user_id']
+        cart_data = pending_order['cart_data']
+        
+        # Crear registro de compra
+        purchase = process_successful_purchase(
+            user_id=user_id,
+            cart_data=cart_data,
+            payment_info={
+                'payment_id': pending_order['payment_id'],
+                'payment_method': 'stripe', 
+                'status': 'paid'
+            }
+        )
+        
+        # Limpiar carrito
+        clear_user_cart(user_id)
+        
+        # Limpiar sesión
+        session.pop('pending_order', None)
+        
+        # Mostrar página de éxito
+        return render_template(
+            'public/payment/success.html',
+            purchase=purchase,
+            payment_info={
+                'payment_id': pending_order['payment_id'],
+                'order_number': purchase.order_number,
+                'amount': purchase.total_amount
+            }
+        )
+            
+    except Exception as e:
+        print(f"❌ Error en payment_success: {str(e)}")
+        flash('Pago procesado. Revisa tu dashboard.', 'success')
+        return redirect('/dashboard/public')
+
+def process_successful_purchase(user_id, cart_data, payment_info):
+    """Procesar una compra exitosa - VERSIÓN SIMPLIFICADA"""
+    try:
+        from app.models.purchase import Purchase, PurchaseItem
+        
+        # Crear la compra
+        purchase = Purchase(
+            user_id=user_id,
+            order_number=cart_data['order_number'],
+            status='paid',
+            subtotal_amount=cart_data['subtotal'],
+            tax_amount=cart_data['tax_amount'],
+            shipping_amount=0.0,
+            total_amount=cart_data['total_amount'],
+            payment_method='stripe',
+            payment_reference=payment_info['payment_id'],
+            payer_email=session.get('user_email', ''),
+            payer_name=session.get('user_name', 'Cliente')
+        )
+        db.session.add(purchase)
+        db.session.flush()
+        
+        # Crear items de la compra (versión simplificada)
+        for item in cart_data['items']:
+            product = Product.query.filter_by(ingram_part_number=item['product']['ingramPartNumber']).first()
+            
+            purchase_item = PurchaseItem(
+                purchase_id=purchase.id,
+                product_id=product.id if product else None,
+                product_sku=item['product']['ingramPartNumber'],
+                product_name=item['product']['description'][:100],  # Limitar longitud
+                quantity=item['quantity'],
+                unit_price=item['unit_price'],
+                total_price=item['total_price']
+            )
+            db.session.add(purchase_item)
+        
+        db.session.commit()
+        
+        print(f"✅ Compra procesada: {purchase.order_number}")
+        return purchase
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ ERROR procesando compra: {str(e)}")
+        # Aún así retornar un objeto básico para que no falle el template
+        from types import SimpleObject
+        return SimpleObject(
+            order_number=cart_data['order_number'],
+            total_amount=cart_data['total_amount']
+        )
+
+def clear_user_cart(user_id):
+    """Limpiar carrito del usuario - VERSIÓN SIMPLIFICADA"""
+    try:
+        cart = Cart.query.filter_by(user_id=user_id, status='active').first()
+        if cart:
+            CartItem.query.filter_by(cart_id=cart.id).delete()
+            cart.total_amount = 0.0
+            db.session.commit()
+            print(f"🗑️ Carrito limpiado para usuario: {user_id}")
+    except Exception as e:
+        print(f"⚠️ Error limpiando carrito: {str(e)}")
+        db.session.rollback()

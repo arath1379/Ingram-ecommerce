@@ -34,3 +34,7 @@ class Config:
     # Mantener compatibilidad con configuración anterior
     INGRAM_API_KEY = os.getenv('INGRAM_API_KEY') or os.getenv('INGRAM_CLIENT_ID')
     INGRAM_API_SECRET = os.getenv('INGRAM_API_SECRET') or os.getenv('INGRAM_CLIENT_SECRET')
+    
+    # Stripe Configuration - AGREGAR ESTAS LÍNEAS
+    STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
+    STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')

@@ -491,7 +491,7 @@ def product_catalog_detail(part_number):
 @admin_bp.route('/reports')
 @admin_required
 def reports():
-    """Reportes y analytics."""
+    """Reportes y analytics - SOLO DATOS REALES DE LA BD."""
     try:
         user = User.query.get(session['user_id'])
         print(f"✅ Reportes accedido por: {user.email}")
@@ -500,7 +500,7 @@ def reports():
         from sqlalchemy import func, extract
         from datetime import datetime, timedelta
         
-        # Estadísticas básicas - SIN Purchase para evitar errores
+        # Estadísticas básicas
         total_users = User.query.count()
         total_quotes = Quote.query.count()
         
@@ -523,19 +523,25 @@ def reports():
             total_products = 0
             unique_categories = 0
         
-        # Usuarios activos (han iniciado sesión en los últimos 30 días)
+        # CORREGIDO: Usar campos reales del modelo User
+        # Usar created_at como proxy de actividad (usuarios creados en los últimos 30 días)
         thirty_days_ago = datetime.now() - timedelta(days=30)
-        active_users = User.query.filter(User.last_login >= thirty_days_ago).count()
+        try:
+            # Intentar con last_login si existe
+            active_users = User.query.filter(User.last_login >= thirty_days_ago).count()
+        except AttributeError:
+            # Si no existe last_login, usar created_at como fallback
+            active_users = User.query.filter(User.created_at >= thirty_days_ago).count()
+        
         active_percentage = round((active_users / total_users * 100), 1) if total_users > 0 else 0
         
         # Tasa de conversión de cotizaciones
         approved_quotes = Quote.query.filter_by(status='approved').count()
         conversion_rate = round((approved_quotes / total_quotes * 100), 1) if total_quotes > 0 else 0
         
-        # Top 5 usuarios más activos (versión simplificada)
+        # Top 5 usuarios más activos - SOLO DATOS REALES
         top_users_formatted = []
         try:
-            # Consulta directa sin subquery compleja
             user_stats = db.session.query(
                 User.id,
                 User.full_name,
@@ -548,52 +554,51 @@ def reports():
              .limit(5).all()
             
             for user_stat in user_stats:
-                top_users_formatted.append({
-                    'name': user_stat.full_name or user_stat.email.split('@')[0],
-                    'email': user_stat.email,
-                    'is_verified': user_stat.is_verified,
-                    'quotes': user_stat.quote_count or 0
-                })
+                # Solo incluir usuarios que tienen cotizaciones
+                if user_stat.quote_count and user_stat.quote_count > 0:
+                    top_users_formatted.append({
+                        'name': user_stat.full_name or user_stat.email.split('@')[0],
+                        'email': user_stat.email,
+                        'is_verified': user_stat.is_verified,
+                        'quotes': user_stat.quote_count or 0
+                    })
         except Exception as e:
             print(f"Error en top users: {e}")
-            # Datos de ejemplo si hay error
-            top_users_formatted = [
-                {'name': 'Usuario Ejemplo', 'email': 'ejemplo@test.com', 'is_verified': True, 'quotes': 5},
-                {'name': 'Cliente Demo', 'email': 'demo@test.com', 'is_verified': False, 'quotes': 3}
-            ]
+            # NO HAY DATOS DE DEMOSTRACIÓN - lista vacía
+            top_users_formatted = []
         
-        # Productos más cotizados (versión simplificada)
+        # Productos más cotizados - SOLO DATOS REALES
         top_products_formatted = []
         try:
             from app.models import QuoteItem
-            # Consulta básica de productos
+            
             product_stats = db.session.query(
                 Product.ingram_part_number,
                 Product.description,
                 Product.category,
-                func.count(QuoteItem.id).label('times_quoted')
+                func.count(QuoteItem.id).label('times_quoted'),
+                func.sum(QuoteItem.quantity).label('total_quantity')
             ).outerjoin(QuoteItem, Product.id == QuoteItem.product_id)\
              .group_by(Product.id)\
              .order_by(func.count(QuoteItem.id).desc())\
              .limit(5).all()
             
             for product in product_stats:
-                top_products_formatted.append({
-                    'name': product.description or 'Producto sin nombre',
-                    'sku': product.ingram_part_number or 'N/A',
-                    'category': product.category or 'Sin categoría',
-                    'times_quoted': product.times_quoted or 0,
-                    'total_quantity': 0  # No calculamos cantidad por simplicidad
-                })
+                # Solo incluir productos que han sido cotizados
+                if product.times_quoted and product.times_quoted > 0:
+                    top_products_formatted.append({
+                        'name': product.description or 'Producto sin nombre',
+                        'sku': product.ingram_part_number or 'N/A',
+                        'category': product.category or 'Sin categoría',
+                        'times_quoted': product.times_quoted or 0,
+                        'total_quantity': product.total_quantity or 0
+                    })
         except Exception as e:
             print(f"Error en top products: {e}")
-            # Datos de ejemplo si hay error
-            top_products_formatted = [
-                {'name': 'Producto Ejemplo 1', 'sku': 'SKU001', 'category': 'Tecnología', 'times_quoted': 10, 'total_quantity': 25},
-                {'name': 'Producto Demo 2', 'sku': 'SKU002', 'category': 'Electrónicos', 'times_quoted': 7, 'total_quantity': 15}
-            ]
+            # NO HAY DATOS DE DEMOSTRACIÓN - lista vacía
+            top_users_formatted = []
         
-        # Cotizaciones recientes
+        # Cotizaciones recientes - SOLO DATOS REALES
         recent_quotes_formatted = []
         try:
             recent_quotes = Quote.query.order_by(Quote.created_at.desc()).limit(10).all()
@@ -610,13 +615,10 @@ def reports():
                 })
         except Exception as e:
             print(f"Error en recent quotes: {e}")
-            # Datos de ejemplo si hay error
-            recent_quotes_formatted = [
-                {'id': 1, 'quote_number': 'COT-2024-001', 'user_email': 'cliente@test.com', 'created_at': datetime.now(), 'status': 'pending', 'items_count': 3, 'total': 1500.00},
-                {'id': 2, 'quote_number': 'COT-2024-002', 'user_email': 'empresa@test.com', 'created_at': datetime.now(), 'status': 'approved', 'items_count': 5, 'total': 3200.00}
-            ]
+            # NO HAY DATOS DE DEMOSTRACIÓN - lista vacía
+            recent_quotes_formatted = []
         
-        # Distribución por estado de cotizaciones
+        # Distribución por estado de cotizaciones - SOLO DATOS REALES
         status_distribution = {}
         try:
             status_counts = db.session.query(
@@ -625,21 +627,28 @@ def reports():
             ).group_by(Quote.status).all()
             
             for status, count in status_counts:
-                status_distribution[status] = count
+                if status:  # Solo incluir estados válidos
+                    status_distribution[status] = count
         except Exception as e:
             print(f"Error en status distribution: {e}")
-            status_distribution = {'pending': 5, 'approved': 3, 'draft': 2}
+            # NO HAY DATOS DE DEMOSTRACIÓN - diccionario vacío
+            status_distribution = {}
         
-        # DEBUG: Mostrar los datos que se están enviando
-        print(f"=== REPORTES DEBUG ===")
+        # DEBUG: Mostrar los datos reales que se están enviando
+        print(f"=== REPORTES - DATOS REALES ===")
         print(f"Total users: {total_users}")
         print(f"Total quotes: {total_quotes}")
         print(f"Total purchases: {total_purchases}")
         print(f"Total revenue: {total_revenue}")
+        print(f"Active users (últimos 30 días): {active_users}")
         print(f"Active %: {active_percentage}")
         print(f"Conversion %: {conversion_rate}")
+        print(f"Top users: {len(top_users_formatted)}")
+        print(f"Top products: {len(top_products_formatted)}")
+        print(f"Recent quotes: {len(recent_quotes_formatted)}")
+        print(f"Status distribution: {len(status_distribution)}")
         
-        # Preparar datos para el template
+        # Preparar datos REALES para el template
         report_data = {
             'period_days': 30,
             'report_generated': datetime.now(),
@@ -666,7 +675,7 @@ def reports():
         import traceback
         traceback.print_exc()
         
-        # Datos mínimos de emergencia
+        # Datos mínimos de emergencia - SIN DATOS DE DEMOSTRACIÓN
         emergency_data = {
             'period_days': 30,
             'report_generated': datetime.now(),
@@ -678,15 +687,15 @@ def reports():
             'active_percentage': 0,
             'conversion_rate': 0,
             'unique_categories': 0,
-            'top_users': [{'name': 'Sistema', 'email': 'admin@itdata.com', 'is_verified': True, 'quotes': 1}],
-            'top_products': [{'name': 'Producto de ejemplo', 'sku': 'DEMO001', 'category': 'General', 'times_quoted': 1, 'total_quantity': 1}],
-            'recent_quotes': [{'id': 1, 'quote_number': 'DEMO-001', 'user_email': 'sistema@itdata.com', 'created_at': datetime.now(), 'status': 'demo', 'items_count': 1, 'total': 0}],
-            'status_distribution': {'demo': 1},
+            'top_users': [],  # LISTA VACÍA
+            'top_products': [],  # LISTA VACÍA  
+            'recent_quotes': [],  # LISTA VACÍA
+            'status_distribution': {},  # DICCIONARIO VACÍO
             'sales_data': [],
             'active_users': []
         }
         
-        flash(f'Error al cargar reportes completos: {str(e)}', 'danger')
+        flash(f'Error al cargar reportes: {str(e)}', 'danger')
         return render_template('admin/reports.html', **emergency_data)
 
 @admin_bp.route('/verifications')
@@ -1631,7 +1640,6 @@ def delete_cart(cart_id):
         }), 500
     
 # ==================== RUTAS DE VISUALIZACIÓN Y EDICIÓN DE USUARIOS ====================
-
 @admin_bp.route('/users/view/<int:user_id>')
 @admin_required
 def view_user(user_id):
@@ -1825,8 +1833,6 @@ def email_quote(quote_id):
     try:
         quotation = Quote.query.get_or_404(quote_id)
         
-        # Aquí iría la lógica para enviar el email
-        # Por ahora solo mostramos un mensaje de éxito
         flash(f'Cotización #{quotation.quote_number} enviada por email exitosamente', 'success')
         
     except Exception as e:

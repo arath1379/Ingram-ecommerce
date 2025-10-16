@@ -496,7 +496,6 @@
             height: fit-content;
             position: sticky;
             top: 120px;
-            position: relative;
         }
 
         .cart-summary-section::before {
@@ -555,6 +554,11 @@
         .summary-row.tax {
             color: var(--info-color);
             font-weight: 600;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02));
+            padding: 1rem;
+            margin: 0.5rem -1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(59, 130, 246, 0.1);
         }
 
         .summary-row.total {
@@ -805,7 +809,6 @@
                 IT Data Global
             </a>
             <div class="nav-links">
-                <!-- BOTÓN DASHBOARD AGREGADO -->
                 <a href="/dashboard/public" class="nav-link">
                     <i class="fas fa-tachometer-alt"></i>
                     Dashboard
@@ -968,11 +971,11 @@
                     </div>
                 </div>
 
-                <!-- Acciones del carrito - BOTÓN DE COTIZACIÓN ELIMINADO -->
+                <!-- Acciones del carrito -->
                 <div class="cart-actions">
-                    <button class="btn btn-success">
+                    <button class="btn btn-success" onclick="processStripePayment()" id="payButton">
                         <i class="fas fa-credit-card"></i>
-                        Proceder al Pago
+                        Pagar con Tarjeta/SPEI
                     </button>
                     
                     <a href="/catalog" class="btn btn-secondary">
@@ -1000,6 +1003,44 @@
     </div>
 
     <script>
+        // Función para procesar el pago con Stripe
+        async function processStripePayment() {
+            const btn = document.getElementById('payButton');
+            const originalHTML = btn.innerHTML;
+            
+            try {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+                btn.disabled = true;
+                
+                console.log('🔄 Iniciando proceso de pago...');
+                
+                const response = await fetch('/payment/stripe-checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                console.log('Respuesta del servidor:', result);
+                
+                if (result.success) {
+                    console.log('✅ Redirigiendo a Stripe:', result.payment_url);
+                    // Redirigir a Stripe para completar el pago
+                    window.location.href = result.payment_url;
+                } else {
+                    console.error('❌ Error:', result.error);
+                    showNotification('Error: ' + result.error, 'error');
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('❌ Error de conexión:', error);
+                showNotification('Error de conexión: ' + error.message, 'error');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        }
         // Variables globales para cálculos
         const TAX_RATE = 0.16; // 16% IVA México
         let cartData = {{ items | tojson if items else '[]' }};

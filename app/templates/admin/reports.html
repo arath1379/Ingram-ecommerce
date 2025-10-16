@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes y Analytics | IT Data Global</title>
+    <title>Reportes y Analisis | IT Data Global</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -354,6 +354,21 @@
             margin-left: 0.5rem;
         }
 
+        .no-data-placeholder {
+            background: linear-gradient(135deg, rgba(107, 114, 128, 0.1), rgba(107, 114, 128, 0.05));
+            border: 2px dashed rgba(107, 114, 128, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .no-data-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -432,7 +447,7 @@
         <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
-                <li class="breadcrumb-item active">Reportes y Analytics</li>
+                <li class="breadcrumb-item active">Reportes y Analisis</li>
             </ol>
         </nav>
 
@@ -447,9 +462,6 @@
                     <p class="page-subtitle">Visualiza estadísticas y genera reportes del sistema</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="#" onclick="refreshStats(); return false;" class="btn btn-outline-info">
-                        <i class="fas fa-sync-alt"></i>Actualizar
-                    </a>
                     <a href="/admin/dashboard" class="btn btn-outline-primary">
                         <i class="fas fa-arrow-left"></i>Volver
                     </a>
@@ -520,12 +532,7 @@
                 <div class="report-icon info">
                     <i class="fas fa-chart-line"></i>
                 </div>
-                <h3 class="report-title">
-                    Reporte de Ventas
-                    {% if total_purchases == 0 %}
-                    <span class="badge-coming-soon">Sin Datos</span>
-                    {% endif %}
-                </h3>
+                <h3 class="report-title">Reporte de Ventas</h3>
                 <p class="report-description">Métricas de ventas, ingresos, tendencias y análisis de rendimiento comercial</p>
                 <div class="report-stats">
                     <div class="stat-item">
@@ -533,7 +540,7 @@
                         <div class="stat-label">Ventas</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">${{ "%.0f"|format(total_revenue) }}</div>
+                        <div class="stat-number">${{ "%.2f"|format(total_revenue) }}</div>
                         <div class="stat-label">Ingresos</div>
                     </div>
                 </div>
@@ -542,7 +549,7 @@
                     <i class="fas fa-eye"></i>Ver Reporte
                 </a>
                 {% else %}
-                <button class="btn btn-outline-info w-100" disabled>
+                <button class="btn btn-outline-secondary w-100" disabled>
                     <i class="fas fa-lock"></i>Sin Datos
                 </button>
                 {% endif %}
@@ -596,7 +603,10 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-center text-muted py-4">No hay datos disponibles</p>
+                    <div class="no-data-placeholder">
+                        <i class="fas fa-users-slash"></i>
+                        <p>No hay usuarios con cotizaciones</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -609,7 +619,7 @@
                     </h4>
                     {% if top_products and top_products|length > 0 %}
                     <div class="list-group list-group-flush">
-                        {% for product in top_products[:5] %}
+                        {% for product in top_products %}
                         <div class="list-group-item">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="flex-grow-1">
@@ -630,7 +640,10 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-center text-muted py-4">No hay datos disponibles</p>
+                    <div class="no-data-placeholder">
+                        <i class="fas fa-box-open"></i>
+                        <p>No hay productos cotizados</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -668,8 +681,10 @@
                                 <span class="badge bg-success">Aprobada</span>
                                 {% elif quote.status == 'rejected' %}
                                 <span class="badge bg-danger">Rechazada</span>
+                                {% elif quote.status == 'draft' %}
+                                <span class="badge bg-secondary">Borrador</span>
                                 {% else %}
-                                <span class="badge bg-secondary">{{ quote.status }}</span>
+                                <span class="badge bg-info">{{ quote.status }}</span>
                                 {% endif %}
                             </td>
                             <td>{{ quote.items_count }}</td>
@@ -690,28 +705,49 @@
                 </a>
             </div>
             {% else %}
-            <p class="text-center text-muted py-4">No hay cotizaciones recientes</p>
+            <div class="no-data-placeholder">
+                <i class="fas fa-file-invoice"></i>
+                <p>No hay cotizaciones registradas</p>
+            </div>
             {% endif %}
         </div>
 
         <!-- Distribución por Estado de Cotizaciones -->
-        {% if status_distribution %}
         <div class="report-card animate-in mt-4" style="text-align: left;">
             <h4 class="report-title" style="text-align: center;">
                 <i class="fas fa-chart-pie"></i> Distribución por Estado
             </h4>
+            {% if status_distribution and status_distribution|length > 0 %}
             <div class="row text-center">
                 {% for status, count in status_distribution.items() %}
                 <div class="col-md-3 col-6 mb-3">
                     <div class="p-3 border rounded">
                         <h3 class="stat-number">{{ count }}</h3>
-                        <p class="stat-label mb-0">{{ status|title }}</p>
+                        <p class="stat-label mb-0">
+                            {% if status == 'pending' %}Pendientes
+                            {% elif status == 'approved' %}Aprobadas
+                            {% elif status == 'rejected' %}Rechazadas
+                            {% elif status == 'draft' %}Borradores
+                            {% elif status == 'sent' %}Enviadas
+                            {% elif status == 'in_progress' %}En Progreso
+                            {% elif status == 'completed' %}Completadas
+                            {% elif status == 'invoiced' %}Facturadas
+                            {% elif status == 'paid' %}Pagadas
+                            {% elif status == 'cancelled' %}Canceladas
+                            {% else %}{{ status|title }}
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            {% else %}
+            <div class="no-data-placeholder">
+                <i class="fas fa-chart-pie"></i>
+                <p>No hay datos de distribución</p>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
 
     </div>
 
@@ -766,34 +802,6 @@
                     }, 16);
                 }
             });
-        }
-
-        function refreshStats() {
-            // Mostrar indicador de carga
-            const btn = event.target.closest('.btn');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
-            btn.disabled = true;
-
-            // Hacer petición para actualizar estadísticas
-            fetch('/admin/api/reports/refresh')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Recargar la página para mostrar datos actualizados
-                        location.reload();
-                    } else {
-                        alert('Error al actualizar: ' + data.error);
-                        btn.innerHTML = originalHTML;
-                        btn.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error al conectar con el servidor');
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                });
         }
     </script>
 </body>
