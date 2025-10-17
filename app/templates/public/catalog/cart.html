@@ -973,17 +973,16 @@
 
                 <!-- Acciones del carrito -->
                 <div class="cart-actions">
-                    <button class="btn btn-success" onclick="processStripePayment()" id="payButton">
+                    <button class="btn btn-warning w-100 mb-2" onclick="processMercadoPagoPayment()" id="payButton">
                         <i class="fas fa-credit-card"></i>
-                        Pagar con Tarjeta/SPEI
+                        Pagar con MercadoPago
                     </button>
                     
-                    <a href="/catalog" class="btn btn-secondary">
+                    <a href="/catalog" class="btn btn-secondary w-100">
                         <i class="fas fa-arrow-left"></i>
                         Continuar Comprando
                     </a>
                 </div>
-
                 <!-- Badge de seguridad -->
                 <div class="security-badge">
                     <i class="fas fa-shield-alt"></i>
@@ -1014,7 +1013,7 @@
                 
                 console.log('🔄 Iniciando proceso de pago...');
                 
-                const response = await fetch('/payment/stripe-checkout', {
+                const response = await fetch('/payment/mercadopago-checkout', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1213,6 +1212,56 @@
                 if (item) {
                     item.classList.remove('loading');
                 }
+            }
+        }
+
+        async function processMercadoPagoPayment() {
+            const btn = document.getElementById('payButton');
+            const originalHTML = btn.innerHTML;
+            
+            try {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando con MercadoPago...';
+                btn.disabled = true;
+                
+                console.log('🔄 Iniciando proceso de pago con MercadoPago...');
+                
+                const response = await fetch('/payment/mercadopago-checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                console.log('Respuesta de MercadoPago:', result);
+                
+                if (result.success && result.init_point) {
+                    console.log('✅ Redirigiendo a MercadoPago:', result.init_point);
+                    showNotification('Redirigiendo a MercadoPago...', 'info');
+                    
+                    // Redirigir después de un breve delay para que el usuario vea el mensaje
+                    setTimeout(() => {
+                        window.location.href = result.init_point;
+                    }, 1000);
+                } else {
+                    console.error('❌ Error MercadoPago:', result.error);
+                    let errorMsg = 'Error al procesar el pago';
+                    
+                    if (result.error && result.error.includes('back_urls')) {
+                        errorMsg = 'Error de configuración. Por favor, contacta al soporte.';
+                    } else if (result.error) {
+                        errorMsg = result.error;
+                    }
+                    
+                    showNotification(errorMsg, 'error');
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('❌ Error de conexión:', error);
+                showNotification('Error de conexión: ' + error.message, 'error');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
             }
         }
 
