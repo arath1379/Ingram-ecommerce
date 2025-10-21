@@ -1017,7 +1017,8 @@
             </div>
             <div class="card-body-modern">
                 {% if active_carts %}
-                    {% for cart in active_carts %}
+                    {% for cart_data in active_carts %}
+                    {% set cart = cart_data.cart %}
                     <div class="cart-item">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
@@ -1026,9 +1027,11 @@
                                     Carrito #{{ cart.id }}
                                 </h6>
                                 <div class="customer-info">
-                                    <i class="fas fa-user me-1"></i>Usuario ID: {{ cart.user_id }}
+                                    <i class="fas fa-user me-1"></i>
                                     {% if cart.user %}
-                                    <br>{{ cart.user.full_name or cart.user.email }}
+                                        {{ cart.user.full_name or cart.user.email }} (ID: {{ cart.user_id }})
+                                    {% else %}
+                                        Usuario ID: {{ cart.user_id }}
                                     {% endif %}
                                 </div>
                             </div>
@@ -1039,7 +1042,7 @@
                                 <div>
                                     <small class="text-muted">
                                         <i class="fas fa-clock me-1"></i>
-                                        Actualizado: {{ cart.updated_at.strftime('%d/%m/%Y %H:%M') }}
+                                        Actualizado: {{ cart.updated_at.strftime('%d/%m/%Y %H:%M') if cart.updated_at else 'Nunca' }}
                                     </small>
                                 </div>
                             </div>
@@ -1060,9 +1063,16 @@
                                     {% for item in cart.items %}
                                     <tr>
                                         <td>
-                                            <div class="fw-bold">{{ item.product_name if item.product_name else 'Producto no disponible' }}</div>
-                                            {% if item.product_sku %}
-                                            <small class="text-muted">SKU: {{ item.product_sku }}</small>
+                                            <!-- CORREGIDO: Acceder a través de la relación product -->
+                                            <div class="fw-bold">
+                                                {% if item.product %}
+                                                    {{ item.product.description or item.product.ingram_part_number or 'Producto Ingram' }}
+                                                {% else %}
+                                                    Producto no disponible
+                                                {% endif %}
+                                            </div>
+                                            {% if item.product and item.product.ingram_part_number %}
+                                            <small class="text-muted">SKU: {{ item.product.ingram_part_number }}</small>
                                             {% endif %}
                                         </td>
                                         <td class="text-center">
@@ -1074,11 +1084,25 @@
                                     {% endfor %}
                                 </tbody>
                                 <tfoot>
+                                    <!-- ✅ SUBTOTAL -->
                                     <tr>
-                                        <td colspan="3" class="text-end fw-bold">Total del Carrito:</td>
-                                        <td class="text-end">
-                                            <span class="total-amount">${{ "%.2f"|format(cart.total_amount) }}</span>
+                                        <td colspan="3" class="text-end fw-bold">Subtotal:</td>
+                                        <td class="text-end fw-bold">${{ "%.2f"|format(cart_data.subtotal) }}</td>
+                                    </tr>
+                                    <!-- ✅ IVA (16%) -->
+                                    <tr>
+                                        <td colspan="3" class="text-end">
+                                            <span class="text-info fw-bold">
+                                                <i class="fas fa-percentage me-1"></i>
+                                                IVA (16%):
+                                            </span>
                                         </td>
+                                        <td class="text-end text-info fw-bold">${{ "%.2f"|format(cart_data.tax_amount) }}</td>
+                                    </tr>
+                                    <!-- ✅ TOTAL CON IVA -->
+                                    <tr class="table-primary">
+                                        <td colspan="3" class="text-end fw-bold fs-6">Total del Carrito:</td>
+                                        <td class="text-end fw-bold fs-6">${{ "%.2f"|format(cart_data.total_with_tax) }}</td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -1093,7 +1117,7 @@
                         <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                             <small class="text-muted">
                                 <i class="fas fa-calendar-plus me-1"></i>
-                                Creado: {{ cart.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                Creado: {{ cart.created_at.strftime('%d/%m/%Y %H:%M') if cart.created_at else 'Fecha desconocida' }}
                             </small>
                             <div class="btn-group-modern">
                                 <button class="btn btn-outline-danger btn-sm" 

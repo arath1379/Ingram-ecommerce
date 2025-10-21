@@ -312,22 +312,135 @@
             border-bottom: none;
         }
 
-        /* Total Section with visual emphasis */
-        .total-section {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
-            border: 2px solid var(--primary-color);
+        /* Financial Summary Card - Nueva estructura optimizada */
+        .financial-summary-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, rgba(16, 185, 129, 0.08) 100%);
+            border: 2px solid rgba(16, 185, 129, 0.2);
             border-radius: 16px;
-            padding: 2rem;
-            margin-top: 2rem;
+            padding: 0;
+            overflow: hidden;
         }
 
-        .total-amount {
-            font-size: 2.5rem;
-            font-weight: 800;
+        .financial-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .financial-header i {
+            font-size: 1.75rem;
+        }
+
+        .financial-header h5 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .financial-body {
+            padding: 1.5rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+        }
+
+        .summary-row:first-child {
+            padding-top: 0;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .summary-label i {
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        .summary-detail {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            padding-left: 32px;
+            font-weight: 500;
+        }
+
+        /* Total destacado */
+        .summary-row.summary-total {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.2) 100%);
+            margin: 1rem -1.5rem 0;
+            padding: 1.5rem 1.5rem;
+            border-top: 2px solid var(--primary-color);
+            border-bottom: none;
+        }
+
+        .summary-total .summary-label {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .summary-total .summary-value {
+            font-size: 1.75rem;
             background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+
+        /* Contador de productos */
+        .product-count-box {
+            background: rgba(16, 185, 129, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .product-count-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .product-count-label i {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .product-count-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
         }
 
         /* History Timeline */
@@ -561,8 +674,18 @@
                 grid-template-columns: 1fr;
             }
 
-            .total-amount {
-                font-size: 2rem;
+            .summary-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .summary-value {
+                text-align: left;
+            }
+
+            .summary-total .summary-value {
+                font-size: 1.5rem;
             }
 
             .btn {
@@ -759,7 +882,6 @@
                         </button>
                     {% endif %}
 
-                    <!-- BOTONES DE ELIMINAR Y CANCELAR AGREGADOS -->
                     {% if quotation.status != 'cancelled' %}
                     <button class="btn btn-warning" onclick="cancelQuote()">
                         <i class="fas fa-ban"></i>Cancelar
@@ -832,17 +954,6 @@
                     </div>
                 {% endif %}
             </div>
-
-            <div class="info-card">
-                <div class="info-label">
-                    <i class="fas fa-dollar-sign"></i>
-                    Información de Pago
-                </div>
-                <div class="info-value" style="color: var(--primary-color);">${{ "%.2f"|format(quotation.total_amount) }}</div>
-                <div class="text-muted small mt-1">
-                    <i class="fas fa-coins me-1"></i>Moneda: {{ quotation.currency }}<br>
-                </div>
-            </div>
         </div>
 
         <div class="row">
@@ -868,7 +979,6 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% set subtotal = namespace(value=0) %}
                                     {% for item in quotation.items %}
                                     <tr>
                                         <td>
@@ -911,7 +1021,6 @@
                                             ${{ "%.2f"|format(item.total_price) }}
                                         </td>
                                     </tr>
-                                    {% set subtotal.value = subtotal.value + item.total_price %}
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -922,41 +1031,74 @@
                             <h5 class="text-muted">No hay items en esta cotización</h5>
                         </div>
                         {% endif %}
-
-                        <!-- Totales CORREGIDOS -->
-                        <div class="total-section">
-                            <div class="row align-items-center">
-                                <div class="col-md-6">
-                                    <div class="mb-2">
-                                        <span class="text-muted me-2">Subtotal:</span>
-                                        <span class="fw-bold">${{ "%.2f"|format(subtotal.value) }}</span>
-                                    </div>
-                                    {% if quotation.markup_percentage and quotation.markup_percentage > 0 %}
-                                    <div class="mb-2">
-                                        <span class="text-muted me-2">IVA(16%):</span>
-                                        <span class="fw-bold">${{ "%.2f"|format(subtotal.value * (quotation.markup_percentage/100)) }}</span>
-                                    </div>
-                                    {% endif %}
-                                    {% if quotation.tax_amount and quotation.tax_amount > 0 %}
-                                    <div class="mb-2">
-                                        <span class="text-muted me-2">Impuestos:</span>
-                                        <span class="fw-bold">${{ "%.2f"|format(quotation.tax_amount) }}</span>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                                    <div class="text-muted mb-1">Total</div>
-                                    <div class="total-amount">${{ "%.2f"|format(quotation.total_amount) }}</div>
-                                    <small class="text-muted">{{ quotation.currency }}</small>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Información Adicional e Historial -->
+            <!-- Columna Derecha: Resumen Financiero y Más -->
             <div class="col-lg-4">
+                <!-- RESUMEN FINANCIERO - Nueva ubicación optimizada -->
+                <div class="modern-card animate-in financial-summary-card">
+                    <div class="financial-header">
+                        <i class="fas fa-chart-line"></i>
+                        <h5>Resumen Financiero</h5>
+                    </div>
+                    <div class="financial-body">
+                        <!-- Subtotal -->
+                        <div class="summary-row">
+                            <div>
+                                <div class="summary-label">
+                                    <i class="fas fa-calculator"></i>
+                                    Subtotal
+                                </div>
+                                <div class="summary-detail">Base sin impuestos</div>
+                            </div>
+                            <div class="summary-value">
+                                ${{ "%.2f"|format(quote_subtotal) }}
+                            </div>
+                        </div>
+
+                        <!-- IVA -->
+                        <div class="summary-row">
+                            <div>
+                                <div class="summary-label">
+                                    <i class="fas fa-percent"></i>
+                                    IVA (16%)
+                                </div>
+                                <div class="summary-detail">Impuesto aplicado</div>
+                            </div>
+                            <div class="summary-value" style="color: var(--text-secondary);">
+                                ${{ "%.2f"|format(quote_tax) }}
+                            </div>
+                        </div>
+
+                        <!-- Total -->
+                        <div class="summary-row summary-total">
+                            <div>
+                                <div class="summary-label">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    Total a Pagar
+                                </div>
+                                <div class="summary-detail">Incluye IVA</div>
+                            </div>
+                            <div class="summary-value">
+                                ${{ "%.2f"|format(quote_total) }}
+                            </div>
+                        </div>
+
+                        <!-- Contador de productos -->
+                        <div class="product-count-box">
+                            <div class="product-count-label">
+                                <i class="fas fa-box"></i>
+                                Total de Productos
+                            </div>
+                            <div class="product-count-value">
+                                {{ quotation.items|length }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Notas -->
                 {% if quotation.notes or quotation.admin_notes %}
                 <div class="modern-card animate-in">
@@ -988,6 +1130,39 @@
                     </div>
                 </div>
                 {% endif %}
+
+                <!-- Acciones Rápidas -->
+                <div class="modern-card animate-in">
+                    <div class="card-header-modern">
+                        <h5>
+                            <i class="fas fa-bolt"></i>
+                            Acciones Rápidas
+                        </h5>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="printQuote()">
+                                <i class="fas fa-print"></i>
+                                Imprimir Cotización
+                            </button>
+                            
+                            <button class="btn btn-outline-primary" onclick="downloadPDF()">
+                                <i class="fas fa-download"></i>
+                                Descargar PDF
+                            </button>
+                            
+                            <button class="btn btn-outline-primary" onclick="sendEmail()">
+                                <i class="fas fa-envelope"></i>
+                                Enviar por Email
+                            </button>
+                            
+                            <button class="btn btn-outline-secondary" onclick="duplicateQuote()">
+                                <i class="fas fa-copy"></i>
+                                Duplicar Cotización
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Historial -->
                 <div class="modern-card animate-in">
@@ -1021,43 +1196,6 @@
                             <p class="text-muted mb-0">No hay historial registrado</p>
                         </div>
                         {% endif %}
-                    </div>
-                </div>
-
-                <!-- Acciones Rápidas -->
-                <div class="modern-card animate-in">
-                    <div class="card-header-modern">
-                        <h5>
-                            <i class="fas fa-bolt"></i>
-                            Acciones Rápidas
-                        </h5>
-                    </div>
-                    <div class="card-body-modern">
-                        <div class="d-grid gap-2">
-                            <!-- Botón de Imprimir -->
-                            <button class="btn btn-outline-primary" onclick="printQuote()">
-                                <i class="fas fa-print"></i>
-                                Imprimir Cotización
-                            </button>
-                            
-                            <!-- Botón de Descargar PDF -->
-                            <button class="btn btn-outline-primary" onclick="downloadPDF()">
-                                <i class="fas fa-download"></i>
-                                Descargar PDF
-                            </button>
-                            
-                            <!-- Botón de Enviar por Email -->
-                            <button class="btn btn-outline-primary" onclick="sendEmail()">
-                                <i class="fas fa-envelope"></i>
-                                Enviar por Email
-                            </button>
-                            
-                            <!-- Botón de Duplicar -->
-                            <button class="btn btn-outline-secondary" onclick="duplicateQuote()">
-                                <i class="fas fa-copy"></i>
-                                Duplicar Cotización
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -1198,7 +1336,6 @@
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                // Mostrar mensaje de éxito antes de recargar
                 btn.innerHTML = '<i class="fas fa-check me-2"></i>¡Actualizado!';
                 setTimeout(() => {
                     location.reload();
@@ -1219,18 +1356,15 @@
     // ==================== FUNCIONES DE ACCIONES RÁPIDAS ====================
 
     function printQuote() {
-        // Abrir en nueva pestaña la vista de impresión
         window.open(`/admin/quotes/{{ quotation.id }}/print`, '_blank');
     }
 
     function downloadPDF() {
-        // Mostrar indicador de carga
         const btn = event.target;
         const originalHTML = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generando PDF...';
         
-        // Descargar PDF directamente
         const downloadLink = document.createElement('a');
         downloadLink.href = `/admin/quotes/{{ quotation.id }}/pdf`;
         downloadLink.download = `cotizacion_{{ quotation.quote_number }}.pdf`;
@@ -1238,7 +1372,6 @@
         downloadLink.click();
         document.body.removeChild(downloadLink);
         
-        // Restaurar botón después de un momento
         setTimeout(() => {
             btn.disabled = false;
             btn.innerHTML = originalHTML;
@@ -1247,17 +1380,14 @@
 
     function sendEmail() {
         if (confirm('¿Enviar esta cotización por email al cliente?')) {
-            // Mostrar indicador de carga
             const btn = event.target;
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
             
-            // Llamar a la ruta de email
             fetch(`/admin/quotes/{{ quotation.id }}/email`)
                 .then(response => {
                     if (response.ok) {
-                        // Recargar para ver el mensaje flash
                         location.reload();
                     } else {
                         alert('Error al enviar el email');
@@ -1275,13 +1405,11 @@
 
     function duplicateQuote() {
         if (confirm('¿Duplicar esta cotización?')) {
-            // Mostrar indicador de carga
             const btn = event.target;
             const originalHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Duplicando...';
             
-            // Redirigir a la ruta de duplicación
             window.location.href = `/admin/quotes/{{ quotation.id }}/duplicate`;
         }
     }
@@ -1293,7 +1421,6 @@
             return;
         }
         
-        // Redirigir a la ruta de cancelación (método simplificado)
         window.location.href = `/admin/quotes/cancel/{{ quotation.id }}`;
     }
 
@@ -1302,7 +1429,6 @@
             return;
         }
         
-        // Redirigir a la ruta de eliminación (método simplificado)
         window.location.href = `/admin/quotes/delete/{{ quotation.id }}`;
     }
 
@@ -1322,6 +1448,6 @@
     window.onafterprint = function() {
         document.body.classList.remove('printing');
     };
-</script>
+    </script>
 </body>
 </html>

@@ -102,16 +102,18 @@ def add_to_quote(user_id, product_data, quantity=1):
             existing_item.calculate_total()
             print(f"DEBUG - Item existente actualizado, cantidad: {existing_item.quantity}")
         else:
-            unit_price = product.base_price * 1.10  # 10% markup
+            # ✅ CORREGIDO: unit_price YA INCLUYE markup del 10%
+            base_price = product.base_price or 0
+            unit_price = base_price * 1.10  # 10% markup
             new_item = QuoteItem(
                 quote_id=quote.id,
                 product_id=product.id,
                 quantity=quantity,
-                unit_price=unit_price
+                unit_price=unit_price  # ← Este precio YA incluye markup
             )
             new_item.calculate_total()
             db.session.add(new_item)
-            print(f"DEBUG - Nuevo item creado, precio: {unit_price}, cantidad: {quantity}")
+            print(f"DEBUG - Nuevo item creado, precio base: {base_price}, precio con markup: {unit_price}, cantidad: {quantity}")
         
         # Recalcular total
         quote.calculate_total()
@@ -772,6 +774,18 @@ def quote_history():
             page=page, per_page=per_page, error_out=False
         )
         
+        # ✅ CORREGIDO: Calcular totales con IVA para cada cotización
+        quotes_with_totals = []
+        for quote in quotes.items:
+            # Calcular total con IVA para esta cotización
+            quote_items = QuoteItem.query.filter_by(quote_id=quote.id).all()
+            totals = calculate_quote_totals(quote_items)
+            
+            quotes_with_totals.append({
+                'quote': quote,
+                'total_with_tax': totals['total_amount']  # Total con IVA
+            })
+        
         # Estadísticas
         stats = {
             'total': Quote.query.filter_by(user_id=user_id).count(),
@@ -783,7 +797,8 @@ def quote_history():
         }
         
         return render_template('client/catalog/quote_history.html',
-                            quotes=quotes,
+                            quotes_with_totals=quotes_with_totals,  # ✅ Enviar con totales
+                            quotes=quotes,  # Mantener para paginación
                             stats=stats,
                             current_status=status,
                             user_type='client')
@@ -808,25 +823,28 @@ def quote_detail(quote_id):
         # Obtener items de la cotización
         quote_items = QuoteItem.query.filter_by(quote_id=quote_id).all()
         
-        # Calcular totales CON IVA (16%) - CORREGIDO
-        subtotal = sum(item.quantity * (item.unit_price or 0) for item in quote_items)
-        tax_amount = subtotal * 0.16  # IVA del 16%
-        total_amount = subtotal + tax_amount
+        # ✅ CALCULO CORREGIDO usando la función auxiliar
+        totals = calculate_quote_totals(quote_items)
         
-        # Si la cotización ya tiene totales guardados (para cotizaciones enviadas/formalizadas)
-        if quote.total_amount and quote.total_amount > 0:
-            # Usar los totales ya calculados que incluyen IVA
-            total_amount = quote.total_amount
-            # Recalcular subtotal e IVA basado en el total
-            subtotal = total_amount / 1.16
-            tax_amount = total_amount - subtotal
+        # DEBUG: Mostrar cálculos para verificar
+        print(f"=== DEBUG COTIZACIÓN {quote_id} ===")
+        for i, item in enumerate(quote_items):
+            print(f"Item {i}: {item.product.ingram_part_number}")
+            print(f"  Precio base: {item.product.base_price}")
+            print(f"  Precio con markup: {item.unit_price}")
+            print(f"  Cantidad: {item.quantity}")
+            print(f"  Total item: {item.unit_price * item.quantity}")
+        
+        print(f"Subtotal (con markup): {totals['subtotal']}")
+        print(f"IVA (16% sobre subtotal): {totals['tax_amount']}")
+        print(f"Total con IVA: {totals['total_amount']}")
         
         return render_template('client/catalog/quote_detail.html',
                             quote=quote,
                             quote_items=quote_items,
-                            subtotal=subtotal,
-                            tax_amount=tax_amount,
-                            total_amount=total_amount,
+                            subtotal=totals['subtotal'],
+                            tax_amount=totals['tax_amount'],
+                            total_amount=totals['total_amount'],
                             user_type='client')
         
     except Exception as e:
@@ -1509,3 +1527,24 @@ def cancel_current_quote():
         print(f"Error cancelando cotización actual: {str(e)}")
         flash('Error al cancelar la cotización', 'error')
         return redirect('/mi-cotizacion')
+
+def calculate_quote_totals(quote_items):
+    """Calcular totales de cotización de forma correcta - IVA SOBRE PRECIO FINAL"""
+    subtotal = 0
+    
+    for item in quote_items:
+        # El unit_price YA DEBE INCLUIR el markup del 10%
+        unit_price = item.unit_price or 0
+        quantity = item.quantity
+        item_total = unit_price * quantity
+        subtotal += item_total
+    
+    # ✅ CORREGIDO: Calcular IVA sobre el subtotal que YA INCLUYE el markup
+    tax_amount = subtotal * 0.16  # IVA del 16% sobre precio final
+    total_amount = subtotal + tax_amount
+    
+    return {
+        'subtotal': round(subtotal, 2),
+        'tax_amount': round(tax_amount, 2),
+        'total_amount': round(total_amount, 2)
+    }

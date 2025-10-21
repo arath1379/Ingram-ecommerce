@@ -788,8 +788,10 @@
                                 <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
+                        <!-- En la tabla, cambiar la columna Total -->
                         <tbody>
-                            {% for quote in quotes %}
+                            {% for quote_data in quotes_with_totals %}
+                            {% set quote = quote_data.quote %}
                             <tr>
                                 <td>
                                     <div class="quote-number">{{ quote.quote_number }}</div>
@@ -817,7 +819,9 @@
                                     <small class="text-muted">{{ quote.created_at.strftime('%H:%M') }}</small>
                                 </td>
                                 <td>
-                                    <div class="total-amount">${{ "%.2f"|format(quote.total_amount) }}</div>
+                                    <!-- ✅ MOSTRAR TOTAL CON IVA -->
+                                    <div class="total-amount">${{ "%.2f"|format(quote_data.total_with_tax) }}</div>
+                                    <small class="text-muted">IVA incluido</small>
                                 </td>
                                 <td>
                                     {% if quote.status == 'draft' %}

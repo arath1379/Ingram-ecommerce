@@ -534,6 +534,7 @@
                             </div>
                         </div>
                     </div>
+                    <!-- En la sección de Resumen Financiero - CORREGIDO -->
                     <div class="col-md-6">
                         <div class="card animate-in animate-delay-2">
                             <div class="card-header">
@@ -543,21 +544,24 @@
                                 </h5>
                             </div>
                             <div class="card-body">
+                                <!-- CORREGIDO: Mostrar cálculos paso a paso -->
                                 <p><strong>Subtotal:</strong> 
                                     <span style="color: var(--text-primary); font-weight: 600;">
-                                        ${{ "%.2f"|format(subtotal or 0) }} MXN
+                                        ${{ "%.2f"|format(subtotal) }} MXN
                                     </span>
                                 </p>
                                 <p><strong>IVA (16%):</strong> 
                                     <span style="color: var(--text-secondary); font-weight: 600;">
-                                        ${{ "%.2f"|format(tax_amount or 0) }} MXN
+                                        ${{ "%.2f"|format(tax_amount) }} MXN
                                     </span>
+                                    <small class="text-muted d-block">({{ "%.2f"|format(subtotal) }} × 16%)</small>
                                 </p>
                                 <p style="border-top: 2px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
                                     <strong>Total con IVA:</strong> 
                                     <span style="color: var(--primary-color); font-size: 1.5rem; font-weight: 700; display: block; margin-top: 0.5rem;">
-                                        ${{ "%.2f"|format(total_amount or 0) }} MXN
+                                        ${{ "%.2f"|format(total_amount) }} MXN
                                     </span>
+                                    <small class="text-muted d-block">({{ "%.2f"|format(subtotal) }} + {{ "%.2f"|format(tax_amount) }})</small>
                                 </p>
                                 <p><strong>Total de Productos:</strong> <span style="font-weight: 600;">{{ quote_items|length }}</span></p>
                                 

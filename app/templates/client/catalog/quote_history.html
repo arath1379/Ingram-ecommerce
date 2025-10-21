@@ -448,15 +448,26 @@
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
+                                    <!-- En la tabla, cambiar la columna Total -->
                                     <tbody>
-                                        {% for quote in quotes.items %}
+                                        {% for quote_data in quotes_with_totals %}
+                                        {% set quote = quote_data.quote %}
                                         <tr>
                                             <td>
                                                 <strong>{{ quote.quote_number }}</strong>
                                             </td>
                                             <td>{{ quote.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
                                             <td>{{ quote.items|length }} productos</td>
-                                            <td>${{ "%.2f"|format(quote.total_amount or 0) }} MXN</td>
+                                            <td>
+                                                <!-- ✅ MOSTRAR TOTAL CON IVA -->
+                                                <strong style="color: var(--primary-color);">
+                                                    ${{ "%.2f"|format(quote_data.total_with_tax) }} MXN
+                                                </strong>
+                                                <br>
+                                                <small class="text-muted">
+                                                    (IVA incluido)
+                                                </small>
+                                            </td>
                                             <td>
                                                 <span class="status-badge status-{{ quote.status }}">
                                                     {% if quote.status == 'draft' %}Borrador

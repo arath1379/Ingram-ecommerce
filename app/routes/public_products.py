@@ -276,13 +276,22 @@ def view_cart():
             total += item['total_price']
             items_with_totals.append(item)
         
+        # CALCULAR IVA CORRECTAMENTE
+        tax_rate = 0.16  # 16% IVA México
+        tax_amount = round(total * tax_rate, 2)
+        total_with_tax = round(total + tax_amount, 2)
+        
         flash_message = session.pop('flash_message', None)
         
         return render_template(
             "public/catalog/cart.html",
             items=items_with_totals,
             total=round(total, 2),
+            tax_amount=tax_amount,
+            total_with_tax=total_with_tax,
             formatted_total=f"${total:,.2f} MXN",
+            formatted_tax_amount=f"${tax_amount:,.2f} MXN", 
+            formatted_total_with_tax=f"${total_with_tax:,.2f} MXN",
             count=len(cart_items),
             flash_message=flash_message,
             get_product_image=get_product_image,
@@ -1211,7 +1220,7 @@ def clear_user_cart(user_id):
 
 @public_bp.route('/payment/mercadopago-checkout', methods=['POST'])
 def mercadopago_checkout():
-    """Crear preferencia de pago con MercadoPago - VERSIÓN CON DEBUG"""
+    """Crear preferencia de pago con MercadoPago - VERSIÓN MEJORADA"""
     try:
         user_id = get_current_user_id()
         
@@ -1224,36 +1233,33 @@ def mercadopago_checkout():
         
         print(f"🛒 Procesando carrito MP con {len(cart_items)} items")
         
-        # Calcular totales
+        # CALCULAR TOTALES DE FORMA EXPLÍCITA
         subtotal = sum(item['total_price'] for item in cart_items)
-        tax_amount = round(subtotal * 0.16, 2)
+        tax_amount = round(subtotal * 0.16, 2)  # 16% IVA
         total_amount = round(subtotal + tax_amount, 2)
         
         order_number = f"ITD-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        
+        # VERIFICAR CÁLCULOS
+        print(f"🔢 Verificación de cálculos:")
+        print(f"   Subtotal: ${subtotal:.2f}")
+        print(f"   IVA (16%): ${tax_amount:.2f}") 
+        print(f"   Total: ${total_amount:.2f}")
         
         cart_data = {
             'order_number': order_number,
             'items': cart_items,
             'subtotal': subtotal,
             'tax_amount': tax_amount,
-            'total_amount': total_amount
+            'total_amount': total_amount,
+            'tax_rate': 0.16
         }
         
-        # CONSTRUIR URLs DE FORMA MÁS ROBUSTA
+        # CONSTRUIR URLs
         base_url = request.url_root.rstrip('/')
-        
-        # Asegurar que sean URLs absolutas válidas
         success_url = f"{base_url}/payment/mercadopago/success"
-        failure_url = f"{base_url}/payment/mercadopago/failure"
+        failure_url = f"{base_url}/payment/mercadopago/failure" 
         pending_url = f"{base_url}/payment/mercadopago/pending"
-        
-        # DEBUG DETALLADO DE URLs
-        print("🔍 DEBUG URLs:")
-        print(f"  Base URL: {base_url}")
-        print(f"  Success: {success_url}")
-        print(f"  Failure: {failure_url}") 
-        print(f"  Pending: {pending_url}")
-        print(f"  ¿Todas comienzan con http?: {all(url.startswith('http') for url in [success_url, failure_url, pending_url])}")
         
         # Obtener información del usuario
         user_email = session.get('user_email', 'cliente@itdataglobal.com')
@@ -1261,7 +1267,7 @@ def mercadopago_checkout():
         
         print(f"👤 Usuario: {user_email}, Nombre: {user_name}")
         
-        # Crear preferencia en MercadoPago - PRIMERO SIN auto_return
+        # Crear preferencia en MercadoPago
         mp_service = MercadoPagoService()
         result = mp_service.create_preference(
             cart_data=cart_data,
@@ -1286,7 +1292,12 @@ def mercadopago_checkout():
                 'success': True,
                 'init_point': result['init_point'],
                 'preference_id': result['preference_id'],
-                'order_number': order_number
+                'order_number': order_number,
+                'amounts': result.get('amounts', {
+                    'subtotal': subtotal,
+                    'tax_amount': tax_amount, 
+                    'total_amount': total_amount
+                })
             })
         else:
             print(f"❌ Error MP en ruta: {result['error']}")
@@ -1381,3 +1392,136 @@ def process_successful_purchase(user_id, cart_data, payment_info):
                 self.total_amount = total_amount
                 
         return SimplePurchase(cart_data['order_number'], cart_data['total_amount'])
+
+@public_bp.route('/payment/mercadopago/notifications', methods=['POST'])
+def mercadopago_notifications():
+    """Manejar notificaciones de MercadoPago"""
+    try:
+        data = request.json
+        print(f"📨 Notificación MP recibida: {data}")
+        
+        # Procesar la notificación
+        if data.get('type') == 'payment':
+            payment_id = data.get('data', {}).get('id')
+            print(f"💰 Procesando pago MP: {payment_id}")
+            
+            # Aquí puedes actualizar el estado del pedido en tu base de datos
+            # Buscar la orden por external_reference y actualizar su estado
+            
+        return jsonify({'success': True}), 200
+        
+    except Exception as e:
+        print(f"❌ Error en notificación MP: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ==================== RUTA DE ACTIVIDAD ====================
+@public_bp.route('/activity', methods=['GET'])
+def activity():
+    """Página de actividad del usuario"""
+    try:
+        user_id = get_current_user_id()
+        
+        if user_id == 'anonymous_user':
+            flash('Por favor inicia sesión para ver tu actividad', 'warning')
+            return redirect('/login')
+        
+        # Obtener estadísticas de cotizaciones (puedes adaptar según tu modelo)
+        from app.models.quote import Quote  # Asegúrate de importar tu modelo de cotizaciones
+        
+        # Estadísticas básicas
+        total_quotes = Quote.query.filter_by(user_id=user_id).count()
+        pending_quotes = Quote.query.filter_by(user_id=user_id, status='pending').count()
+        approved_quotes = Quote.query.filter_by(user_id=user_id, status='approved').count()
+        
+        # Cotizaciones del mes actual
+        from datetime import datetime
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+        month_quotes = Quote.query.filter(
+            Quote.user_id == user_id,
+            db.extract('month', Quote.created_at) == current_month,
+            db.extract('year', Quote.created_at) == current_year
+        ).count()
+        
+        # Actividad reciente (últimas 10 actividades)
+        recent_activities = Quote.query.filter_by(user_id=user_id)\
+            .order_by(Quote.created_at.desc())\
+            .limit(10)\
+            .all()
+        
+        # Formatear actividades para el template
+        activities = []
+        for quote in recent_activities:
+            activity_data = {
+                'type': 'quote',
+                'title': f'Cotización #{quote.quote_number}',
+                'description': f'Cotización creada para {quote.customer_name}' if hasattr(quote, 'customer_name') else 'Cotización creada',
+                'created_at': quote.created_at,
+                'quote_number': quote.quote_number,
+                'status': quote.status,
+                'amount': float(quote.total_amount) if quote.total_amount else 0.0,
+                'quote_id': quote.id
+            }
+            activities.append(activity_data)
+        
+        # Si no hay suficientes cotizaciones, agregar actividades del carrito
+        if len(activities) < 5:
+            cart_activities = get_recent_cart_activity(user_id)
+            activities.extend(cart_activities)
+        
+        # Ordenar actividades por fecha
+        activities.sort(key=lambda x: x['created_at'], reverse=True)
+        
+        return render_template(
+            "public/catalog/activity.html",  # Asegúrate de que la ruta del template sea correcta
+            total_quotes=total_quotes,
+            pending_quotes=pending_quotes,
+            approved_quotes=approved_quotes,
+            month_quotes=month_quotes,
+            activities=activities[:10],  # Máximo 10 actividades
+            user=session  # Pasar datos de usuario para el template
+        )
+        
+    except Exception as e:
+        print(f"Error cargando actividad: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash('Error al cargar la actividad', 'error')
+        return redirect('/dashboard/public')
+
+def get_recent_cart_activity(user_id):
+    """Obtener actividad reciente del carrito"""
+    try:
+        from app.models.cart import Cart, CartItem
+        from app.models.product import Product
+        from datetime import datetime, timedelta
+        
+        # Buscar carritos recientes (últimos 30 días)
+        recent_carts = Cart.query.filter(
+            Cart.user_id == user_id,
+            Cart.created_at >= datetime.now() - timedelta(days=30)
+        ).order_by(Cart.created_at.desc()).limit(5).all()
+        
+        cart_activities = []
+        for cart in recent_carts:
+            # Obtener items del carrito
+            items = CartItem.query.filter_by(cart_id=cart.id).all()
+            if items:
+                product_count = len(items)
+                total_value = sum(item.total_price for item in items if item.total_price)
+                
+                activity_data = {
+                    'type': 'order',
+                    'title': f'Carrito actualizado',
+                    'description': f'{product_count} productos en carrito - Total: ${total_value:,.2f} MXN',
+                    'created_at': cart.updated_at or cart.created_at,
+                    'status': 'pending',
+                    'amount': float(total_value) if total_value else 0.0
+                }
+                cart_activities.append(activity_data)
+        
+        return cart_activities
+        
+    except Exception as e:
+        print(f"Error obteniendo actividad del carrito: {str(e)}")
+        return []

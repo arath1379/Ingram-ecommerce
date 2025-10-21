@@ -734,8 +734,18 @@
                                 <span class="detail-value">{{ cart_stats.item_count }}</span>
                             </div>
                             <div class="stat-detail-item">
-                                <span class="detail-label">Valor total estimado:</span>
+                                <span class="detail-label">Subtotal:</span>
                                 <span class="detail-value">${{ "%.2f"|format(cart_stats.total_value) }} MXN</span>
+                            </div>
+                            <!-- ✅ NUEVA LÍNEA: IVA (16%) -->
+                            <div class="stat-detail-item">
+                                <span class="detail-label">IVA (16%):</span>
+                                <span class="detail-value text-info">${{ "%.2f"|format(cart_stats.total_value * 0.16) }} MXN</span>
+                            </div>
+                            <!-- ✅ NUEVA LÍNEA: Total con IVA -->
+                            <div class="stat-detail-item">
+                                <span class="detail-label fw-bold">Total estimado:</span>
+                                <span class="detail-value fw-bold text-success">${{ "%.2f"|format(cart_stats.total_value * 1.16) }} MXN</span>
                             </div>
                             <div class="stat-detail-item">
                                 <span class="detail-label">Última actualización:</span>
@@ -851,33 +861,46 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Animaciones de entrada escalonada
-            const animatedElements = document.querySelectorAll('.animate-in');
-            animatedElements.forEach((el, index) => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(30px)';
-                setTimeout(() => {
-                    el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                    el.style.opacity = '1';
-                    el.style.transform = 'translateY(0)';
-                }, index * 150);
-            });
+            // ========== CONFIGURACIÓN INICIAL ==========
+            const config = {
+                animationDelay: 150,
+                toastDuration: 4000,
+                particleInterval: 5000
+            };
 
-            // Efectos hover mejorados para las tarjetas
-            const dashboardCards = document.querySelectorAll('.dashboard-card');
-            dashboardCards.forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-12px) scale(1.02)';
+            // ========== ANIMACIONES DE ENTRADA ==========
+            function initializeAnimations() {
+                const animatedElements = document.querySelectorAll('.animate-in');
+                animatedElements.forEach((el, index) => {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(30px)';
+                    setTimeout(() => {
+                        el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                        el.style.opacity = '1';
+                        el.style.transform = 'translateY(0)';
+                    }, index * config.animationDelay);
                 });
+            }
+
+            // ========== EFECTOS HOVER PARA TARJETAS ==========
+            function initializeCardHover() {
+                const dashboardCards = document.querySelectorAll('.dashboard-card, .stat-card');
+                dashboardCards.forEach(card => {
+                    card.addEventListener('mouseenter', function() {
+                        this.style.transform = 'translateY(-8px) scale(1.02)';
+                    });
+                    
+                    card.addEventListener('mouseleave', function() {
+                        this.style.transform = '';
+                    });
+                });
+            }
+
+            // ========== CONTADORES ANIMADOS ==========
+            function animateCounter(counter) {
+                const target = parseInt(counter.textContent.replace(/,/g, '')) || 0;
+                if (target === 0) return;
                 
-                card.addEventListener('mouseleave', function() {
-                    this.style.transform = '';
-                });
-            });
-
-            // Contador animado para estadísticas
-            const animateCounter = (counter) => {
-                const target = parseInt(counter.textContent);
                 const duration = 1500;
                 const step = target / (duration / 16);
                 let current = 0;
@@ -885,108 +908,159 @@
                 const timer = setInterval(() => {
                     current += step;
                     if (current >= target) {
-                        counter.textContent = target;
+                        counter.textContent = target.toLocaleString();
                         clearInterval(timer);
                     } else {
-                        counter.textContent = Math.floor(current);
+                        counter.textContent = Math.floor(current).toLocaleString();
                     }
                 }, 16);
-            };
+            }
 
-            // Observador de intersección para las animaciones de contadores
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const counter = entry.target.querySelector('.stat-number');
-                        if (counter && !counter.dataset.animated) {
-                            counter.dataset.animated = 'true';
-                            setTimeout(() => animateCounter(counter), 500);
+            function initializeCounters() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            // Buscar múltiples selectores posibles
+                            const counter = entry.target.querySelector('.stat-number, .stat-value, [data-counter]');
+                            if (counter && !counter.dataset.animated) {
+                                counter.dataset.animated = 'true';
+                                setTimeout(() => animateCounter(counter), 500);
+                            }
                         }
-                    }
+                    });
+                }, { threshold: 0.3 });
+
+                const cardsToObserve = document.querySelectorAll('.dashboard-card, .stat-card, .card');
+                cardsToObserve.forEach(card => {
+                    observer.observe(card);
                 });
-            }, { threshold: 0.3 });
+            }
 
-            dashboardCards.forEach(card => {
-                observer.observe(card);
-            });
-
-            // Notificaciones toast para acciones
+            // ========== SISTEMA DE NOTIFICACIONES ==========
             function showToast(message, type = 'info') {
+                // Evitar duplicados
+                const existingToasts = document.querySelectorAll('.toast-notification');
+                existingToasts.forEach(toast => toast.remove());
+
                 const toast = document.createElement('div');
                 toast.className = `toast-notification toast-${type}`;
+                
+                const colors = {
+                    success: 'var(--success-color, #10B981)',
+                    error: 'var(--danger-color, #EF4444)',
+                    warning: 'var(--warning-color, #F59E0B)',
+                    info: 'var(--info-color, #3B82F6)'
+                };
+                
+                const icons = {
+                    success: 'check-circle',
+                    error: 'exclamation-triangle',
+                    warning: 'exclamation-circle',
+                    info: 'info-circle'
+                };
+
                 toast.style.cssText = `
                     position: fixed;
                     top: 2rem;
                     right: 2rem;
-                    background: ${type === 'success' ? 'var(--success-color)' : 
-                                type === 'error' ? 'var(--danger-color)' : 
-                                'var(--info-color)'};
+                    background: ${colors[type] || colors.info};
                     color: white;
                     padding: 1rem 1.5rem;
                     border-radius: 12px;
                     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-                    z-index: 1000;
+                    z-index: 10000;
                     transform: translateX(100%);
                     transition: transform 0.3s ease;
                     font-weight: 500;
                     display: flex;
                     align-items: center;
                     gap: 0.5rem;
+                    max-width: 350px;
+                    word-wrap: break-word;
                 `;
                 
-                const icon = type === 'success' ? 'check-circle' : 
-                           type === 'error' ? 'exclamation-triangle' : 
-                           'info-circle';
-                           
-                toast.innerHTML = `<i class="fas fa-${icon}"></i>${message}`;
+                toast.innerHTML = `<i class="fas fa-${icons[type] || icons.info}"></i>${message}`;
                 document.body.appendChild(toast);
                 
+                // Animación de entrada
                 setTimeout(() => {
                     toast.style.transform = 'translateX(0)';
                 }, 100);
                 
+                // Auto-remover
                 setTimeout(() => {
                     toast.style.transform = 'translateX(100%)';
-                    setTimeout(() => document.body.removeChild(toast), 300);
-                }, 4000);
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                }, config.toastDuration);
             }
 
-            // Manejar clics en botones de acción
-            document.querySelectorAll('.btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    const text = this.textContent.trim();
-                    
-                    if (text.includes('Ver Favoritos')) {
-                        showToast('Cargando tus productos favoritos...', 'info');
-                    } else if (text.includes('Ver Cotización')) {
-                        showToast('Accediendo a tu cotización actual...', 'info');
-                    } else if (text.includes('Explorar Catálogo')) {
-                        showToast('Redirigiendo al catálogo de productos...', 'info');
-                    } else if (text.includes('Cuenta Empresarial')) {
-                        showToast('Te ayudamos a crear tu cuenta empresarial...', 'success');
-                    }
+            // ========== MANEJO DE BOTONES ==========
+            function initializeButtonHandlers() {
+                document.querySelectorAll('.btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        const text = this.textContent.trim();
+                        const href = this.getAttribute('href');
+                        
+                        // Solo mostrar toast para enlaces internos, no para acciones reales
+                        if (href && href.startsWith('/')) {
+                            if (text.includes('Favoritos')) {
+                                showToast('Cargando tus productos favoritos...', 'info');
+                            } else if (text.includes('Cotización')) {
+                                showToast('Accediendo a tu cotización actual...', 'info');
+                            } else if (text.includes('Catálogo')) {
+                                showToast('Redirigiendo al catálogo de productos...', 'info');
+                            } else if (text.includes('Empresarial')) {
+                                showToast('Te ayudamos a crear tu cuenta empresarial...', 'success');
+                            }
+                        }
+                    });
                 });
-            });
 
-            // Actualización de tiempo en tiempo real
+                // Preloader mejorado para enlaces
+                document.querySelectorAll('a[href]').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        // Solo aplicar a enlaces internos que no sean botones secundarios
+                        if (this.href && this.href.includes(window.location.hostname) && 
+                            !this.classList.contains('btn-secondary')) {
+                            
+                            const originalText = this.innerHTML;
+                            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+                            this.style.pointerEvents = 'none';
+                            
+                            // Timeout de seguridad para restaurar el botón
+                            setTimeout(() => {
+                                if (this.parentNode) {
+                                    this.innerHTML = originalText;
+                                    this.style.pointerEvents = '';
+                                }
+                            }, 5000);
+                        }
+                    });
+                });
+            }
+
+            // ========== ACTUALIZACIÓN DE FECHA/HORA ==========
             function updateDateTime() {
                 const now = new Date();
-                const timeElements = document.querySelectorAll('.current-time');
+                const timeElements = document.querySelectorAll('.current-time, [data-time]');
                 timeElements.forEach(el => {
                     el.textContent = now.toLocaleDateString('es-MX', {
                         year: 'numeric',
                         month: '2-digit',
-                        day: '2-digit'
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
                     });
                 });
             }
-            
-            updateDateTime();
-            setInterval(updateDateTime, 60000);
 
-            // Simulación de actividad reciente si no hay datos
+            // ========== ACTIVIDAD DE EJEMPLO ==========
             function addSampleActivity() {
-                const activityList = document.querySelector('.activity-list');
+                const activityList = document.querySelector('.activity-list, [data-activity-list]');
                 if (activityList && activityList.children.length === 0) {
                     const sampleActivities = [
                         {
@@ -1004,12 +1078,6 @@
                             time: 'hace 1 día'
                         }
                     ];
-
-                    // Remover empty state si existe
-                    const emptyState = document.querySelector('.empty-state');
-                    if (emptyState) {
-                        emptyState.remove();
-                    }
 
                     sampleActivities.forEach(activity => {
                         const li = document.createElement('li');
@@ -1032,84 +1100,86 @@
                 }
             }
 
-            // Ejecutar después de 2 segundos para simular carga
-            setTimeout(addSampleActivity, 2000);
-
-            // Preloader para botones con estado de carga
-            document.querySelectorAll('a[href]').forEach(link => {
-                link.addEventListener('click', function() {
-                    if (!this.classList.contains('btn-secondary')) {
-                        const originalText = this.innerHTML;
-                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Cargando...';
-                        this.style.pointerEvents = 'none';
-                        
-                        setTimeout(() => {
-                            this.innerHTML = originalText;
-                            this.style.pointerEvents = '';
-                        }, 2000);
-                    }
-                });
-            });
-
-            // Mensaje de bienvenida personalizado
-            setTimeout(() => {
-                const userName = document.querySelector('.user-info h1').textContent;
-                showToast(`¡Bienvenido ${userName}!`, 'success');
-            }, 1500);
-
-            // Funcionalidad de búsqueda rápida en actividades
+            // ========== BÚSQUEDA EN ACTIVIDADES ==========
             function addActivitySearch() {
-                const activitySection = document.querySelector('.recent-activity');
-                const sectionHeader = activitySection.querySelector('.section-header');
+                const activitySection = document.querySelector('.recent-activity, [data-activity-section]');
+                if (!activitySection) return;
                 
+                const sectionHeader = activitySection.querySelector('.section-header');
+                if (!sectionHeader) return;
+
+                // Verificar si ya existe un buscador
+                if (sectionHeader.querySelector('.activity-search')) return;
+
                 const searchInput = document.createElement('input');
                 searchInput.type = 'text';
                 searchInput.placeholder = 'Buscar en actividad...';
+                searchInput.className = 'activity-search';
                 searchInput.style.cssText = `
                     padding: 0.5rem 1rem;
-                    border: 2px solid var(--border-color);
+                    border: 2px solid var(--border-color, #E2E8F0);
                     border-radius: 8px;
                     font-size: 0.875rem;
                     width: 200px;
                     margin-left: 1rem;
+                    font-family: inherit;
                 `;
                 
                 sectionHeader.appendChild(searchInput);
                 
                 searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
+                    const searchTerm = this.value.toLowerCase().trim();
                     const activities = document.querySelectorAll('.activity-item');
+                    let hasResults = false;
                     
                     activities.forEach(activity => {
                         const text = activity.textContent.toLowerCase();
-                        activity.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+                        const matches = text.includes(searchTerm);
+                        activity.style.display = matches ? 'flex' : 'none';
+                        if (matches) hasResults = true;
                     });
+
+                    // Mostrar mensaje si no hay resultados
+                    const noResults = document.querySelector('.no-results');
+                    if (!hasResults && searchTerm) {
+                        if (!noResults) {
+                            const message = document.createElement('div');
+                            message.className = 'no-results';
+                            message.textContent = 'No se encontraron actividades';
+                            message.style.cssText = 'text-align: center; padding: 2rem; color: var(--text-secondary);';
+                            activitySection.appendChild(message);
+                        }
+                    } else if (noResults) {
+                        noResults.remove();
+                    }
                 });
             }
 
-            setTimeout(addActivitySearch, 3000);
+            // ========== ACCESIBILIDAD ==========
+            function initializeAccessibility() {
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Tab') {
+                        document.body.classList.add('keyboard-navigation');
+                    }
+                });
 
-            // Mejorar accesibilidad con navegación por teclado
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Tab') {
-                    document.body.classList.add('keyboard-navigation');
-                }
-            });
+                document.addEventListener('mousedown', function() {
+                    document.body.classList.remove('keyboard-navigation');
+                });
+            }
 
-            document.addEventListener('mousedown', function() {
-                document.body.classList.remove('keyboard-navigation');
-            });
-
-            // Efecto de partículas sutil en el fondo
+            // ========== EFECTO DE PARTÍCULAS ==========
             function createParticle() {
+                if (document.hidden) return; // No crear partículas si la pestaña no está visible
+                
                 const particle = document.createElement('div');
                 particle.style.cssText = `
                     position: fixed;
                     width: 4px;
                     height: 4px;
-                    background: var(--primary-color);
+                    background: var(--primary-color, #F15A29);
                     border-radius: 50%;
-                    opacity: 0.1;
+                    opacity: 0.05;
                     pointer-events: none;
                     z-index: -1;
                 `;
@@ -1120,8 +1190,8 @@
                 document.body.appendChild(particle);
                 
                 const animation = particle.animate([
-                    { transform: 'translateY(0)', opacity: 0.1 },
-                    { transform: `translateY(-${window.innerHeight + 100}px)`, opacity: 0 }
+                    { transform: 'translateY(0) rotate(0deg)', opacity: 0.05 },
+                    { transform: `translateY(-${window.innerHeight + 100}px) rotate(180deg)`, opacity: 0 }
                 ], {
                     duration: 15000 + Math.random() * 10000,
                     easing: 'linear'
@@ -1134,16 +1204,45 @@
                 };
             }
 
-            // Crear partículas ocasionalmente
-            setInterval(createParticle, 5000);
+            // ========== INICIALIZACIÓN PRINCIPAL ==========
+            function initializeDashboard() {
+                initializeAnimations();
+                initializeCardHover();
+                initializeCounters();
+                initializeButtonHandlers();
+                initializeAccessibility();
 
-            console.log('Dashboard público iniciado correctamente');
+                // Inicializar fecha/hora
+                updateDateTime();
+                setInterval(updateDateTime, 60000);
+
+                // Inicializaciones con delay
+                setTimeout(() => {
+                    const userName = document.querySelector('.user-info h1, [data-user-name]');
+                    if (userName) {
+                        showToast(`¡Bienvenido ${userName.textContent.trim()}!`, 'success');
+                    }
+                }, 1500);
+
+                setTimeout(addSampleActivity, 2000);
+                setTimeout(addActivitySearch, 3000);
+
+                // Partículas (solo si es necesario para rendimiento)
+                if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+                    setInterval(createParticle, config.particleInterval);
+                }
+
+                console.log('✅ Dashboard público inicializado correctamente');
+            }
+
+            // Iniciar todo
+            initializeDashboard();
         });
 
         // CSS adicional para estados de focus y navegación por teclado
         const additionalStyles = `
             .keyboard-navigation *:focus {
-                outline: 2px solid var(--primary-color);
+                outline: 2px solid var(--primary-color, #F15A29);
                 outline-offset: 2px;
             }
             
@@ -1151,11 +1250,27 @@
                 background: rgba(241, 90, 41, 0.05);
                 transform: translateX(4px);
             }
+            
+            .activity-search:focus {
+                border-color: var(--primary-color, #F15A29);
+                outline: none;
+            }
+            
+            @media (max-width: 768px) {
+                .activity-search {
+                    width: 150px !important;
+                    margin-left: 0.5rem !important;
+                }
+            }
         `;
-        
-        const styleSheet = document.createElement('style');
-        styleSheet.textContent = additionalStyles;
-        document.head.appendChild(styleSheet);
+
+        // Agregar estilos solo si no existen
+        if (!document.querySelector('#dashboard-styles')) {
+            const styleSheet = document.createElement('style');
+            styleSheet.id = 'dashboard-styles';
+            styleSheet.textContent = additionalStyles;
+            document.head.appendChild(styleSheet);
+        }
     </script>
 </body>
 </html>

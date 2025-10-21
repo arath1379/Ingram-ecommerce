@@ -1,13 +1,14 @@
-# app/routes/admin.py - VERSIÓN COMPLETA CON CATÁLOGO
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, jsonify
 from datetime import datetime
-from sqlalchemy import or_
+from sqlalchemy import or_, func
+from sqlalchemy.orm import joinedload
 from app import db
-from app.models import User, Quote, Product, QuoteHistory
+from app.models import User, Quote, Product, QuoteHistory, QuoteItem
 from app.models.product_utils import ProductUtils
 from app.models.image_handler import ImageHandler
 from app.models.api_client import APIClient
 from app.models.purchase import Purchase, PurchaseHistory, PurchaseItem
+from app.models.cart import Cart, CartItem  
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -179,6 +180,18 @@ def quotes():
             page=page, per_page=per_page, error_out=False
         )
         
+        # ✅ CORREGIDO: Calcular total con IVA para cada cotización
+        quotes_with_totals = []
+        for quote in quotes_pagination.items:
+            # Calcular total con IVA
+            quote_items = QuoteItem.query.filter_by(quote_id=quote.id).all()
+            totals = calculate_quote_totals_with_tax(quote_items)
+            
+            quotes_with_totals.append({
+                'quote': quote,
+                'total_with_tax': totals['total_amount']  # Total con IVA
+            })
+        
         # Estadísticas
         stats = {
             'total': Quote.query.count(),
@@ -195,7 +208,8 @@ def quotes():
         }
         
         return render_template('admin/quotes.html',
-                             quotes=quotes_pagination.items,
+                             quotes_with_totals=quotes_with_totals,  # ✅ Enviar con totales
+                             quotes=quotes_pagination.items,  # Mantener para compatibilidad
                              pagination=quotes_pagination,
                              status_filter=status_filter,
                              current_status=status_filter,
@@ -916,16 +930,74 @@ def debug_admin():
 @admin_bp.route('/quotes/<int:quote_id>')
 @admin_required
 def quote_detail(quote_id):
-    """Vista detallada de una cotización"""
+    """Vista detallada de una cotización - VERSIÓN DEFINITIVA CORREGIDA"""
     try:
+        print(f"🔍 quote_detail llamado con: {quote_id}, tipo: {type(quote_id)}")
+        
+        # ✅ OBTENER DATOS BÁSICOS
         quotation = Quote.query.get_or_404(quote_id)
         history = QuoteHistory.query.filter_by(quote_id=quote_id).order_by(QuoteHistory.created_at.desc()).all()
+        quote_items = QuoteItem.query.filter_by(quote_id=quote_id).all()
         
-        return render_template('admin/quotation_detail.html',
-                             quotation=quotation,
-                             history=history)
+        # ✅ CÁLCULO DIRECTO SIN FUNCIONES INTERMEDIAS
+        raw_subtotal = 0.0
+        for item in quote_items:
+            try:
+                # Obtener valores directamente
+                unit_price_val = getattr(item, 'unit_price', 0)
+                quantity_val = getattr(item, 'quantity', 0)
+                
+                # ✅ CONVERSIÓN ABSOLUTAMENTE SEGURA
+                # Si es objeto Namespace, extraer el valor
+                if hasattr(unit_price_val, '__dict__'):
+                    unit_price_val = getattr(unit_price_val, 'value', 0)
+                if hasattr(quantity_val, '__dict__'):
+                    quantity_val = getattr(quantity_val, 'value', 0)
+                
+                # Convertir a números
+                unit_price = float(unit_price_val) if unit_price_val else 0.0
+                quantity = int(quantity_val) if quantity_val else 0
+                
+                item_total = unit_price * quantity
+                raw_subtotal += item_total
+                
+                print(f"🔍 Item {getattr(item, 'id', 'N/A')}: {quantity} x ${unit_price} = ${item_total}")
+                
+            except (TypeError, ValueError, AttributeError) as e:
+                print(f"⚠️ Error calculando item {getattr(item, 'id', 'N/A')}: {e}")
+                continue
+        
+        # ✅ CÁLCULO FINAL CON NOMBRES ÚNICOS
+        final_subtotal = round(float(raw_subtotal), 2)
+        final_tax = round(float(raw_subtotal * 0.16), 2)
+        final_total = round(float(raw_subtotal + final_tax), 2)
+        
+        # ✅ VERIFICACIÓN EXTREMA DE TIPOS
+        print("🎯 VERIFICACIÓN FINAL DE TIPOS:")
+        print(f"   final_subtotal: {final_subtotal} (tipo: {type(final_subtotal)})")
+        print(f"   final_tax: {final_tax} (tipo: {type(final_tax)})")
+        print(f"   final_total: {final_total} (tipo: {type(final_total)})")
+        
+        # ✅ FORZAR CONVERSIÓN A FLOAT (POR SI ACASO)
+        final_subtotal = float(final_subtotal)
+        final_tax = float(final_tax)
+        final_total = float(final_total)
+        
+        # ✅ CONTEXTO LIMPIO CON NOMBRES ESPECÍFICOS
+        context = {
+            'quotation': quotation,
+            'history': history,
+            'quote_subtotal': final_subtotal,  # Nombre único
+            'quote_tax': final_tax,           # Nombre único
+            'quote_total': final_total,       # Nombre único
+        }
+        
+        return render_template('admin/quotation_detail.html', **context)
         
     except Exception as e:
+        print(f"❌ Error crítico en quote_detail: {str(e)}")
+        import traceback
+        traceback.print_exc()
         flash(f'Error al cargar la cotización: {str(e)}', 'danger')
         return redirect(url_for('admin.quotes'))
 
@@ -1403,7 +1475,7 @@ def purchases():
         search = request.args.get('search', '').strip()
         tab = request.args.get('tab', 'purchases')
         
-        # ✅ CORREGIDO: Cargar relaciones con joinedload
+        # CORREGIDO: Cargar relaciones con joinedload
         from sqlalchemy.orm import joinedload
         
         # Query para Purchase con relaciones
@@ -1427,14 +1499,38 @@ def purchases():
             page=page, per_page=per_page, error_out=False
         )
         
-        # ✅ CORREGIDO: Cargar carritos con información de productos
-        from app.models import Cart, CartItem
-        
+        # CORREGIDO: Cargar carritos con información de productos usando joinedload
         active_carts = Cart.query.options(
             joinedload(Cart.items).joinedload(CartItem.product)
         ).filter(Cart.status == 'active').order_by(Cart.updated_at.desc()).all()
         
-        # Estadísticas
+        # ✅ CORREGIDO: Calcular totales CON IVA para carritos activos
+        carts_with_tax = []
+        for cart in active_carts:
+            # Calcular subtotal
+            subtotal = sum(item.total_price for item in cart.items if item.total_price)
+            # Calcular IVA (16%)
+            tax_amount = round(subtotal * 0.16, 2)
+            total_with_tax = round(subtotal + tax_amount, 2)
+            
+            carts_with_tax.append({
+                'cart': cart,
+                'subtotal': subtotal,
+                'tax_amount': tax_amount,
+                'total_with_tax': total_with_tax,
+                'formatted_subtotal': f"${subtotal:,.2f}",
+                'formatted_tax': f"${tax_amount:,.2f}",
+                'formatted_total_with_tax': f"${total_with_tax:,.2f}"
+            })
+        
+        # ✅ CORREGIDO: Calcular estadísticas CON IVA
+        total_revenue_query = db.session.query(db.func.sum(Purchase.total_amount)).filter(
+            Purchase.status.in_(['paid', 'shipped', 'delivered'])
+        ).scalar() or 0
+        
+        # Calcular valor total de carritos CON IVA
+        total_cart_value_with_tax = sum(cart['total_with_tax'] for cart in carts_with_tax)
+        
         stats = {
             'total': Purchase.query.count(),
             'pending': Purchase.query.filter_by(status='pending').count(),
@@ -1443,9 +1539,11 @@ def purchases():
             'delivered': Purchase.query.filter_by(status='delivered').count(),
             'cancelled': Purchase.query.filter_by(status='cancelled').count(),
             'refunded': Purchase.query.filter_by(status='refunded').count(),
-            'total_revenue': db.session.query(db.func.sum(Purchase.total_amount)).filter(Purchase.status.in_(['paid', 'shipped', 'delivered'])).scalar() or 0,
+            'total_revenue': float(total_revenue_query),
             'active_carts': len(active_carts),
-            'total_cart_value': sum(cart.total_amount for cart in active_carts)
+            'total_cart_value': total_cart_value_with_tax,  # ✅ AHORA CON IVA
+            'formatted_total_revenue': f"${float(total_revenue_query):,.2f}",
+            'formatted_total_cart_value': f"${total_cart_value_with_tax:,.2f}"
         }
         
         return render_template('admin/purchases.html',
@@ -1456,7 +1554,7 @@ def purchases():
                              search=search,
                              tab=tab,
                              stats=stats,
-                             active_carts=active_carts)
+                             active_carts=carts_with_tax)  # ✅ Enviar carritos con IVA
         
     except Exception as e:
         print(f"❌ Error en purchases: {str(e)}")
@@ -1893,3 +1991,106 @@ def duplicate_quote(quote_id):
         db.session.rollback()
         flash(f'Error al duplicar cotización: {str(e)}', 'danger')
         return redirect(url_for('admin.quote_detail', quote_id=quote_id))
+
+def calculate_quote_totals_with_tax(quote_items):
+    """Calcular totales de cotización con IVA incluido - CORREGIDO"""
+    subtotal = 0.0
+    
+    for item in quote_items:
+        try:
+            # ✅ CONVERSIÓN ABSOLUTAMENTE SEGURA
+            unit_price = float(getattr(item, 'unit_price', 0)) if getattr(item, 'unit_price', 0) is not None else 0.0
+            quantity = int(getattr(item, 'quantity', 0)) if getattr(item, 'quantity', 0) is not None else 0
+            
+            # ✅ VERIFICAR QUE NO SEAN OBJETOS
+            if hasattr(unit_price, '__dict__'):
+                print(f"⚠️ unit_price es objeto: {unit_price}")
+                unit_price = 0.0
+            if hasattr(quantity, '__dict__'):
+                print(f"⚠️ quantity es objeto: {quantity}")
+                quantity = 0
+            
+            item_total = unit_price * quantity
+            subtotal += item_total
+            
+            print(f"🔍 Item {getattr(item, 'id', 'N/A')}: {quantity} x ${unit_price} = ${item_total}")
+            
+        except (TypeError, ValueError, AttributeError) as e:
+            print(f"⚠️ Error calculando item {getattr(item, 'id', 'N/A')}: {e}")
+            continue
+    
+    # ✅ GARANTIZAR QUE SON FLOATS
+    subtotal = float(subtotal)
+    tax_rate = 0.16
+    tax_amount = subtotal * tax_rate
+    total_amount = subtotal + tax_amount
+    
+    print(f"🔍 Totales - Subtotal: ${subtotal}, IVA: ${tax_amount}, Total: ${total_amount}")
+    
+    return {
+        'subtotal': round(float(subtotal), 2),
+        'tax_amount': round(float(tax_amount), 2),
+        'total_amount': round(float(total_amount), 2)
+    }
+
+def validate_quote_id(quote_id):
+    """Validar y convertir quote_id de cualquier tipo a entero"""
+    print(f"🔍 Validando quote_id: {quote_id}, tipo: {type(quote_id)}")
+    
+    # Si es un objeto Namespace, buscar el atributo id
+    if hasattr(quote_id, 'id'):
+        return quote_id.id
+    # Si es un objeto con atributos, buscar cualquier atributo numérico
+    elif hasattr(quote_id, '__dict__'):
+        for key, value in quote_id.__dict__.items():
+            if isinstance(value, (int, float)) and value > 0:
+                return int(value)
+    # Si es string, convertir a int
+    elif isinstance(quote_id, str) and quote_id.isdigit():
+        return int(quote_id)
+    # Si ya es int, devolver directamente
+    elif isinstance(quote_id, int):
+        return quote_id
+    
+    # Si no se puede convertir, lanzar error
+    raise ValueError(f"ID de cotización inválido: {quote_id} (tipo: {type(quote_id)})")
+
+def validate_template_variables(**kwargs):
+    """Validar que las variables numéricas para template sean tipos básicos"""
+    validated = {}
+    
+    for key, value in kwargs.items():
+        # ✅ SOLO VALIDAR VARIABLES NUMÉRICAS
+        if key in ['subtotal', 'tax_amount', 'total_amount', 'amount', 'price', 'quantity']:
+            # ✅ CONVERSIÓN SEGURA PARA VARIABLES NUMÉRICAS
+            if hasattr(value, '__dict__'):
+                print(f"⚠️ Variable numérica '{key}' es objeto: {value}")
+                # Intentar extraer valor numérico de objetos
+                if hasattr(value, 'id'):
+                    validated[key] = float(getattr(value, 'id', 0))
+                elif hasattr(value, 'value'):
+                    validated[key] = float(getattr(value, 'value', 0))
+                else:
+                    # Buscar cualquier atributo numérico
+                    for attr_name, attr_value in value.__dict__.items():
+                        if isinstance(attr_value, (int, float)):
+                            validated[key] = float(attr_value)
+                            break
+                    else:
+                        validated[key] = 0.0
+            # ✅ CONVERTIR A FLOAT SI ES NUMÉRICO
+            elif isinstance(value, (int, float)):
+                validated[key] = float(value)
+            # ✅ CONVERTIR STRING A FLOAT
+            elif isinstance(value, str):
+                try:
+                    validated[key] = float(value.replace('$', '').replace(',', ''))
+                except:
+                    validated[key] = 0.0
+            else:
+                validated[key] = 0.0
+        else:
+            # ✅ DEJAR OBJETOS Y OTROS TIPOS INTACTOS
+            validated[key] = value
+    
+    return validated

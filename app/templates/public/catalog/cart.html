@@ -950,24 +950,12 @@
                             <i class="fas fa-percentage"></i>
                             IVA (16%):
                         </span>
-                        <span id="tax-amount">${{ "%.2f"|format(total * 0.16) }} MXN</span>
+                        <span id="tax-amount">{{ formatted_tax_amount }}</span>
                     </div>
                     
                     <div class="summary-row total">
                         <span>Total a Pagar:</span>
-                        <span id="total-amount">${{ "%.2f"|format(total * 1.16) }} MXN</span>
-                    </div>
-                </div>
-
-                <!-- Información fiscal -->
-                <div class="tax-info">
-                    <div class="tax-info-header">
-                        <i class="fas fa-info-circle"></i>
-                        Información Fiscal
-                    </div>
-                    <div class="tax-info-text">
-                        Los precios incluyen IVA del 16% según la legislación mexicana. 
-                        Recibirás tu factura electrónica por correo.
+                        <span id="total-amount">{{ formatted_total_with_tax }}</span>
                     </div>
                 </div>
 
@@ -1040,9 +1028,6 @@
                 btn.disabled = false;
             }
         }
-        // Variables globales para cálculos
-        const TAX_RATE = 0.16; // 16% IVA México
-        let cartData = {{ items | tojson if items else '[]' }};
         
         // Función para formatear moneda en MXN
         function formatCurrency(amount) {
@@ -1051,46 +1036,6 @@
                 currency: 'MXN',
                 minimumFractionDigits: 2
             }).format(amount);
-        }
-
-        // Función para calcular totales
-        function calculateTotals() {
-            let subtotal = 0;
-            
-            // Calcular subtotal basado en items visibles
-            document.querySelectorAll('.cart-item').forEach(item => {
-                const partNumber = item.dataset.partNumber;
-                const quantityInput = item.querySelector('.quantity-input');
-                const quantity = parseInt(quantityInput.value) || 1;
-                
-                // Buscar el producto en cartData
-                const product = cartData.find(p => p.product.ingramPartNumber === partNumber);
-                if (product && product.unit_price) {
-                    const unitPrice = product.unit_price;
-                    const itemTotal = unitPrice * quantity;
-                    subtotal += itemTotal;
-                    
-                    // Actualizar el total del item
-                    const itemTotalElement = item.querySelector('.item-total-price');
-                    if (itemTotalElement) {
-                        itemTotalElement.textContent = formatCurrency(itemTotal);
-                    }
-                }
-            });
-            
-            const tax = subtotal * TAX_RATE;
-            const total = subtotal + tax;
-            
-            // Actualizar elementos del DOM
-            const subtotalElement = document.getElementById('subtotal-amount');
-            const taxElement = document.getElementById('tax-amount');
-            const totalElement = document.getElementById('total-amount');
-            
-            if (subtotalElement) subtotalElement.textContent = formatCurrency(subtotal);
-            if (taxElement) taxElement.textContent = formatCurrency(tax);
-            if (totalElement) totalElement.textContent = formatCurrency(total);
-            
-            return { subtotal, tax, total };
         }
 
         // Función para actualizar cantidad
@@ -1215,6 +1160,59 @@
             }
         }
 
+        // Variables globales para cálculos - USAR VALORES DEL BACKEND
+        const TAX_RATE = 0.16; // 16% IVA México
+        let cartData = {{ items | tojson if items else '[]' }};
+        let currentSubtotal = {{ total }};
+        let currentTax = {{ tax_amount }};
+        let currentTotal = {{ total_with_tax }};
+
+        // Función para calcular totales - SINCRONIZADA CON BACKEND
+        function calculateTotals() {
+            let subtotal = 0;
+            
+            // Calcular subtotal basado en items visibles
+            document.querySelectorAll('.cart-item').forEach(item => {
+                const partNumber = item.dataset.partNumber;
+                const quantityInput = item.querySelector('.quantity-input');
+                const quantity = parseInt(quantityInput.value) || 1;
+                
+                // Buscar el producto en cartData
+                const product = cartData.find(p => p.product.ingramPartNumber === partNumber);
+                if (product && product.unit_price) {
+                    const unitPrice = product.unit_price;
+                    const itemTotal = unitPrice * quantity;
+                    subtotal += itemTotal;
+                    
+                    // Actualizar el total del item
+                    const itemTotalElement = item.querySelector('.item-total-price');
+                    if (itemTotalElement) {
+                        itemTotalElement.textContent = formatCurrency(itemTotal);
+                    }
+                }
+            });
+            
+            const tax = subtotal * TAX_RATE;
+            const total = subtotal + tax;
+            
+            // Actualizar elementos del DOM
+            const subtotalElement = document.getElementById('subtotal-amount');
+            const taxElement = document.getElementById('tax-amount');
+            const totalElement = document.getElementById('total-amount');
+            
+            if (subtotalElement) subtotalElement.textContent = formatCurrency(subtotal);
+            if (taxElement) taxElement.textContent = formatCurrency(tax);
+            if (totalElement) totalElement.textContent = formatCurrency(total);
+            
+            // Actualizar variables globales
+            currentSubtotal = subtotal;
+            currentTax = tax;
+            currentTotal = total;
+            
+            return { subtotal, tax, total };
+        }
+
+        // Función mejorada para procesar pagos
         async function processMercadoPagoPayment() {
             const btn = document.getElementById('payButton');
             const originalHTML = btn.innerHTML;
@@ -1224,6 +1222,11 @@
                 btn.disabled = true;
                 
                 console.log('🔄 Iniciando proceso de pago con MercadoPago...');
+                console.log('💰 Montos calculados:', {
+                    subtotal: currentSubtotal,
+                    tax: currentTax,
+                    total: currentTotal
+                });
                 
                 const response = await fetch('/payment/mercadopago-checkout', {
                     method: 'POST',
