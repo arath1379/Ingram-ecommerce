@@ -26,7 +26,6 @@ def admin_required(f):
             flash('Acceso restringido a administradores', 'danger')
             return redirect(url_for('main.index'))
         
-        print(f"✅ Acceso admin concedido a: {user.email}")
         return f(*args, **kwargs)
     return decorated_function
 
@@ -159,9 +158,6 @@ def users():
 def quotes():
     """Gestión de cotizaciones."""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Gestión de cotizaciones por: {user.email}")
-        
         page = request.args.get('page', 1, type=int)
         per_page = 20
         
@@ -180,19 +176,16 @@ def quotes():
             page=page, per_page=per_page, error_out=False
         )
         
-        # ✅ CORREGIDO: Calcular total con IVA para cada cotización
         quotes_with_totals = []
         for quote in quotes_pagination.items:
-            # Calcular total con IVA
             quote_items = QuoteItem.query.filter_by(quote_id=quote.id).all()
             totals = calculate_quote_totals_with_tax(quote_items)
             
             quotes_with_totals.append({
                 'quote': quote,
-                'total_with_tax': totals['total_amount']  # Total con IVA
+                'total_with_tax': totals['total_amount']
             })
         
-        # Estadísticas
         stats = {
             'total': Quote.query.count(),
             'draft': Quote.query.filter_by(status='draft').count(),
@@ -208,8 +201,8 @@ def quotes():
         }
         
         return render_template('admin/quotes.html',
-                             quotes_with_totals=quotes_with_totals,  # ✅ Enviar con totales
-                             quotes=quotes_pagination.items,  # Mantener para compatibilidad
+                             quotes_with_totals=quotes_with_totals,  
+                             quotes=quotes_pagination.items, 
                              pagination=quotes_pagination,
                              status_filter=status_filter,
                              current_status=status_filter,
@@ -229,18 +222,11 @@ def quotes():
 def products():
     """Gestión de productos - Solo catálogo Ingram para admin"""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Catálogo Admin por: {user.email}")
-        
-        # Parámetros de búsqueda del catálogo
         page_number = int(request.args.get("page", 1))
         page_size = int(request.args.get("page_size", 25))
         query = request.args.get("q", "").strip()
         vendor = request.args.get("vendor", "").strip()
         
-        print(f"DEBUG - Catálogo Admin - Page: {page_number}, Query: '{query}', Vendor: '{vendor}'")
-        
-        # Buscar productos en Ingram
         productos, total_records, pagina_vacia = ProductUtils.buscar_productos_hibrido(
             query=query, 
             vendor=vendor, 
@@ -248,58 +234,36 @@ def products():
             page_size=page_size, 
             use_keywords=bool(query)
         )
-        # DEBUG DETALLADO DE LA ESTRUCTURA DE DATOS
-        if productos:
-            # Buscar la clave correcta para el SKU
-            primer_producto = productos[0]
-            if isinstance(primer_producto, dict):
-                for key, value in primer_producto.items():
-                    if 'sku' in key.lower() or 'part' in key.lower() or 'number' in key.lower():
-                        print(f"DEBUG - Posible clave SKU: '{key}' = '{value}'")
         
-        # Aplicar lógica específica para admin (precios originales)
         productos_admin = []
-        for i, producto in enumerate(productos):
-            print(f"DEBUG - Procesando producto {i}: {type(producto)}")
-            
+        for producto in productos:
             if not isinstance(producto, dict):
-                print(f"DEBUG - Producto {i} no es diccionario: {producto}")
                 continue
                 
             producto_admin = producto.copy()
             
-            # BUSCAR LA CLAVE CORRECTA DEL SKU - MÚLTIPLES POSIBILIDADES
             sku = None
             posibles_claves = ['ingramPartNumber', 'ingram_part_number', 'sku', 'partNumber', 'vendorPartNumber']
             
             for clave in posibles_claves:
                 if clave in producto_admin:
                     sku = producto_admin[clave]
-                    print(f"DEBUG - Encontrado SKU en clave '{clave}': {sku}")
                     break
-            
-            # Si no encontramos con las claves conocidas, buscar cualquier clave que contenga 'sku' o 'part'
+
             if not sku:
                 for clave, valor in producto_admin.items():
                     if 'sku' in clave.lower() or 'part' in clave.lower():
                         sku = valor
-                        print(f"DEBUG - Encontrado SKU en clave alternativa '{clave}': {sku}")
                         break
             
-            # VERIFICAR QUE TENGA SKU VÁLIDO
             if not sku:
-                print(f"DEBUG - Producto {i} sin SKU válido. Claves disponibles: {list(producto_admin.keys())}")
                 producto_admin['precio_original'] = "SKU No Encontrado"
                 producto_admin['precio_publico'] = "SKU No Encontrado"
                 producto_admin['ingram_part_number'] = "NO SKU"
                 productos_admin.append(producto_admin)
                 continue
-            
-            print(f"DEBUG - Procesando producto con SKU: {sku}")
-            
-            # Para admin, mostrar información completa y precios originales
+
             try:
-                # Obtener precio original de la API
                 price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
                 body = {"products": [{"ingramPartNumber": sku}]}
                 params = {
@@ -307,7 +271,6 @@ def products():
                     "includePricing": "true"
                 }
                 
-                print(f"DEBUG - Consultando precio para: {sku}")
                 precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
                 
                 if precio_res and precio_res.status_code == 200:
@@ -319,15 +282,12 @@ def products():
                             if pricing:
                                 customer_price = pricing.get('customerPrice')
                                 if customer_price is not None:
-                                    # PRECIO ORIGINAL PARA ADMIN
                                     precio_original = float(customer_price)
                                     producto_admin['precio_original'] = f"${precio_original:,.2f}"
                                     
-                                    # Calcular precio público con markup (solo para referencia)
                                     precio_publico = round(precio_original * 1.15, 2)
                                     producto_admin['precio_publico'] = f"${precio_publico:,.2f}"
                                     
-                                    # Información adicional para admin
                                     producto_admin['disponibilidad_real'] = first_product.get('totalAvailability', 0)
                                     producto_admin['disponible'] = first_product.get('available', False)
                                 else:
@@ -347,15 +307,12 @@ def products():
                     producto_admin['precio_publico'] = "Error API"
                     
             except Exception as price_error:
-                print(f"Error obteniendo precio para {sku}: {price_error}")
                 producto_admin['precio_original'] = "Error"
                 producto_admin['precio_publico'] = "Error"
             
-            # Asegurar que siempre tengamos la clave ingram_part_number para el template
             producto_admin['ingram_part_number'] = sku
             productos_admin.append(producto_admin)
         
-        # Cálculos de paginación
         total_pages = max(1, (total_records + page_size - 1) // page_size) if total_records > 0 else 1
         page_number = max(1, min(page_number, total_pages))
         start_record = (page_number - 1) * page_size + 1 if total_records > 0 else 0
@@ -377,9 +334,6 @@ def products():
                              get_availability_text=ProductUtils.get_availability_text)
         
     except Exception as e:
-        print(f"ERROR en catálogo admin: {str(e)}")
-        import traceback
-        traceback.print_exc()
         flash(f'Error al cargar productos: {str(e)}', 'danger')
         return render_template('admin/products_management.html', 
                              productos_ingram=[])
@@ -390,14 +344,10 @@ def products():
 def product_catalog_detail(part_number):
     """Detalle de producto del catálogo Ingram"""
     try:
-        # Validar que part_number no esté vacío
         if not part_number or part_number == 'None':
             flash('Número de parte inválido', 'danger')
             return redirect(url_for('admin.products', view='catalog'))
-        
-        user = User.query.get(session['user_id'])
 
-        # Detalle del producto
         detail_url = f"https://api.ingrammicro.com/resellers/v6/catalog/details/{part_number}"
         detalle_res = APIClient.make_request("GET", detail_url)
         
@@ -407,12 +357,10 @@ def product_catalog_detail(part_number):
         
         detalle = detalle_res.json()
         
-        # Verificar que el producto tenga datos válidos
         if not detalle or 'ingramPartNumber' not in detalle:
             flash(f'Datos del producto {part_number} incompletos', 'warning')
             return redirect(url_for('admin.products', view='catalog'))
 
-        # Precio y disponibilidad - PARA ADMIN MOSTRAR PRECIO ORIGINAL
         price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
         body = {"products": [{"ingramPartNumber": part_number}]}
         params = {
@@ -429,29 +377,25 @@ def product_catalog_detail(part_number):
             if precio_data and isinstance(precio_data, list) and len(precio_data) > 0:
                 precio_info = precio_data[0]
 
-        # PARA ADMIN: Mostrar precio original sin markup
         pricing = precio_info.get("pricing") or {}
         precio_original = pricing.get("customerPrice")
         currency = pricing.get("currencyCode") or pricing.get("currency") or "USD"
         
-        # Formatear precio original para admin
         if precio_original is not None:
             try:
                 precio_original_val = float(precio_original)
                 precio_original_formatted = ProductUtils.format_currency(precio_original_val, currency)
                 precio_publico_val = round(precio_original_val * 1.15, 2)
                 precio_publico_formatted = ProductUtils.format_currency(precio_publico_val, currency)
-            except Exception as e:
+            except Exception:
                 precio_original_formatted = "Consultar"
                 precio_publico_formatted = "Consultar"
         else:
             precio_original_formatted = "No disponible"
             precio_publico_formatted = "No disponible"
 
-        # Disponibilidad
         disponibilidad = ProductUtils.get_availability_text(precio_info, detalle)
 
-        # Información de inventario
         inventory_info = {
             'available': precio_info.get("available", False),
             'total_availability': precio_info.get("totalAvailability", 0),
@@ -459,7 +403,6 @@ def product_catalog_detail(part_number):
             'ingram_part_number': precio_info.get("ingramPartNumber", part_number)
         }
 
-        # Extraer atributos
         atributos = []
         raw_attrs = detalle.get("productAttributes") or detalle.get("attributes") or []
         for a in raw_attrs:
@@ -468,7 +411,6 @@ def product_catalog_detail(part_number):
             if name and value:
                 atributos.append({"name": name, "value": value})
 
-        # Imagen mejorada
         imagen_url = ImageHandler.get_image_url_enhanced(detalle)
         
         return render_template(
@@ -484,9 +426,6 @@ def product_catalog_detail(part_number):
         )
     
     except Exception as e:
-        print(f"Error obteniendo detalle del producto {part_number}: {str(e)}")
-        import traceback
-        traceback.print_exc()
         flash(f'Error al cargar el detalle del producto: {str(e)}', 'danger')
         return redirect(url_for('admin.products', view='catalog'))
     
@@ -496,18 +435,12 @@ def product_catalog_detail(part_number):
 def reports():
     """Reportes y analytics - SOLO DATOS REALES DE LA BD."""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Reportes accedido por: {user.email}")
-        
-        # Obtener estadísticas reales
         from sqlalchemy import func, extract
         from datetime import datetime, timedelta
         
-        # Estadísticas básicas
         total_users = User.query.count()
         total_quotes = Quote.query.count()
         
-        # Intentar obtener datos de Purchase si existe, sino usar 0
         try:
             from app.models.purchase import Purchase
             total_purchases = Purchase.query.count()
@@ -518,31 +451,24 @@ def reports():
             total_purchases = 0
             total_revenue = 0
         
-        # Intentar obtener datos de Product si existe
         try:
             total_products = Product.query.count()
             unique_categories = db.session.query(func.count(func.distinct(Product.category))).scalar() or 0
         except Exception:
             total_products = 0
             unique_categories = 0
-        
-        # CORREGIDO: Usar campos reales del modelo User
-        # Usar created_at como proxy de actividad (usuarios creados en los últimos 30 días)
+
         thirty_days_ago = datetime.now() - timedelta(days=30)
         try:
-            # Intentar con last_login si existe
             active_users = User.query.filter(User.last_login >= thirty_days_ago).count()
         except AttributeError:
-            # Si no existe last_login, usar created_at como fallback
             active_users = User.query.filter(User.created_at >= thirty_days_ago).count()
         
         active_percentage = round((active_users / total_users * 100), 1) if total_users > 0 else 0
         
-        # Tasa de conversión de cotizaciones
         approved_quotes = Quote.query.filter_by(status='approved').count()
         conversion_rate = round((approved_quotes / total_quotes * 100), 1) if total_quotes > 0 else 0
         
-        # Top 5 usuarios más activos - SOLO DATOS REALES
         top_users_formatted = []
         try:
             user_stats = db.session.query(
@@ -557,7 +483,6 @@ def reports():
              .limit(5).all()
             
             for user_stat in user_stats:
-                # Solo incluir usuarios que tienen cotizaciones
                 if user_stat.quote_count and user_stat.quote_count > 0:
                     top_users_formatted.append({
                         'name': user_stat.full_name or user_stat.email.split('@')[0],
@@ -565,12 +490,9 @@ def reports():
                         'is_verified': user_stat.is_verified,
                         'quotes': user_stat.quote_count or 0
                     })
-        except Exception as e:
-            print(f"Error en top users: {e}")
-            # NO HAY DATOS DE DEMOSTRACIÓN - lista vacía
+        except Exception:
             top_users_formatted = []
         
-        # Productos más cotizados - SOLO DATOS REALES
         top_products_formatted = []
         try:
             from app.models import QuoteItem
@@ -587,7 +509,6 @@ def reports():
              .limit(5).all()
             
             for product in product_stats:
-                # Solo incluir productos que han sido cotizados
                 if product.times_quoted and product.times_quoted > 0:
                     top_products_formatted.append({
                         'name': product.description or 'Producto sin nombre',
@@ -596,12 +517,9 @@ def reports():
                         'times_quoted': product.times_quoted or 0,
                         'total_quantity': product.total_quantity or 0
                     })
-        except Exception as e:
-            print(f"Error en top products: {e}")
-            # NO HAY DATOS DE DEMOSTRACIÓN - lista vacía
+        except Exception:
             top_users_formatted = []
         
-        # Cotizaciones recientes - SOLO DATOS REALES
         recent_quotes_formatted = []
         try:
             recent_quotes = Quote.query.order_by(Quote.created_at.desc()).limit(10).all()
@@ -616,12 +534,9 @@ def reports():
                     'items_count': len(quote.items) if hasattr(quote, 'items') else 0,
                     'total': quote.total_amount or 0
                 })
-        except Exception as e:
-            print(f"Error en recent quotes: {e}")
-            # NO HAY DATOS DE DEMOSTRACIÓN - lista vacía
+        except Exception:
             recent_quotes_formatted = []
         
-        # Distribución por estado de cotizaciones - SOLO DATOS REALES
         status_distribution = {}
         try:
             status_counts = db.session.query(
@@ -630,28 +545,11 @@ def reports():
             ).group_by(Quote.status).all()
             
             for status, count in status_counts:
-                if status:  # Solo incluir estados válidos
+                if status:
                     status_distribution[status] = count
-        except Exception as e:
-            print(f"Error en status distribution: {e}")
-            # NO HAY DATOS DE DEMOSTRACIÓN - diccionario vacío
+        except Exception:
             status_distribution = {}
         
-        # DEBUG: Mostrar los datos reales que se están enviando
-        print(f"=== REPORTES - DATOS REALES ===")
-        print(f"Total users: {total_users}")
-        print(f"Total quotes: {total_quotes}")
-        print(f"Total purchases: {total_purchases}")
-        print(f"Total revenue: {total_revenue}")
-        print(f"Active users (últimos 30 días): {active_users}")
-        print(f"Active %: {active_percentage}")
-        print(f"Conversion %: {conversion_rate}")
-        print(f"Top users: {len(top_users_formatted)}")
-        print(f"Top products: {len(top_products_formatted)}")
-        print(f"Recent quotes: {len(recent_quotes_formatted)}")
-        print(f"Status distribution: {len(status_distribution)}")
-        
-        # Preparar datos REALES para el template
         report_data = {
             'period_days': 30,
             'report_generated': datetime.now(),
@@ -674,11 +572,6 @@ def reports():
         return render_template('admin/reports.html', **report_data)
         
     except Exception as e:
-        print(f"❌ Error crítico en reportes: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
-        # Datos mínimos de emergencia - SIN DATOS DE DEMOSTRACIÓN
         emergency_data = {
             'period_days': 30,
             'report_generated': datetime.now(),
@@ -690,10 +583,10 @@ def reports():
             'active_percentage': 0,
             'conversion_rate': 0,
             'unique_categories': 0,
-            'top_users': [],  # LISTA VACÍA
-            'top_products': [],  # LISTA VACÍA  
-            'recent_quotes': [],  # LISTA VACÍA
-            'status_distribution': {},  # DICCIONARIO VACÍO
+            'top_users': [],
+            'top_products': [],  
+            'recent_quotes': [],
+            'status_distribution': {},
             'sales_data': [],
             'active_users': []
         }
@@ -706,9 +599,6 @@ def reports():
 def verifications():
     """Gestión de verificaciones de usuarios."""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Verificaciones accedido por: {user.email}")
-        
         unverified_users = User.query.filter_by(is_verified=False).order_by(User.created_at.desc()).all()
         return render_template('admin/verifications.html', users=unverified_users)
     except Exception as e:
@@ -727,9 +617,6 @@ def orders():
 def approve_quote(quote_id):
     """Aprobar una cotización."""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Aprobando cotización {quote_id} por: {user.email}")
-        
         quote = Quote.query.get(quote_id)
         if quote:
             quote.status = 'approved'
@@ -750,9 +637,6 @@ def approve_quote(quote_id):
 def reject_quote(quote_id):
     """Rechazar una cotización."""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Rechazando cotización {quote_id} por: {user.email}")
-        
         quote = Quote.query.get(quote_id)
         if quote:
             quote.status = 'rejected'
@@ -881,9 +765,6 @@ def delete_user(user_id):
 def api_stats():
     """API para obtener estadísticas actualizadas."""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ API stats accedido por: {user.email}")
-        
         total_users = User.query.count()
         pending_quotes = Quote.query.filter_by(status='pending').count()
         monthly_revenue = 0
@@ -921,72 +802,49 @@ def debug_admin():
 def quote_detail(quote_id):
     """Vista detallada de una cotización - VERSIÓN DEFINITIVA CORREGIDA"""
     try:
-        print(f"🔍 quote_detail llamado con: {quote_id}, tipo: {type(quote_id)}")
-        
-        # ✅ OBTENER DATOS BÁSICOS
         quotation = Quote.query.get_or_404(quote_id)
         history = QuoteHistory.query.filter_by(quote_id=quote_id).order_by(QuoteHistory.created_at.desc()).all()
         quote_items = QuoteItem.query.filter_by(quote_id=quote_id).all()
         
-        # ✅ CÁLCULO DIRECTO SIN FUNCIONES INTERMEDIAS
         raw_subtotal = 0.0
         for item in quote_items:
             try:
-                # Obtener valores directamente
                 unit_price_val = getattr(item, 'unit_price', 0)
                 quantity_val = getattr(item, 'quantity', 0)
                 
-                # ✅ CONVERSIÓN ABSOLUTAMENTE SEGURA
-                # Si es objeto Namespace, extraer el valor
                 if hasattr(unit_price_val, '__dict__'):
                     unit_price_val = getattr(unit_price_val, 'value', 0)
                 if hasattr(quantity_val, '__dict__'):
                     quantity_val = getattr(quantity_val, 'value', 0)
                 
-                # Convertir a números
                 unit_price = float(unit_price_val) if unit_price_val else 0.0
                 quantity = int(quantity_val) if quantity_val else 0
                 
                 item_total = unit_price * quantity
                 raw_subtotal += item_total
                 
-                print(f"🔍 Item {getattr(item, 'id', 'N/A')}: {quantity} x ${unit_price} = ${item_total}")
-                
-            except (TypeError, ValueError, AttributeError) as e:
-                print(f"⚠️ Error calculando item {getattr(item, 'id', 'N/A')}: {e}")
+            except (TypeError, ValueError, AttributeError):
                 continue
         
-        # ✅ CÁLCULO FINAL CON NOMBRES ÚNICOS
         final_subtotal = round(float(raw_subtotal), 2)
         final_tax = round(float(raw_subtotal * 0.16), 2)
         final_total = round(float(raw_subtotal + final_tax), 2)
         
-        # ✅ VERIFICACIÓN EXTREMA DE TIPOS
-        print("🎯 VERIFICACIÓN FINAL DE TIPOS:")
-        print(f"   final_subtotal: {final_subtotal} (tipo: {type(final_subtotal)})")
-        print(f"   final_tax: {final_tax} (tipo: {type(final_tax)})")
-        print(f"   final_total: {final_total} (tipo: {type(final_total)})")
-        
-        # ✅ FORZAR CONVERSIÓN A FLOAT (POR SI ACASO)
         final_subtotal = float(final_subtotal)
         final_tax = float(final_tax)
         final_total = float(final_total)
         
-        # ✅ CONTEXTO LIMPIO CON NOMBRES ESPECÍFICOS
         context = {
             'quotation': quotation,
             'history': history,
-            'quote_subtotal': final_subtotal,  # Nombre único
-            'quote_tax': final_tax,           # Nombre único
-            'quote_total': final_total,       # Nombre único
+            'quote_subtotal': final_subtotal,
+            'quote_tax': final_tax,
+            'quote_total': final_total,
         }
         
         return render_template('admin/quotation_detail.html', **context)
         
     except Exception as e:
-        print(f"❌ Error crítico en quote_detail: {str(e)}")
-        import traceback
-        traceback.print_exc()
         flash(f'Error al cargar la cotización: {str(e)}', 'danger')
         return redirect(url_for('admin.quotes'))
 
@@ -1041,7 +899,6 @@ def update_quote_status(quote_id):
             quotation.admin_notes = admin_notes
             quotation.updated_at = datetime.utcnow()
             
-            # Agregar al historial
             history = QuoteHistory(
                 quote_id=quotation.id,
                 action=action_description,
@@ -1103,19 +960,14 @@ def add_quote_note(quote_id):
 def admin_catalog_search():
     """Búsqueda específica para administradores"""
     try:
-        user = User.query.get(session['user_id'])
         search_type = request.args.get('type', 'sku')
         query = request.args.get('query', '').strip()
         page = request.args.get('page', 1, type=int)
         
-        print(f"✅ Búsqueda en catálogo admin por: {user.email} - Tipo: {search_type}, Query: {query}")
-        
-        # Aquí puedes usar tu función existente de búsqueda
         productos = []
         total_results = 0
         
         if query:
-            # Usar tu función de búsqueda existente
             productos, total_results, _ = ProductUtils.buscar_productos_hibrido(
                 query=query, 
                 vendor="", 
@@ -1124,12 +976,10 @@ def admin_catalog_search():
                 use_keywords=bool(query)
             )
             
-            # Aplicar transformaciones para admin
             for producto in productos:
-                # Para admin, mostrar información de costo real
                 if 'precio_final' in producto:
                     producto['precio_admin'] = producto.get('precio_base', 'Consultar')
-                    producto['markup_aplicado'] = '15%'  # O calcular basado en la diferencia
+                    producto['markup_aplicado'] = '15%'
         
         return render_template('admin/catalog/admin_search_results.html',
                              productos=productos,
@@ -1158,7 +1008,6 @@ def api_admin_catalog_search():
         if not query or len(query) < 2:
             return jsonify({'results': []})
         
-        # Usar tu función de búsqueda existente
         productos, total, _ = ProductUtils.buscar_productos_hibrido(
             query=query, 
             vendor="", 
@@ -1167,7 +1016,6 @@ def api_admin_catalog_search():
             use_keywords=bool(query)
         )
         
-        # Formatear resultados para autocompletar
         results = []
         for producto in productos[:limit]:
             results.append({
@@ -1195,7 +1043,6 @@ def api_admin_catalog_search():
 def api_admin_catalog_availability(part_number):
     """API para verificar disponibilidad y precios (admin - datos originales)"""
     try:
-        # Obtener información actualizada de precio y disponibilidad
         price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
         body = {"products": [{"ingramPartNumber": part_number}]}
         params = {
@@ -1246,25 +1093,21 @@ def apply_admin_pricing(productos):
     for producto in productos:
         producto_admin = producto.copy()
         
-        # Para admin, mostrar información de costo real
         if 'precio_final' in producto_admin:
-            # Guardar precio público como referencia
             producto_admin['precio_publico'] = producto_admin['precio_final']
             
-            # Calcular y mostrar precio original (costo)
             try:
                 if producto_admin.get('precio_base'):
                     precio_base = float(str(producto_admin['precio_base']).replace('$', '').replace(',', ''))
                     producto_admin['precio_original'] = f"${precio_base:.2f}"
                     
-                    # Calcular markup aplicado
                     precio_publico_val = float(str(producto_admin['precio_final']).replace('$', '').replace(',', ''))
                     markup = ((precio_publico_val - precio_base) / precio_base) * 100
                     producto_admin['markup'] = f"{markup:.1f}%"
                 else:
                     producto_admin['precio_original'] = "Consultar"
                     producto_admin['markup'] = "N/A"
-            except Exception as e:
+            except Exception:
                 producto_admin['precio_original'] = "Consultar"
                 producto_admin['markup'] = "Error"
         
@@ -1278,10 +1121,6 @@ def apply_admin_pricing(productos):
 def settings():
     """Configuración del sistema"""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Configuración accedida por: {user.email}")
-        
-        # Configuración básica del sistema
         system_settings = {
             'app_name': 'Ingram eCommerce',
             'version': '1.0.0',
@@ -1296,7 +1135,7 @@ def settings():
         
         return render_template('admin/settings.html', 
                              settings=system_settings,
-                             current_user=user)
+                             current_user=User.query.get(session['user_id']))
         
     except Exception as e:
         flash(f'Error al cargar configuración: {str(e)}', 'danger')
@@ -1309,11 +1148,6 @@ def settings():
 def update_settings():
     """Actualizar configuración del sistema"""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Actualizando configuración por: {user.email}")
-        
-        # Aquí procesarías los datos del formulario
-        # Por ahora solo mostramos un mensaje de éxito
         flash('Configuración actualizada exitosamente', 'success')
         return redirect(url_for('admin.settings'))
         
@@ -1328,16 +1162,11 @@ def update_settings():
 def delete_quote(quote_id):
     """Eliminar una cotización permanentemente."""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Eliminando cotización {quote_id} por: {user.email}")
-        
         quote = Quote.query.get_or_404(quote_id)
         quote_number = quote.quote_number
         
-        # Eliminar el historial primero
         QuoteHistory.query.filter_by(quote_id=quote_id).delete()
         
-        # Eliminar la cotización
         db.session.delete(quote)
         db.session.commit()
         
@@ -1354,20 +1183,16 @@ def delete_quote(quote_id):
 def cancel_quote(quote_id):
     """Cancelar una cotización (cambio de estado a cancelled)."""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Cancelando cotización {quote_id} por: {user.email}")
-        
         quote = Quote.query.get_or_404(quote_id)
+        user = User.query.get(session['user_id'])
         
         if quote.status == 'cancelled':
             flash(f'La cotización #{quote.quote_number} ya está cancelada', 'warning')
             return redirect(url_for('admin.quotes'))
         
-        # Cambiar estado a cancelled
         quote.status = 'cancelled'
         quote.updated_at = datetime.now()
         
-        # Agregar al historial
         history = QuoteHistory(
             quote_id=quote.id,
             action="Cotización cancelada",
@@ -1405,9 +1230,7 @@ def quotes_bulk_action():
         if action == 'delete':
             deleted_count = 0
             for quote in quotes:
-                # Eliminar historial primero
                 QuoteHistory.query.filter_by(quote_id=quote.id).delete()
-                # Eliminar cotización
                 db.session.delete(quote)
                 deleted_count += 1
             
@@ -1421,7 +1244,6 @@ def quotes_bulk_action():
                     quote.status = 'cancelled'
                     quote.updated_at = datetime.now()
                     
-                    # Agregar al historial
                     history = QuoteHistory(
                         quote_id=quote.id,
                         action="Cotización cancelada (acción masiva)",
@@ -1436,7 +1258,6 @@ def quotes_bulk_action():
             flash(f'{cancelled_count} cotización(es) cancelada(s)', 'warning')
             
         elif action == 'export':
-            # Aquí podrías implementar exportación masiva
             flash(f'Exportando {len(quotes)} cotización(es) - Función en desarrollo', 'info')
             
         else:
@@ -1454,9 +1275,6 @@ def quotes_bulk_action():
 def purchases():
     """Gestión de compras directas y carritos de usuarios."""
     try:
-        user = User.query.get(session['user_id'])
-        print(f"✅ Gestión de compras por: {user.email}")
-        
         page = request.args.get('page', 1, type=int)
         per_page = 20
         
@@ -1464,10 +1282,8 @@ def purchases():
         search = request.args.get('search', '').strip()
         tab = request.args.get('tab', 'purchases')
         
-        # CORREGIDO: Cargar relaciones con joinedload
         from sqlalchemy.orm import joinedload
         
-        # Query para Purchase con relaciones
         query = Purchase.query.options(
             joinedload(Purchase.items).joinedload(PurchaseItem.product)
         )
@@ -1494,9 +1310,7 @@ def purchases():
         
         carts_with_tax = []
         for cart in active_carts:
-            # Calcular subtotal
             subtotal = sum(item.total_price for item in cart.items if item.total_price)
-            # Calcular IVA (16%)
             tax_amount = round(subtotal * 0.16, 2)
             total_with_tax = round(subtotal + tax_amount, 2)
             
@@ -1510,12 +1324,10 @@ def purchases():
                 'formatted_total_with_tax': f"${total_with_tax:,.2f}"
             })
         
-        # ✅ CORREGIDO: Calcular estadísticas CON IVA
         total_revenue_query = db.session.query(db.func.sum(Purchase.total_amount)).filter(
             Purchase.status.in_(['paid', 'shipped', 'delivered'])
         ).scalar() or 0
         
-        # Calcular valor total de carritos CON IVA
         total_cart_value_with_tax = sum(cart['total_with_tax'] for cart in carts_with_tax)
         
         stats = {
@@ -1528,7 +1340,7 @@ def purchases():
             'refunded': Purchase.query.filter_by(status='refunded').count(),
             'total_revenue': float(total_revenue_query),
             'active_carts': len(active_carts),
-            'total_cart_value': total_cart_value_with_tax,  # ✅ AHORA CON IVA
+            'total_cart_value': total_cart_value_with_tax,
             'formatted_total_revenue': f"${float(total_revenue_query):,.2f}",
             'formatted_total_cart_value': f"${total_cart_value_with_tax:,.2f}"
         }
@@ -1541,10 +1353,9 @@ def purchases():
                              search=search,
                              tab=tab,
                              stats=stats,
-                             active_carts=carts_with_tax)  # ✅ Enviar carritos con IVA
+                             active_carts=carts_with_tax)
         
     except Exception as e:
-        print(f"❌ Error en purchases: {str(e)}")
         flash(f'Error al cargar compras: {str(e)}', 'danger')
         return render_template('admin/purchases.html', 
                              purchases=[], 
@@ -1591,16 +1402,13 @@ def update_purchase_status(purchase_id):
                 'error': 'Estado no válido'
             }), 400
         
-        # Actualizar estado
         old_status = purchase.status
         purchase.status = new_status
         purchase.updated_at = datetime.utcnow()
         
-        # Agregar tracking number si se proporciona
         if new_status == 'shipped' and data.get('tracking_number'):
             purchase.tracking_number = data.get('tracking_number')
         
-        # Agregar al historial
         history = PurchaseHistory(
             purchase_id=purchase.id,
             action=f"Estado actualizado: {old_status} → {new_status}",
@@ -1661,12 +1469,10 @@ def api_purchases_stats():
         from sqlalchemy import func, extract
         from datetime import datetime, timedelta
         
-        # Estadísticas básicas
         total_purchases = Purchase.query.count()
         pending_purchases = Purchase.query.filter_by(status='pending').count()
         paid_purchases = Purchase.query.filter_by(status='paid').count()
         
-        # Ingresos del mes actual
         current_month = datetime.now().month
         current_year = datetime.now().year
         monthly_revenue = db.session.query(func.sum(Purchase.total_amount)).filter(
@@ -1675,7 +1481,6 @@ def api_purchases_stats():
             extract('year', Purchase.created_at) == current_year
         ).scalar() or 0
         
-        # Compras de hoy
         today = datetime.now().date()
         today_purchases = Purchase.query.filter(
             func.date(Purchase.created_at) == today
@@ -1704,11 +1509,9 @@ def delete_cart(cart_id):
         
         cart = Cart.query.get_or_404(cart_id)
         
-        # Eliminar items del carrito primero
         for item in cart.items:
             db.session.delete(item)
         
-        # Eliminar el carrito
         db.session.delete(cart)
         db.session.commit()
         
@@ -1732,7 +1535,6 @@ def view_user(user_id):
     try:
         user = User.query.get_or_404(user_id)
         
-        # Obtener estadísticas del usuario
         user_stats = {
             'total_quotes': Quote.query.filter_by(user_id=user_id).count(),
             'pending_quotes': Quote.query.filter_by(user_id=user_id, status='pending').count(),
@@ -1741,7 +1543,6 @@ def view_user(user_id):
             'total_favorites': len(user.favorites)
         }
         
-        # Obtener últimas cotizaciones del usuario
         recent_quotes = Quote.query.filter_by(user_id=user_id).order_by(Quote.created_at.desc()).limit(5).all()
         
         return render_template('admin/user_detail.html',
@@ -1761,7 +1562,6 @@ def edit_user(user_id):
         user = User.query.get_or_404(user_id)
         
         if request.method == 'POST':
-            # Procesar formulario de edición
             user.full_name = request.form.get('full_name', user.full_name)
             user.business_name = request.form.get('business_name', user.business_name)
             user.email = request.form.get('email', user.email)
@@ -1773,12 +1573,10 @@ def edit_user(user_id):
             user.discount_percentage = float(request.form.get('discount_percentage', user.discount_percentage or 0))
             user.commercial_reference = request.form.get('commercial_reference', user.commercial_reference)
             
-            # Campos booleanos
             user.is_active = 'is_active' in request.form
             user.is_verified = 'is_verified' in request.form
             user.is_admin = 'is_admin' in request.form
             
-            # Tipo de cuenta
             account_type = request.form.get('account_type')
             if account_type in ['public', 'client', 'admin']:
                 user.account_type = account_type
@@ -1789,7 +1587,6 @@ def edit_user(user_id):
             flash(f'Usuario {user.email} actualizado exitosamente', 'success')
             return redirect(url_for('admin.view_user', user_id=user.id))
         
-        # GET - Mostrar formulario de edición
         return render_template('admin/user_edit.html', user=user)
         
     except Exception as e:
@@ -1803,7 +1600,6 @@ def create_user():
     """Crear un nuevo usuario"""
     try:
         if request.method == 'POST':
-            # Validar datos del formulario
             email = request.form.get('email')
             password = request.form.get('password')
             account_type = request.form.get('account_type', 'public')
@@ -1812,13 +1608,11 @@ def create_user():
                 flash('Email y contraseña son requeridos', 'danger')
                 return render_template('admin/user_create.html')
             
-            # Verificar si el email ya existe
             existing_user = User.query.filter_by(email=email).first()
             if existing_user:
                 flash('El email ya está registrado', 'danger')
                 return render_template('admin/user_create.html')
             
-            # Crear nuevo usuario
             new_user = User(
                 email=email,
                 full_name=request.form.get('full_name'),
@@ -1836,7 +1630,6 @@ def create_user():
                 is_admin=account_type == 'admin'
             )
             
-            # Establecer contraseña
             new_user.set_password(password)
             
             db.session.add(new_user)
@@ -1845,7 +1638,6 @@ def create_user():
             flash(f'Usuario {email} creado exitosamente', 'success')
             return redirect(url_for('admin.view_user', user_id=new_user.id))
         
-        # GET - Mostrar formulario de creación
         return render_template('admin/user_create.html')
         
     except Exception as e:
@@ -1876,24 +1668,20 @@ def print_quote(quote_id):
 def download_quote_pdf(quote_id):
     """Descargar cotización como PDF"""
     try:
-        # Verificar si WeasyPrint está instalado
         from weasyprint import HTML
         from io import BytesIO
         from flask import send_file
         
         quotation = Quote.query.get_or_404(quote_id)
         
-        # Renderizar el template HTML
         html_content = render_template('admin/quote_pdf.html',
                                      quotation=quotation)
         
-        # Crear PDF con configuración mejorada
         pdf_file = HTML(
             string=html_content,
             base_url=request.url_root
         ).write_pdf()
         
-        # Crear respuesta con el PDF
         pdf_io = BytesIO(pdf_file)
         
         return send_file(
@@ -1907,7 +1695,6 @@ def download_quote_pdf(quote_id):
         flash('WeasyPrint no está instalado. Ejecuta: pip install weasyprint', 'danger')
         return redirect(url_for('admin.quote_detail', quote_id=quote_id))
     except Exception as e:
-        print(f"❌ Error generando PDF: {str(e)}")
         flash(f'Error al generar PDF: {str(e)}', 'danger')
         return redirect(url_for('admin.quote_detail', quote_id=quote_id))
 
@@ -1933,7 +1720,6 @@ def duplicate_quote(quote_id):
         original_quote = Quote.query.get_or_404(quote_id)
         user = User.query.get(session['user_id'])
         
-        # Crear nueva cotización
         quote_number = f"QT{datetime.now().strftime('%Y%m%d%H%M%S')}"
         new_quote = Quote(
             user_id=original_quote.user_id,
@@ -1948,7 +1734,6 @@ def duplicate_quote(quote_id):
         db.session.add(new_quote)
         db.session.flush()
         
-        # Copiar items
         for original_item in original_quote.items:
             new_item = QuoteItem(
                 quote_id=new_quote.id,
@@ -1959,7 +1744,6 @@ def duplicate_quote(quote_id):
             )
             db.session.add(new_item)
         
-        # Agregar al historial
         history = QuoteHistory(
             quote_id=new_quote.id,
             action="Cotización duplicada",
@@ -1985,34 +1769,24 @@ def calculate_quote_totals_with_tax(quote_items):
     
     for item in quote_items:
         try:
-            # ✅ CONVERSIÓN ABSOLUTAMENTE SEGURA
             unit_price = float(getattr(item, 'unit_price', 0)) if getattr(item, 'unit_price', 0) is not None else 0.0
             quantity = int(getattr(item, 'quantity', 0)) if getattr(item, 'quantity', 0) is not None else 0
             
-            # ✅ VERIFICAR QUE NO SEAN OBJETOS
             if hasattr(unit_price, '__dict__'):
-                print(f"⚠️ unit_price es objeto: {unit_price}")
                 unit_price = 0.0
             if hasattr(quantity, '__dict__'):
-                print(f"⚠️ quantity es objeto: {quantity}")
                 quantity = 0
             
             item_total = unit_price * quantity
             subtotal += item_total
             
-            print(f"🔍 Item {getattr(item, 'id', 'N/A')}: {quantity} x ${unit_price} = ${item_total}")
-            
-        except (TypeError, ValueError, AttributeError) as e:
-            print(f"⚠️ Error calculando item {getattr(item, 'id', 'N/A')}: {e}")
+        except (TypeError, ValueError, AttributeError):
             continue
     
-    # ✅ GARANTIZAR QUE SON FLOATS
     subtotal = float(subtotal)
     tax_rate = 0.16
     tax_amount = subtotal * tax_rate
     total_amount = subtotal + tax_amount
-    
-    print(f"🔍 Totales - Subtotal: ${subtotal}, IVA: ${tax_amount}, Total: ${total_amount}")
     
     return {
         'subtotal': round(float(subtotal), 2),
@@ -2022,24 +1796,17 @@ def calculate_quote_totals_with_tax(quote_items):
 
 def validate_quote_id(quote_id):
     """Validar y convertir quote_id de cualquier tipo a entero"""
-    print(f"🔍 Validando quote_id: {quote_id}, tipo: {type(quote_id)}")
-    
-    # Si es un objeto Namespace, buscar el atributo id
     if hasattr(quote_id, 'id'):
         return quote_id.id
-    # Si es un objeto con atributos, buscar cualquier atributo numérico
     elif hasattr(quote_id, '__dict__'):
         for key, value in quote_id.__dict__.items():
             if isinstance(value, (int, float)) and value > 0:
                 return int(value)
-    # Si es string, convertir a int
     elif isinstance(quote_id, str) and quote_id.isdigit():
         return int(quote_id)
-    # Si ya es int, devolver directamente
     elif isinstance(quote_id, int):
         return quote_id
     
-    # Si no se puede convertir, lanzar error
     raise ValueError(f"ID de cotización inválido: {quote_id} (tipo: {type(quote_id)})")
 
 def validate_template_variables(**kwargs):
@@ -2047,28 +1814,21 @@ def validate_template_variables(**kwargs):
     validated = {}
     
     for key, value in kwargs.items():
-        # ✅ SOLO VALIDAR VARIABLES NUMÉRICAS
         if key in ['subtotal', 'tax_amount', 'total_amount', 'amount', 'price', 'quantity']:
-            # ✅ CONVERSIÓN SEGURA PARA VARIABLES NUMÉRICAS
             if hasattr(value, '__dict__'):
-                print(f"⚠️ Variable numérica '{key}' es objeto: {value}")
-                # Intentar extraer valor numérico de objetos
                 if hasattr(value, 'id'):
                     validated[key] = float(getattr(value, 'id', 0))
                 elif hasattr(value, 'value'):
                     validated[key] = float(getattr(value, 'value', 0))
                 else:
-                    # Buscar cualquier atributo numérico
                     for attr_name, attr_value in value.__dict__.items():
                         if isinstance(attr_value, (int, float)):
                             validated[key] = float(attr_value)
                             break
                     else:
                         validated[key] = 0.0
-            # ✅ CONVERTIR A FLOAT SI ES NUMÉRICO
             elif isinstance(value, (int, float)):
                 validated[key] = float(value)
-            # ✅ CONVERTIR STRING A FLOAT
             elif isinstance(value, str):
                 try:
                     validated[key] = float(value.replace('$', '').replace(',', ''))
@@ -2077,7 +1837,6 @@ def validate_template_variables(**kwargs):
             else:
                 validated[key] = 0.0
         else:
-            # ✅ DEJAR OBJETOS Y OTROS TIPOS INTACTOS
             validated[key] = value
     
     return validated

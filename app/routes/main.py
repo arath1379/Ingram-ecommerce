@@ -1,4 +1,3 @@
-# app/routes/main.py - SISTEMA COMPLETO DE DASHBOARDS POR ROL
 from flask import Blueprint, render_template, redirect, url_for, jsonify, request, flash, session
 from app import db
 from app.models import User
@@ -48,12 +47,6 @@ def dashboard():
         session.clear()
         return redirect(url_for('auth.login'))
     
-    print(f"🔍 Usuario: {user.email}")
-    print(f"🔍 Tipo de cuenta: {user.account_type}")
-    print(f"🔍 Activo: {user.is_active}")
-    print(f"🔍 Admin: {user.is_admin}")
-    print(f"🔍 Verificado: {user.is_verified}")
-    
     if not user.is_active:
         flash('Cuenta pendiente de activación. Contacta al administrador.', 'danger')
         return redirect(url_for('auth.logout'))
@@ -76,7 +69,6 @@ def client_dashboard():
     user_id = session.get('user_id')
     user = User.query.get(user_id)
     
-    # Verificar que sea client
     if user.is_admin:
         flash('Acceso redirigido al panel de administración', 'info')
         return redirect(url_for('admin.dashboard'))
@@ -84,30 +76,21 @@ def client_dashboard():
         flash('Acceso restringido a clientes', 'danger')
         return redirect(url_for('main.client_dashboard'))
     
-    # Obtener datos reales para el dashboard de cliente
     from app.models import Quote
+    from sqlalchemy import func
     
     total_quotes = Quote.query.filter_by(user_id=user_id).count()
     
-    # ✅ CORREGIDO: Incluir todos los estados que están "en revisión"
     pending_quotes = Quote.query.filter_by(user_id=user_id).filter(
         Quote.status.in_(['pending', 'sent', 'under_review', 'waiting_approval', 'draft'])
     ).count()
     
     approved_quotes = Quote.query.filter_by(user_id=user_id, status='approved').count()
     
-    # ✅ CORREGIDO: Usar total_amount en lugar de total
-    from sqlalchemy import func
     total_sales = db.session.query(func.sum(Quote.total_amount)).filter(
         Quote.user_id == user_id, 
         Quote.status.in_(['approved', 'paid'])
     ).scalar() or 0
-    
-    # DEBUG: Ver qué estados de cotizaciones existen
-    all_quotes = Quote.query.filter_by(user_id=user_id).all()
-    print("=== ESTADOS DE COTIZACIONES DEL USUARIO ===")
-    for quote in all_quotes:
-        print(f"Quote {quote.id}: {quote.quote_number} - Status: {quote.status}")
     
     client_data = {
         'user_name': user.full_name or user.email,
@@ -123,16 +106,9 @@ def client_dashboard():
         'user_type': 'client'
     }
     
-    # DEBUG: Mostrar los datos que se envían al template
-    print("=== DATOS ENVIADOS AL TEMPLATE ===")
-    print(f"Total quotes: {client_data['total_quotes']}")
-    print(f"Pending quotes: {client_data['pending_quotes']}")
-    print(f"Approved quotes: {client_data['approved_quotes']}")
-    
     try:
         return render_template('client/client_dashboard.html', **client_data)
     except Exception as e:
-        print(f"⚠️ Error cargando template: {e}")
         return f"""
         <!DOCTYPE html>
         <html>
@@ -210,153 +186,126 @@ def client_dashboard():
         </body>
         </html>
         """
+
 @main_bp.route('/dashboard/public')
 @login_required_sessions
 def public_dashboard():
-        """Dashboard para usuarios públicos/individuales."""
-        user_id = session.get('user_id')
-        user = User.query.get(user_id)
-        
-        # Verificar que no sea admin ni client
-        if user.is_admin:
-            flash('Acceso redirigido al panel de administración', 'info')
-            return redirect(url_for('admin.dashboard'))
-        elif user.account_type == 'client':
-            flash('Acceso redirigido al dashboard de cliente', 'info')
-            return redirect(url_for('main.client_dashboard'))
-        
-        # Obtener datos REALES para el dashboard público
-        from app.models import Favorite, Quote, Cart, CartItem
-        from sqlalchemy import func
-        
-        # Contador de favoritos
-        favorites_count = Favorite.query.filter_by(user_id=user_id).count()
-        
-        # Obtener datos REALES del carrito - CORREGIDO
-        cart = Cart.query.filter_by(user_id=user_id, status='active').first()
-        
-        # Calcular total_items sumando las cantidades de todos los items
-        total_items = 0
-        item_count = 0
-        total_value = 0.0
-        
-        if cart and cart.items:
-            for item in cart.items:
-                total_items += item.quantity  # Sumar cantidad de cada item
-                item_count += 1  # Contar productos distintos
-                if item.unit_price:
-                    total_value += float(item.unit_price) * item.quantity
-        
-        cart_stats = {
-            'total_items': total_items,
-            'item_count': item_count,
-            'total_value': total_value,
-            'last_update': cart.updated_at.strftime('%d/%m/%Y %H:%M') if cart and cart.updated_at else 'Hoy'
+    """Dashboard para usuarios públicos/individuales."""
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    
+    if user.is_admin:
+        flash('Acceso redirigido al panel de administración', 'info')
+        return redirect(url_for('admin.dashboard'))
+    elif user.account_type == 'client':
+        flash('Acceso redirigido al dashboard de cliente', 'info')
+        return redirect(url_for('main.client_dashboard'))
+    
+    from app.models import Favorite, Quote, Cart, CartItem
+    from sqlalchemy import func
+    
+    favorites_count = Favorite.query.filter_by(user_id=user_id).count()
+    
+    cart = Cart.query.filter_by(user_id=user_id, status='active').first()
+    
+    total_items = 0
+    item_count = 0
+    total_value = 0.0
+    
+    if cart and cart.items:
+        for item in cart.items:
+            total_items += item.quantity
+            item_count += 1
+            if item.unit_price:
+                total_value += float(item.unit_price) * item.quantity
+    
+    cart_stats = {
+        'total_items': total_items,
+        'item_count': item_count,
+        'total_value': total_value,
+        'last_update': cart.updated_at.strftime('%d/%m/%Y %H:%M') if cart and cart.updated_at else 'Hoy'
+    }
+    
+    active_quotes = Quote.query.filter_by(user_id=user_id).filter(
+        Quote.status.in_(['draft', 'sent', 'pending'])
+    ).count()
+    
+    recent_favorites = Favorite.query.filter_by(user_id=user_id).order_by(
+        Favorite.created_at.desc()
+    ).limit(5).all()
+    
+    favorite_categories = []
+    if recent_favorites:
+        categories_set = set()
+        for fav in recent_favorites:
+            if hasattr(fav, 'product') and fav.product and fav.product.category:
+                categories_set.add(fav.product.category)
+        favorite_categories = list(categories_set)
+    
+    recent_activity = [
+        {
+            'type': 'user',
+            'icon': 'fas fa-user-plus',
+            'title': 'Cuenta activa',
+            'description': f'Bienvenido/a {user.full_name or user.email}',
+            'time': 'Hoy'
         }
-        
-        # Cotizaciones activas
-        active_quotes = Quote.query.filter_by(user_id=user_id).filter(
-            Quote.status.in_(['draft', 'sent', 'pending'])
-        ).count()
-        
-        # Favoritos recientes (últimos 5)
-        recent_favorites = Favorite.query.filter_by(user_id=user_id).order_by(
-            Favorite.created_at.desc()
-        ).limit(5).all()
-        
-        # Categorías de favoritos (simplificado)
-        favorite_categories = []
-        if recent_favorites:
-            # Obtener categorías únicas de los favoritos recientes
-            categories_set = set()
-            for fav in recent_favorites:
-                if hasattr(fav, 'product') and fav.product and fav.product.category:
-                    categories_set.add(fav.product.category)
-            favorite_categories = list(categories_set)
-        
-        # Actividad reciente
-        recent_activity = [
-            {
-                'type': 'user',
-                'icon': 'fas fa-user-plus',
-                'title': 'Cuenta activa',
-                'description': f'Bienvenido/a {user.full_name or user.email}',
-                'time': 'Hoy'
-            }
-        ]
-        
-        # Agregar actividad basada en datos reales
-        if favorites_count > 0:
-            recent_activity.append({
-                'type': 'heart',
-                'icon': 'fas fa-heart',
-                'title': 'Favoritos guardados',
-                'description': f'Tienes {favorites_count} productos en favoritos',
-                'time': 'Reciente'
-            })
-        
-        if total_items > 0:
-            recent_activity.append({
-                'type': 'cart',
-                'icon': 'fas fa-shopping-cart',
-                'title': 'Carrito activo',
-                'description': f'Tienes {total_items} productos en el carrito',
-                'time': 'Reciente'
-            })
-        
-        # DEBUG: Verificar datos del usuario desde BD
-        print(f"🔍 DEBUG - Datos del usuario desde BD:")
-        print(f"   - account_type: {user.account_type}")
-        print(f"   - is_active: {user.is_active} (tipo: {type(user.is_active)})")
-        print(f"   - is_admin: {user.is_admin}")
-        
-        # Determinar tipo de cuenta para mostrar
+    ]
+    
+    if favorites_count > 0:
+        recent_activity.append({
+            'type': 'heart',
+            'icon': 'fas fa-heart',
+            'title': 'Favoritos guardados',
+            'description': f'Tienes {favorites_count} productos en favoritos',
+            'time': 'Reciente'
+        })
+    
+    if total_items > 0:
+        recent_activity.append({
+            'type': 'cart',
+            'icon': 'fas fa-shopping-cart',
+            'title': 'Carrito activo',
+            'description': f'Tienes {total_items} productos en el carrito',
+            'time': 'Reciente'
+        })
+    
+    account_type_display = "Público"
+    if user.account_type and user.account_type != 'None' and user.account_type != 'nan':
+        account_type_display = user.account_type.title()
+    elif user.account_type == 'public':
         account_type_display = "Público"
-        if user.account_type and user.account_type != 'None' and user.account_type != 'nan':
-            account_type_display = user.account_type.title()
-        elif user.account_type == 'public':
-            account_type_display = "Público"
-        
-        # Determinar estado activo (manejar tanto boolean como integer)
-        is_active = True  # Por defecto activo
-        if hasattr(user, 'is_active'):
-            if isinstance(user.is_active, bool):
-                is_active = user.is_active
-            elif isinstance(user.is_active, int):
-                is_active = user.is_active == 1
-            # Si es string u otro tipo, mantener True por defecto
-        
-        # Manejar last_login
-        last_login_display = 'Hoy'
-        if hasattr(user, 'last_login') and user.last_login:
-            last_login_display = user.last_login.strftime('%d/%m/%Y %H:%M')
-        elif user.created_at:
-            last_login_display = user.created_at.strftime('%d/%m/%Y %H:%M')
-        
-        public_data = {
-            'user_name': user.full_name or user.email.split('@')[0],
-            'user_email': user.email,
-            'favorites_count': favorites_count,
-            'active_quotes': active_quotes,
-            'user_type': 'public',
-            'account_type': account_type_display,  # Usar el valor procesado
-            'member_since': user.created_at.strftime('%d/%m/%Y') if user.created_at else 'Reciente',
-            'last_login': last_login_display,
-            'cart_stats': cart_stats,
-            'recent_favorites': recent_favorites,
-            'favorite_categories': favorite_categories,
-            'recent_activity': recent_activity,
-            'is_active': is_active  # Valor booleano procesado
-        }
-        
-        # DEBUG: Verificar datos enviados al template
-        print(f"✅ DEBUG - Datos enviados al template:")
-        print(f"   - account_type: '{public_data['account_type']}'")
-        print(f"   - is_active: {public_data['is_active']}")
-        print(f"   - last_login: {public_data['last_login']}")
-        
-        # Renderizar el template del DASHBOARD (solo lectura)
-        return render_template('public/public_dashboard.html', **public_data)
+    
+    is_active = True
+    if hasattr(user, 'is_active'):
+        if isinstance(user.is_active, bool):
+            is_active = user.is_active
+        elif isinstance(user.is_active, int):
+            is_active = user.is_active == 1
+    
+    last_login_display = 'Hoy'
+    if hasattr(user, 'last_login') and user.last_login:
+        last_login_display = user.last_login.strftime('%d/%m/%Y %H:%M')
+    elif user.created_at:
+        last_login_display = user.created_at.strftime('%d/%m/%Y %H:%M')
+    
+    public_data = {
+        'user_name': user.full_name or user.email.split('@')[0],
+        'user_email': user.email,
+        'favorites_count': favorites_count,
+        'active_quotes': active_quotes,
+        'user_type': 'public',
+        'account_type': account_type_display,
+        'member_since': user.created_at.strftime('%d/%m/%Y') if user.created_at else 'Reciente',
+        'last_login': last_login_display,
+        'cart_stats': cart_stats,
+        'recent_favorites': recent_favorites,
+        'favorite_categories': favorite_categories,
+        'recent_activity': recent_activity,
+        'is_active': is_active
+    }
+    
+    return render_template('public/public_dashboard.html', **public_data)
 
 # ==================== RUTA DE POST-LOGIN ====================
 @main_bp.route('/post-login')
@@ -366,7 +315,6 @@ def post_login():
     return redirect(url_for('main.dashboard'))
 
 # ==================== RUTAS INFORMATIVAS ====================
-
 @main_bp.route('/about')
 def about():
     """Página acerca de"""
@@ -405,7 +353,6 @@ def contact():
         """, 200
 
 # ==================== RUTAS DE SALUD ====================
-
 @main_bp.route('/health')
 def health_check():
     """Endpoint de salud para verificar que la app funciona"""
@@ -432,7 +379,6 @@ def api_health_check():
     })
 
 # ==================== RUTAS DE COMPATIBILIDAD ====================
-
 @main_bp.route('/catalog')
 def catalogo_redirect():
     """Redirección de compatibilidad para /catalogo"""
@@ -444,7 +390,6 @@ def productos_redirect():
     return redirect(url_for('products.catalog'))
 
 # ==================== MANEJO DE ERRORES ====================
-
 @main_bp.app_errorhandler(404)
 def page_not_found(e):
     """Página de error 404 personalizada"""
@@ -474,7 +419,6 @@ def internal_server_error(e):
     """, 500
 
 # ==================== RUTAS DE UTILIDAD ====================
-
 @main_bp.route('/favicon.ico')
 def favicon():
     """Manejar solicitudes de favicon"""
@@ -510,7 +454,6 @@ def sitemap():
     return Response(sitemap_xml, mimetype='application/xml')
 
 # ==================== RUTAS DE BÚSQUEDA ====================
-
 @main_bp.route('/buscar')
 def buscar_global():
     """Búsqueda global que redirige al catálogo con parámetros"""
@@ -528,7 +471,6 @@ def search_redirect():
     return redirect(catalog_url)
 
 # ==================== RUTA DE DIAGNÓSTICO ====================
-
 @main_bp.route('/check-session')
 def check_session():
     """Verificar estado de la sesión"""

@@ -25,7 +25,6 @@ def get_product_image(product_data):
     if images and isinstance(images, list) and len(images) > 0:
         return images[0]
     
-    # Usar un servicio de placeholder online
     return "https://via.placeholder.com/300x300/cccccc/969696?text=Imagen+No+Disponible"
 
 # ==================== FUNCIONES DE CARRITO MEJORADAS ====================
@@ -40,7 +39,6 @@ def get_user_cart(user_id):
         for item in cart.items:
             product = item.product
             
-            # Manejar imágenes de forma segura
             product_images = []
             if product.metadata_json:
                 try:
@@ -61,7 +59,6 @@ def get_user_cart(user_id):
                 'productImages': product_images
             }
             
-            # Calcular precios con markup del 15%
             base_price = product.base_price or 0
             unit_price = round(base_price * 1.15, 2)
             total_price = round(unit_price * item.quantity, 2)
@@ -76,39 +73,28 @@ def get_user_cart(user_id):
                 'added_date': item.created_at.isoformat() if item.created_at else 'Desconocida'
             })
         
-        print(f"DEBUG - Carrito obtenido: {len(items_with_details)} items")
         return items_with_details
         
     except Exception as e:
-        print(f"Error en get_user_cart: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return []
 
 def add_to_cart(user_id, product_data, quantity=1):
     """Agregar producto al carrito - VERSIÓN MEJORADA"""
     try:
-        print(f"DEBUG - add_to_cart iniciado para: {product_data['ingramPartNumber']}")
-        
-        # Validar cantidad
         if quantity < 1:
             quantity = 1
         if quantity > 999:
             quantity = 999
             
-        # Obtener o crear carrito
         cart = Cart.query.filter_by(user_id=user_id, status='active').first()
         if not cart:
             cart = Cart(user_id=user_id, status='active')
             db.session.add(cart)
             db.session.flush()
-            print(f"DEBUG - Nuevo carrito creado: {cart.id}")
         
-        # Buscar o crear producto
         product = Product.query.filter_by(ingram_part_number=product_data['ingramPartNumber']).first()
         if not product:
             base_price = product_data.get('pricing', {}).get('customerPrice', 0)
-            print(f"DEBUG - Creando nuevo producto, precio base: {base_price}")
             
             product = Product(
                 ingram_part_number=product_data['ingramPartNumber'],
@@ -124,17 +110,13 @@ def add_to_cart(user_id, product_data, quantity=1):
             )
             db.session.add(product)
             db.session.flush()
-            print(f"DEBUG - Nuevo producto creado: {product.ingram_part_number}")
         
-        # Buscar item existente en el carrito
         existing_item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
         
         if existing_item:
             existing_item.quantity += quantity
             existing_item.calculate_total()
-            print(f"DEBUG - Item existente actualizado, cantidad: {existing_item.quantity}")
         else:
-            # Calcular precio unitario con markup del 15%
             unit_price = round(product.base_price * 1.15, 2) if product.base_price else 0
             new_item = CartItem(
                 cart_id=cart.id,
@@ -144,19 +126,13 @@ def add_to_cart(user_id, product_data, quantity=1):
             )
             new_item.calculate_total()
             db.session.add(new_item)
-            print(f"DEBUG - Nuevo item creado, precio: {unit_price}, cantidad: {quantity}")
         
-        # Recalcular total del carrito
         cart.calculate_total()
         db.session.commit()
-        print(f"DEBUG - Carrito guardado exitosamente, total: {cart.total_amount}")
         return True
         
     except Exception as e:
         db.session.rollback()
-        print(f"ERROR en add_to_cart: {e}")
-        import traceback
-        traceback.print_exc()
         raise
 
 # ==================== RUTAS DEL CARRITO ====================
@@ -164,7 +140,6 @@ def add_to_cart(user_id, product_data, quantity=1):
 def add_to_cart_route():
     """Añadir producto al carrito"""
     try:
-        # Obtener datos de la solicitud
         if request.is_json:
             data = request.get_json()
             part_number = data.get('part_number')
@@ -173,24 +148,17 @@ def add_to_cart_route():
             part_number = request.form.get('part_number')
             quantity = int(request.form.get('quantity', 1))
         
-        # Validar part_number
         if not part_number or part_number == 'None':
-            print(f"ERROR - part_number inválido: {part_number}")
             return jsonify({'success': False, 'error': 'Número de parte inválido'}), 400
         
-        print(f"DEBUG - Agregando al carrito: {part_number}, cantidad: {quantity}")
-        
-        # Obtener detalles del producto
         detail_url = f"https://api.ingrammicro.com/resellers/v6/catalog/details/{part_number}"
         detalle_res = APIClient.make_request("GET", detail_url)
         
         if detalle_res.status_code != 200:
-            print(f"ERROR - Producto no encontrado: {part_number}")
             return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
         
         detalle = detalle_res.json()
         
-        # Obtener precio
         real_price = 0
         try:
             price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
@@ -213,10 +181,9 @@ def add_to_cart_route():
                             customer_price = pricing.get('customerPrice')
                             if customer_price is not None:
                                 real_price = float(customer_price)
-        except Exception as api_error:
-            print(f"DEBUG - Excepción en API de precios: {api_error}")
+        except Exception:
+            pass
         
-        # Preparar datos del producto
         product_data = {
             'ingramPartNumber': part_number,
             'description': detalle.get('description', f"Producto {part_number}"),
@@ -229,12 +196,10 @@ def add_to_cart_route():
         
         user_id = get_current_user_id()
         
-        # Intentar agregar al carrito
         try:
             add_to_cart(user_id, product_data, quantity)
             
             cart_count = len(get_user_cart(user_id))
-            print(f"DEBUG - Producto agregado exitosamente. Carrito tiene {cart_count} items")
             
             if request.is_json:
                 return jsonify({
@@ -247,7 +212,6 @@ def add_to_cart_route():
                 return redirect('/cart')
                 
         except Exception as e:
-            print(f"ERROR al agregar al carrito: {str(e)}")
             if request.is_json:
                 return jsonify({'success': False, 'error': f'Error interno: {str(e)}'}), 500
             else:
@@ -255,7 +219,6 @@ def add_to_cart_route():
                 return redirect(request.referrer or '/catalog')
         
     except Exception as e:
-        print(f"ERROR en add_to_cart_route: {str(e)}")
         if request.is_json:
             return jsonify({'success': False, 'error': str(e)}), 500
         else:
@@ -276,8 +239,7 @@ def view_cart():
             total += item['total_price']
             items_with_totals.append(item)
         
-        # CALCULAR IVA CORRECTAMENTE
-        tax_rate = 0.16  # 16% IVA México
+        tax_rate = 0.16
         tax_amount = round(total * tax_rate, 2)
         total_with_tax = round(total + tax_amount, 2)
         
@@ -299,7 +261,6 @@ def view_cart():
         )
         
     except Exception as e:
-        print(f"Error al cargar carrito: {str(e)}")
         return render_template("errors/500.html", error=f"Error al cargar carrito: {str(e)}")
 
 @public_bp.route('/cart/update', methods=['POST'])
@@ -320,26 +281,21 @@ def update_cart_item():
         
         user_id = get_current_user_id()
         
-        # Buscar el carrito activo del usuario
         cart = Cart.query.filter_by(user_id=user_id, status='active').first()
         if not cart:
             return jsonify({'success': False, 'error': 'Carrito no encontrado'}), 404
         
-        # Buscar el producto
         product = Product.query.filter_by(ingram_part_number=part_number).first()
         if not product:
             return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
         
-        # Buscar el item en el carrito
         cart_item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
         if not cart_item:
             return jsonify({'success': False, 'error': 'Producto no encontrado en el carrito'}), 404
         
-        # Actualizar cantidad
         cart_item.quantity = quantity
         cart_item.calculate_total()
         
-        # Recalcular total del carrito
         cart.calculate_total()
         db.session.commit()
         
@@ -352,7 +308,6 @@ def update_cart_item():
         
     except Exception as e:
         db.session.rollback()
-        print(f"ERROR en update_cart_item: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @public_bp.route('/cart/remove', methods=['POST'])
@@ -367,22 +322,18 @@ def remove_cart_item():
         
         user_id = get_current_user_id()
         
-        # Buscar el carrito activo del usuario
         cart = Cart.query.filter_by(user_id=user_id, status='active').first()
         if not cart:
             return jsonify({'success': False, 'error': 'Carrito no encontrado'}), 404
         
-        # Buscar el producto
         product = Product.query.filter_by(ingram_part_number=part_number).first()
         if not product:
             return jsonify({'success': False, 'error': 'Producto no encontrado'}), 404
         
-        # Buscar y eliminar el item del carrito
         cart_item = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id).first()
         if cart_item:
             db.session.delete(cart_item)
             
-            # Recalcular total del carrito
             cart.calculate_total()
             db.session.commit()
             
@@ -395,7 +346,6 @@ def remove_cart_item():
             
     except Exception as e:
         db.session.rollback()
-        print(f"ERROR en remove_cart_item: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ==================== RUTAS ADICIONALES DEL CARRITO ====================
@@ -434,11 +384,9 @@ def public_profile():
             flash('Usuario no encontrado', 'error')
             return redirect('/')
         
-        # Obtener estadísticas para mostrar en el perfil
         favorites_count = get_favorites_count(user_id)
         cart_stats = get_cart_stats(user_id)
         
-        # Datos para el template de PERFIL/EDITAR
         profile_data = {
             'user_id': user_id,
             'user_name': user.full_name or user.email.split('@')[0],
@@ -449,7 +397,6 @@ def public_profile():
             'favorites_count': favorites_count,
             'cart_count': cart_stats['total_items'],
             'member_since': user.created_at.strftime('%d/%m/%Y') if user.created_at else 'Reciente',
-            # CORREGIDO: Usar created_at si last_login no existe
             'last_login': user.last_login.strftime('%d/%m/%Y %H:%M') if hasattr(user, 'last_login') and user.last_login else user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'Nunca',
             'is_verified': user.is_verified
         }
@@ -457,7 +404,6 @@ def public_profile():
         return render_template('public/catalog/profile.html', **profile_data)
         
     except Exception as e:
-        print(f"Error cargando perfil: {str(e)}")
         flash('Error al cargar el perfil', 'error')
         return redirect('public/public_dashboard.html')
     
@@ -467,16 +413,13 @@ def update_profile():
     try:
         user_id = get_current_user_id()
         
-        # Verificar que el usuario esté autenticado
         if user_id == 'anonymous_user':
             flash('Usuario no autenticado', 'error')
             return redirect('/auth/login')
         
-        # Obtener datos del formulario
         full_name = request.form.get('name', '').strip()
         email = request.form.get('email', '').strip().lower()
         
-        # Validaciones básicas
         if not full_name:
             flash('El nombre completo es requerido', 'error')
             return redirect('/profile')
@@ -485,44 +428,34 @@ def update_profile():
             flash('El correo electrónico es requerido', 'error')
             return redirect('/profile')
         
-        # Validar formato de email
         import re
         if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
             flash('El formato del correo electrónico no es válido', 'error')
             return redirect('/profile')
         
-        # Buscar usuario en la base de datos
         user = User.query.get(user_id)
         if not user:
             flash('Usuario no encontrado', 'error')
             return redirect('/profile')
         
-        # Verificar si el email ya existe (excluyendo al usuario actual)
         existing_user = User.query.filter(User.email == email, User.id != user_id).first()
         if existing_user:
             flash('Este correo electrónico ya está en uso', 'error')
             return redirect('/profile')
         
-        # Actualizar datos del usuario
         user.full_name = full_name
         user.email = email
         
-        # Guardar cambios en la base de datos
         db.session.commit()
         
-        # Actualizar datos en la sesión
         session['user_email'] = email
         session['username'] = full_name
         
-        print(f"DEBUG - Perfil actualizado exitosamente: {full_name} ({email})")
-        
-        # SOLO UNA RESPUESTA - Redirección al dashboard
         flash('Perfil actualizado correctamente', 'success')
         return redirect('/dashboard/public')
         
     except Exception as e:
         db.session.rollback()
-        print(f"ERROR en update_profile: {str(e)}")
         flash('Error al actualizar el perfil', 'error')
         return redirect('/profile')
 
@@ -532,16 +465,13 @@ def update_password():
     try:
         user_id = get_current_user_id()
         
-        # Verificar que el usuario esté autenticado
         if user_id == 'anonymous_user':
             return jsonify({'success': False, 'error': 'Usuario no autenticado'}), 401
         
-        # Obtener datos del formulario
         current_password = request.form.get('current_password', '')
         new_password = request.form.get('new_password', '')
         confirm_password = request.form.get('confirm_password', '')
         
-        # Validaciones
         if not current_password or not new_password or not confirm_password:
             return jsonify({'success': False, 'error': 'Todos los campos son requeridos'}), 400
         
@@ -551,22 +481,16 @@ def update_password():
         if len(new_password) < 6:
             return jsonify({'success': False, 'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
         
-        # Buscar usuario en la base de datos
         user = User.query.get(user_id)
         if not user:
             return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
         
-        # Verificar contraseña actual (asumiendo que tienes un campo password_hash)
-        if not user.check_password(current_password):  # Si tienes este método
+        if not user.check_password(current_password):
             return jsonify({'success': False, 'error': 'La contraseña actual es incorrecta'}), 400
         
-        # Actualizar contraseña
-        user.set_password(new_password)  # Si tienes este método
+        user.set_password(new_password)
         
-        # Guardar cambios
         db.session.commit()
-        
-        print(f"DEBUG - Contraseña actualizada para usuario: {user.email}")
         
         return jsonify({
             'success': True,
@@ -575,7 +499,6 @@ def update_password():
         
     except Exception as e:
         db.session.rollback()
-        print(f"ERROR en update_password: {str(e)}")
         return jsonify({'success': False, 'error': f'Error al actualizar contraseña: {str(e)}'}), 500
 
 @public_bp.route('/profile/stats', methods=['GET'])
@@ -598,7 +521,6 @@ def get_profile_stats():
         })
         
     except Exception as e:
-        print(f"Error obteniendo estadísticas: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ==================== RUTAS DEL CATÁLOGO ====================
@@ -606,17 +528,12 @@ def get_profile_stats():
 @public_bp.route("/tienda", methods=["GET"])
 def public_catalog():
     """Catálogo para público general"""
-    # Parámetros de búsqueda
     page_number = int(request.args.get("page", 1))
     page_size = int(request.args.get("page_size", 25))
     query = request.args.get("q", "").strip()
     vendor = request.args.get("vendor", "").strip()
     
-    # DEBUG: Log de parámetros
-    print(f"DEBUG - Catálogo Público - Page: {page_number}, Query: '{query}', Vendor: '{vendor}'")
-    
     try:
-        # Realizar la búsqueda (misma lógica que clientes)
         productos, total_records, pagina_vacia = ProductUtils.buscar_productos_hibrido(
             query=query, 
             vendor=vendor, 
@@ -625,18 +542,15 @@ def public_catalog():
             use_keywords=bool(query)
         )
         
-        # Cálculos de paginación
         total_pages = max(1, (total_records + page_size - 1) // page_size) if total_records > 0 else 1
         page_number = max(1, min(page_number, total_pages))
         start_record = (page_number - 1) * page_size + 1 if total_records > 0 else 0
         end_record = min(page_number * page_size, total_records)
         
-        # Verificar si el usuario es cliente y redirigir si es necesario
         user_id = get_current_user_id()
         if user_id != 'anonymous_user':
             user = User.query.get(user_id)
             if user and user.account_type == 'client' and user.is_verified:
-                # Redirigir al catálogo de clientes
                 redirect_url = f'/client/catalog?page={page_number}'
                 if query:
                     redirect_url += f'&q={query}'
@@ -664,10 +578,6 @@ def public_catalog():
         )
     
     except Exception as e:
-        print(f"ERROR en catálogo público: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
         return render_template("public/catalog/catalog.html", 
                              query=query,
                              vendor=vendor,
@@ -687,7 +597,6 @@ def public_catalog():
 def public_product_detail(part_number):
     """Detalle de producto para público general"""
     try:
-        # Detalle del producto (misma lógica que clientes)
         detail_url = f"https://api.ingrammicro.com/resellers/v6/catalog/details/{part_number}"
         detalle_res = APIClient.make_request("GET", detail_url)
         
@@ -696,7 +605,6 @@ def public_product_detail(part_number):
         
         detalle = detalle_res.json()
 
-        # Precio y disponibilidad
         price_url = "https://api.ingrammicro.com/resellers/v6/catalog/priceandavailability"
         body = {"products": [{"ingramPartNumber": part_number}]}
         params = {
@@ -707,7 +615,6 @@ def public_product_detail(part_number):
         precio_res = APIClient.make_request("POST", price_url, params=params, json=body)
         precio_info = precio_res.json()[0] if precio_res.status_code == 200 else {}
 
-        # Calcular precio final con markup del 15% (precio público)
         pricing = precio_info.get("pricing") or {}
         base_price = pricing.get("customerPrice")
         currency = pricing.get("currencyCode") or pricing.get("currency") or ""
@@ -719,10 +626,8 @@ def public_product_detail(part_number):
                 precio_final_val = None
         precio_final = ProductUtils.format_currency(precio_final_val, currency) if precio_final_val is not None else "No disponible"
 
-        # Disponibilidad
         disponibilidad = ProductUtils.get_availability_text(precio_info, detalle)
 
-        # Extraer atributos
         atributos = []
         raw_attrs = detalle.get("productAttributes") or detalle.get("attributes") or []
         for a in raw_attrs:
@@ -731,7 +636,6 @@ def public_product_detail(part_number):
             if name:
                 atributos.append({"name": name, "value": value})
 
-        # Imagen mejorada
         imagen_url = ImageHandler.get_image_url_enhanced(detalle)
         
         return render_template(
@@ -746,7 +650,6 @@ def public_product_detail(part_number):
         )
     
     except Exception as e:
-        print(f"Error obteniendo detalle del producto {part_number}: {str(e)}")
         return render_template("errors/500.html", message="Error al cargar el detalle del producto"), 500
 
 # ==================== RUTAS DE FAVORITOS ====================
@@ -769,32 +672,25 @@ def public_favorites():
         )
         
     except Exception as e:
-        print(f"Error al cargar favoritos: {str(e)}")
         return render_template("errors/500.html", error=f"Error al cargar favoritos: {str(e)}")
 
 @public_bp.route('/favorites/toggle', methods=['POST'])
 def toggle_favorite_route():
     """Agregar/eliminar favorito - VERSIÓN CORREGIDA para form data"""
     try:
-        # Determinar si es JSON o form data
         if request.is_json:
             data = request.get_json()
             part_number = data.get('part_number')
         else:
-            # Para form data tradicional
             part_number = request.form.get('part_number')
         
         if not part_number:
             return jsonify({'success': False, 'error': 'Part number requerido'}), 400
         
-        print(f"DEBUG - Eliminando favorito: {part_number}")
-        
         user_id = get_current_user_id()
         
-        # Buscar producto en la base de datos local
         product = Product.query.filter_by(ingram_part_number=part_number).first()
         if not product:
-            # Si no existe en la BD, crear un producto básico
             product = Product(
                 ingram_part_number=part_number,
                 description=request.form.get('description', 'Producto sin descripción'),
@@ -803,16 +699,13 @@ def toggle_favorite_route():
             db.session.add(product)
             db.session.flush()
         
-        # Buscar el favorito
         favorite = Favorite.query.filter_by(user_id=user_id, product_id=product.id).first()
         
         if favorite:
-            # Eliminar favorito
             db.session.delete(favorite)
             action = 'removed'
             message = 'Producto eliminado de favoritos'
         else:
-            # Agregar favorito
             new_favorite = Favorite(user_id=user_id, product_id=product.id)
             db.session.add(new_favorite)
             action = 'added'
@@ -820,16 +713,11 @@ def toggle_favorite_route():
         
         db.session.commit()
         
-        # Redirigir de vuelta a favoritos
         flash(message, 'success')
         return redirect('/favorites')
         
     except Exception as e:
         db.session.rollback()
-        print(f"ERROR en toggle_favorite_route: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
         flash('Error al actualizar favoritos', 'error')
         return redirect('/favorites')
 
@@ -839,12 +727,10 @@ def check_favorite_route(part_number):
     try:
         user_id = get_current_user_id()
         
-        # Buscar producto
         product = Product.query.filter_by(ingram_part_number=part_number).first()
         if not product:
             return jsonify({'success': True, 'is_favorite': False})
         
-        # Verificar si es favorito
         favorite = Favorite.query.filter_by(user_id=user_id, product_id=product.id).first()
         
         return jsonify({
@@ -853,7 +739,6 @@ def check_favorite_route(part_number):
         })
         
     except Exception as e:
-        print(f"Error checking favorite: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ==================== FUNCIONES AUXILIARES ====================
@@ -881,7 +766,6 @@ def toggle_favorite(user_id, product_data):
     from app.models.favorite import Favorite
     from app.models.product import Product
     
-    # Buscar o crear producto
     product = Product.query.filter_by(ingram_part_number=product_data['ingramPartNumber']).first()
     if not product:
         product = Product(
@@ -892,7 +776,6 @@ def toggle_favorite(user_id, product_data):
         db.session.add(product)
         db.session.flush()
     
-    # Verificar si ya es favorito
     existing_fav = Favorite.query.filter_by(user_id=user_id, product_id=product.id).first()
     
     if existing_fav:
@@ -919,14 +802,12 @@ def get_cart_stats(user_id):
                 'item_count': 0
             }
         
-        # Calcular totales REALES
         total_items = sum(item['quantity'] for item in cart_items)
         total_value = 0.0
         
         for item in cart_items:
             total_value += item['total_price']
         
-        # Obtener fecha de última actualización
         last_update = "Reciente"
         cart = Cart.query.filter_by(user_id=user_id, status='active').first()
         if cart and cart.updated_at:
@@ -940,7 +821,6 @@ def get_cart_stats(user_id):
         }
         
     except Exception as e:
-        print(f"Error obteniendo estadísticas del carrito: {str(e)}")
         return {
             'total_items': 0,
             'total_value': 0.0,
@@ -955,21 +835,17 @@ def get_favorites_count(user_id):
         count = Favorite.query.filter_by(user_id=user_id).count()
         return count
     except Exception as e:
-        print(f"Error obteniendo contador de favoritos: {str(e)}")
         return 0
 
 def get_recent_activity(user_id):
     """Obtener actividad reciente del usuario"""
     try:
-        # Aquí puedes implementar lógica para obtener actividad reciente
-        # Por ahora devolvemos datos de ejemplo
         return [
             {'action': 'Producto agregado al carrito', 'date': 'Hoy', 'icon': 'fas fa-cart-plus'},
             {'action': 'Producto visto', 'date': 'Hoy', 'icon': 'fas fa-eye'},
             {'action': 'Búsqueda realizada', 'date': 'Ayer', 'icon': 'fas fa-search'}
         ]
     except Exception as e:
-        print(f"Error obteniendo actividad reciente: {str(e)}")
         return []
 
 # ==================== RUTAS DE COMPATIBILIDAD ====================
@@ -996,7 +872,6 @@ def api_remove_from_cart():
             return jsonify({'success': False, 'error': 'Producto no encontrado en carrito'})
         
     except Exception as e:
-        print(f"ERROR en api_remove_from_cart: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def remove_from_cart_legacy(user_id, part_number):
@@ -1021,7 +896,6 @@ def remove_from_cart_legacy(user_id, part_number):
         
     except Exception as e:
         db.session.rollback()
-        print(f"Error removing from cart: {e}")
         return False
 
 # ==================== RUTAS DE PAGO CON STRIPE (SIMPLIFICADO) ====================
@@ -1034,22 +908,16 @@ def stripe_checkout():
         if user_id == 'anonymous_user':
             return jsonify({'success': False, 'error': 'Debes iniciar sesión para realizar una compra'}), 401
         
-        # Obtener carrito del usuario
         cart_items = get_user_cart(user_id)
         if not cart_items:
             return jsonify({'success': False, 'error': 'El carrito está vacío'}), 400
         
-        print(f"🛒 Procesando carrito con {len(cart_items)} items")
-        
-        # Calcular totales
         subtotal = sum(item['total_price'] for item in cart_items)
-        tax_amount = round(subtotal * 0.16, 2)  # 16% IVA
+        tax_amount = round(subtotal * 0.16, 2)
         total_amount = round(subtotal + tax_amount, 2)
         
-        # Generar número de orden único
         order_number = f"ITD-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
-        # Preparar datos para Stripe
         cart_data = {
             'order_number': order_number,
             'items': cart_items,
@@ -1058,14 +926,10 @@ def stripe_checkout():
             'total_amount': total_amount
         }
         
-        # URLs de retorno
         base_url = request.url_root.rstrip('/')
         success_url = f"{base_url}/payment/success?order={order_number}"
         cancel_url = f"{base_url}/cart"
         
-        print(f"🔗 URLs: éxito={success_url}, cancelar={cancel_url}")
-        
-        # Crear link de pago en Stripe
         stripe_service = StripePaymentService()
         result = stripe_service.create_payment_link(
             cart_data=cart_data,
@@ -1075,7 +939,6 @@ def stripe_checkout():
         )
         
         if result['success']:
-            # Guardar información temporal en sesión
             session['pending_order'] = {
                 'order_number': order_number,
                 'payment_id': result['payment_id'],
@@ -1083,21 +946,15 @@ def stripe_checkout():
                 'user_id': user_id
             }
             
-            print(f"💾 Orden guardada: {order_number}")
-            
             return jsonify({
                 'success': True,
                 'payment_url': result['payment_url'],
                 'order_number': order_number
             })
         else:
-            print(f"❌ Error Stripe: {result['error']}")
             return jsonify({'success': False, 'error': result['error']}), 500
             
     except Exception as e:
-        print(f"❌ Error en stripe_checkout: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'success': False, 'error': 'Error interno del servidor'}), 500
 
 @public_bp.route('/payment/success')
@@ -1106,21 +963,15 @@ def payment_success():
     try:
         order_number = request.args.get('order')
         
-        print(f"🎉 Pago exitoso para orden: {order_number}")
-        
-        # Recuperar información de la sesión
         pending_order = session.get('pending_order')
         
         if not pending_order or pending_order['order_number'] != order_number:
-            # Intentar recuperar de otra manera
             flash('Redirigiendo... procesando tu pago', 'info')
             return redirect('/dashboard/public')
         
-        # Procesar la orden exitosa
         user_id = pending_order['user_id']
         cart_data = pending_order['cart_data']
         
-        # Crear registro de compra
         purchase = process_successful_purchase(
             user_id=user_id,
             cart_data=cart_data,
@@ -1131,13 +982,10 @@ def payment_success():
             }
         )
         
-        # Limpiar carrito
         clear_user_cart(user_id)
         
-        # Limpiar sesión
         session.pop('pending_order', None)
         
-        # Mostrar página de éxito
         return render_template(
             'public/payment/success.html',
             purchase=purchase,
@@ -1149,7 +997,6 @@ def payment_success():
         )
             
     except Exception as e:
-        print(f"❌ Error en payment_success: {str(e)}")
         flash('Pago procesado. Revisa tu dashboard.', 'success')
         return redirect('/dashboard/public')
 
@@ -1158,7 +1005,6 @@ def process_successful_purchase(user_id, cart_data, payment_info):
     try:
         from app.models.purchase import Purchase, PurchaseItem
         
-        # Crear la compra
         purchase = Purchase(
             user_id=user_id,
             order_number=cart_data['order_number'],
@@ -1175,7 +1021,6 @@ def process_successful_purchase(user_id, cart_data, payment_info):
         db.session.add(purchase)
         db.session.flush()
         
-        # Crear items de la compra (versión simplificada)
         for item in cart_data['items']:
             product = Product.query.filter_by(ingram_part_number=item['product']['ingramPartNumber']).first()
             
@@ -1183,7 +1028,7 @@ def process_successful_purchase(user_id, cart_data, payment_info):
                 purchase_id=purchase.id,
                 product_id=product.id if product else None,
                 product_sku=item['product']['ingramPartNumber'],
-                product_name=item['product']['description'][:100],  # Limitar longitud
+                product_name=item['product']['description'][:100],
                 quantity=item['quantity'],
                 unit_price=item['unit_price'],
                 total_price=item['total_price']
@@ -1192,18 +1037,16 @@ def process_successful_purchase(user_id, cart_data, payment_info):
         
         db.session.commit()
         
-        print(f"✅ Compra procesada: {purchase.order_number}")
         return purchase
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ ERROR procesando compra: {str(e)}")
-        # Aún así retornar un objeto básico para que no falle el template
-        from types import SimpleObject
-        return SimpleObject(
-            order_number=cart_data['order_number'],
-            total_amount=cart_data['total_amount']
-        )
+        class SimplePurchase:
+            def __init__(self, order_number, total_amount):
+                self.order_number = order_number
+                self.total_amount = total_amount
+                
+        return SimplePurchase(cart_data['order_number'], cart_data['total_amount'])
 
 def clear_user_cart(user_id):
     """Limpiar carrito del usuario - VERSIÓN SIMPLIFICADA"""
@@ -1213,9 +1056,7 @@ def clear_user_cart(user_id):
             CartItem.query.filter_by(cart_id=cart.id).delete()
             cart.total_amount = 0.0
             db.session.commit()
-            print(f"🗑️ Carrito limpiado para usuario: {user_id}")
     except Exception as e:
-        print(f"⚠️ Error limpiando carrito: {str(e)}")
         db.session.rollback()
 
 @public_bp.route('/payment/mercadopago-checkout', methods=['POST'])
@@ -1231,20 +1072,11 @@ def mercadopago_checkout():
         if not cart_items:
             return jsonify({'success': False, 'error': 'Carrito vacío'}), 400
         
-        print(f"🛒 Procesando carrito MP con {len(cart_items)} items")
-        
-        # CALCULAR TOTALES DE FORMA EXPLÍCITA
         subtotal = sum(item['total_price'] for item in cart_items)
-        tax_amount = round(subtotal * 0.16, 2)  # 16% IVA
+        tax_amount = round(subtotal * 0.16, 2)
         total_amount = round(subtotal + tax_amount, 2)
         
         order_number = f"ITD-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        # VERIFICAR CÁLCULOS
-        print(f"🔢 Verificación de cálculos:")
-        print(f"   Subtotal: ${subtotal:.2f}")
-        print(f"   IVA (16%): ${tax_amount:.2f}") 
-        print(f"   Total: ${total_amount:.2f}")
         
         cart_data = {
             'order_number': order_number,
@@ -1255,19 +1087,14 @@ def mercadopago_checkout():
             'tax_rate': 0.16
         }
         
-        # CONSTRUIR URLs
         base_url = request.url_root.rstrip('/')
         success_url = f"{base_url}/payment/mercadopago/success"
         failure_url = f"{base_url}/payment/mercadopago/failure" 
         pending_url = f"{base_url}/payment/mercadopago/pending"
         
-        # Obtener información del usuario
         user_email = session.get('user_email', 'cliente@itdataglobal.com')
         user_name = session.get('user_name', 'Cliente')
         
-        print(f"👤 Usuario: {user_email}, Nombre: {user_name}")
-        
-        # Crear preferencia en MercadoPago
         mp_service = MercadoPagoService()
         result = mp_service.create_preference(
             cart_data=cart_data,
@@ -1277,8 +1104,6 @@ def mercadopago_checkout():
             failure_url=failure_url,
             pending_url=pending_url
         )
-        
-        print(f"📨 Resultado MP: {result}")
         
         if result['success']:
             session['pending_mp_order'] = {
@@ -1300,13 +1125,9 @@ def mercadopago_checkout():
                 })
             })
         else:
-            print(f"❌ Error MP en ruta: {result['error']}")
             return jsonify({'success': False, 'error': result['error']}), 500
             
     except Exception as e:
-        print(f"❌ Error crítico en mercadopago_checkout: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'success': False, 'error': f'Error interno: {str(e)}'}), 500
     
 @public_bp.route('/payment/mercadopago/success')
@@ -1317,14 +1138,10 @@ def mercadopago_success():
         status = request.args.get('status')
         external_reference = request.args.get('external_reference')
         
-        print(f"🎉 Pago MP exitoso - ID: {payment_id}, Status: {status}, Orden: {external_reference}")
-        
-        # Aquí procesas el pago exitoso
         flash('¡Pago realizado exitosamente!', 'success')
         return redirect('/dashboard/public')
         
     except Exception as e:
-        print(f"Error en mercadopago_success: {str(e)}")
         flash('Pago procesado correctamente', 'success')
         return redirect('/dashboard/public')
 
@@ -1340,78 +1157,18 @@ def mercadopago_pending():
     flash('Tu pago está pendiente de confirmación. Te notificaremos cuando sea procesado.', 'warning')
     return redirect('/dashboard/public')
 
-def process_successful_purchase(user_id, cart_data, payment_info):
-    """Procesar una compra exitosa - VERSIÓN BÁSICA para MercadoPago"""
-    try:
-        from app.models.purchase import Purchase, PurchaseItem
-        
-        # Crear la compra
-        purchase = Purchase(
-            user_id=user_id,
-            order_number=cart_data['order_number'],
-            status='paid',
-            subtotal_amount=cart_data['subtotal'],
-            tax_amount=cart_data['tax_amount'],
-            shipping_amount=0.0,
-            total_amount=cart_data['total_amount'],
-            payment_method='mercadopago',
-            payment_reference=payment_info['payment_id'],
-            payer_email=session.get('user_email', ''),
-            payer_name=session.get('user_name', 'Cliente')
-        )
-        db.session.add(purchase)
-        db.session.flush()
-        
-        # Crear items de la compra
-        for item in cart_data['items']:
-            product = Product.query.filter_by(ingram_part_number=item['product']['ingramPartNumber']).first()
-            
-            purchase_item = PurchaseItem(
-                purchase_id=purchase.id,
-                product_id=product.id if product else None,
-                product_sku=item['product']['ingramPartNumber'],
-                product_name=item['product']['description'][:100],
-                quantity=item['quantity'],
-                unit_price=item['unit_price'],
-                total_price=item['total_price']
-            )
-            db.session.add(purchase_item)
-        
-        db.session.commit()
-        
-        print(f"✅ Compra MP procesada: {purchase.order_number}")
-        return purchase
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"❌ ERROR procesando compra MP: {str(e)}")
-        # Crear objeto básico para evitar errores
-        class SimplePurchase:
-            def __init__(self, order_number, total_amount):
-                self.order_number = order_number
-                self.total_amount = total_amount
-                
-        return SimplePurchase(cart_data['order_number'], cart_data['total_amount'])
-
 @public_bp.route('/payment/mercadopago/notifications', methods=['POST'])
 def mercadopago_notifications():
     """Manejar notificaciones de MercadoPago"""
     try:
         data = request.json
-        print(f"📨 Notificación MP recibida: {data}")
         
-        # Procesar la notificación
         if data.get('type') == 'payment':
             payment_id = data.get('data', {}).get('id')
-            print(f"💰 Procesando pago MP: {payment_id}")
-            
-            # Aquí puedes actualizar el estado del pedido en tu base de datos
-            # Buscar la orden por external_reference y actualizar su estado
             
         return jsonify({'success': True}), 200
         
     except Exception as e:
-        print(f"❌ Error en notificación MP: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ==================== RUTA DE ACTIVIDAD ====================
@@ -1425,15 +1182,12 @@ def activity():
             flash('Por favor inicia sesión para ver tu actividad', 'warning')
             return redirect('/login')
         
-        # Obtener estadísticas de cotizaciones (puedes adaptar según tu modelo)
-        from app.models.quote import Quote  # Asegúrate de importar tu modelo de cotizaciones
+        from app.models.quote import Quote
         
-        # Estadísticas básicas
         total_quotes = Quote.query.filter_by(user_id=user_id).count()
         pending_quotes = Quote.query.filter_by(user_id=user_id, status='pending').count()
         approved_quotes = Quote.query.filter_by(user_id=user_id, status='approved').count()
         
-        # Cotizaciones del mes actual
         from datetime import datetime
         current_month = datetime.now().month
         current_year = datetime.now().year
@@ -1443,13 +1197,11 @@ def activity():
             db.extract('year', Quote.created_at) == current_year
         ).count()
         
-        # Actividad reciente (últimas 10 actividades)
         recent_activities = Quote.query.filter_by(user_id=user_id)\
             .order_by(Quote.created_at.desc())\
             .limit(10)\
             .all()
         
-        # Formatear actividades para el template
         activities = []
         for quote in recent_activities:
             activity_data = {
@@ -1464,28 +1216,23 @@ def activity():
             }
             activities.append(activity_data)
         
-        # Si no hay suficientes cotizaciones, agregar actividades del carrito
         if len(activities) < 5:
             cart_activities = get_recent_cart_activity(user_id)
             activities.extend(cart_activities)
         
-        # Ordenar actividades por fecha
         activities.sort(key=lambda x: x['created_at'], reverse=True)
         
         return render_template(
-            "public/catalog/activity.html",  # Asegúrate de que la ruta del template sea correcta
+            "public/catalog/activity.html",
             total_quotes=total_quotes,
             pending_quotes=pending_quotes,
             approved_quotes=approved_quotes,
             month_quotes=month_quotes,
-            activities=activities[:10],  # Máximo 10 actividades
-            user=session  # Pasar datos de usuario para el template
+            activities=activities[:10],
+            user=session
         )
         
     except Exception as e:
-        print(f"Error cargando actividad: {str(e)}")
-        import traceback
-        traceback.print_exc()
         flash('Error al cargar la actividad', 'error')
         return redirect('/dashboard/public')
 
@@ -1496,7 +1243,6 @@ def get_recent_cart_activity(user_id):
         from app.models.product import Product
         from datetime import datetime, timedelta
         
-        # Buscar carritos recientes (últimos 30 días)
         recent_carts = Cart.query.filter(
             Cart.user_id == user_id,
             Cart.created_at >= datetime.now() - timedelta(days=30)
@@ -1504,7 +1250,6 @@ def get_recent_cart_activity(user_id):
         
         cart_activities = []
         for cart in recent_carts:
-            # Obtener items del carrito
             items = CartItem.query.filter_by(cart_id=cart.id).all()
             if items:
                 product_count = len(items)
@@ -1523,5 +1268,4 @@ def get_recent_cart_activity(user_id):
         return cart_activities
         
     except Exception as e:
-        print(f"Error obteniendo actividad del carrito: {str(e)}")
         return []

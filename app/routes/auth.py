@@ -1,4 +1,3 @@
-# app/routes/auth.py - VERSIÓN CORREGIDA (SIN FLASK-LOGIN)
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import check_password_hash
 from app import db
@@ -26,11 +25,6 @@ def login():
             session['user_email'] = user.email
             session['user_role'] = 'admin' if user.is_admin else user.account_type
             
-            print(f"✅ Login exitoso: {user.email}")
-            print(f"✅ Tipo de cuenta: {user.account_type}")  # Ahora será 'public', 'client' o 'admin'
-            print(f"✅ Activo: {user.is_active}")
-            print(f"✅ Verificado: {user.is_verified}")
-            
             flash(f'¡Bienvenido de vuelta, {user.full_name or user.email}!', 'success')
             return redirect(url_for('main.post_login'))
         else:
@@ -55,17 +49,16 @@ def register():
             flash('Este email ya está registrado', 'danger')
             return render_template('auth/register.html')
         
-        # ✅ LÓGICA SIMPLIFICADA: Solo 'public' y 'client'
         is_admin = False
-        is_active = is_admin  # Solo admins activos automáticamente
+        is_active = is_admin
         is_verified = (account_type == 'public' and is_active)
         
         new_user = User(
             email=email,
-            account_type=account_type,  # 'public' o 'client'
+            account_type=account_type,
             full_name=full_name,
-            business_name=business_name if account_type == 'client' else None,  # ✅ Cambiado a 'client'
-            rfc=rfc if account_type == 'client' else None,  # ✅ Cambiado a 'client'
+            business_name=business_name if account_type == 'client' else None,
+            rfc=rfc if account_type == 'client' else None,
             is_admin=is_admin,
             is_active=is_active,
             is_verified=is_verified
@@ -74,12 +67,6 @@ def register():
         
         db.session.add(new_user)
         db.session.commit()
-        
-        print(f"✅ Usuario creado: {new_user.email}")
-        print(f"✅ Tipo de cuenta: {new_user.account_type}")
-        print(f"✅ Activo: {new_user.is_active}")
-        print(f"✅ Admin: {new_user.is_admin}")
-        print(f"✅ Verificado: {new_user.is_verified}")
         
         if is_admin:
             session['user_id'] = new_user.id

@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from datetime import timedelta
 from flask_login import LoginManager, current_user 
 from flask_migrate import Migrate
+
 # Cargar variables de entorno
 load_dotenv()
 
@@ -48,11 +49,6 @@ def create_app():
     app.config["INGRAM_LANGUAGE"] = INGRAM_LANGUAGE
     app.config["CACHE_EXPIRY_HOURS"] = CACHE_EXPIRY_HOURS
 
-    # Debug: verificar configuraciones
-    print(f"🔧 SQLALCHEMY_DATABASE_URI: {app.config.get('SQLALCHEMY_DATABASE_URI')}")
-    print(f"🔧 INGRAM_API_BASE_URL: {app.config.get('INGRAM_API_BASE_URL')}")
-    print(f"🔧 SECRET_KEY configurada: {'SÍ' if app.config.get('SECRET_KEY') else 'NO'}")
-    
     # Initialize extensions
     db.init_app(app)
     
@@ -73,15 +69,9 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         try:
-            print(f"🔍 User loader llamado para ID: {user_id}")
             user = User.query.get(int(user_id))
-            if user:
-                print(f"✅ Usuario cargado: {user.email}")
-            else:
-                print("❌ Usuario no encontrado")
             return user
-        except Exception as e:
-            print(f"❌ Error en user_loader: {e}")
+        except Exception:
             return None
 
     # Importar modelos para que SQLAlchemy los detecte
@@ -127,12 +117,5 @@ def create_app():
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(api_bp, url_prefix='/api')
-    
-    # Middleware para debug de sesión
-    @app.before_request
-    def log_session_info():
-        if '/admin/' in request.path:
-            print(f"🔍 Sesión antes de request: {dict(session)}")
-            print(f"🔍 User authenticated: {current_user.is_authenticated if hasattr(current_user, 'is_authenticated') else 'N/A'}")
     
     return app
