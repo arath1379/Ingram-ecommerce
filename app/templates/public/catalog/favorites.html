@@ -798,11 +798,10 @@
             {% for favorite in favorites %}
             <div class="favorite-card">
                 <div class="card-image">
-                    {% if favorite.productImages and favorite.productImages|length > 0 %}
-                        <img src="{{ favorite.productImages[0] }}" alt="{{ favorite.description }}" class="product-image" loading="lazy">
-                    {% else %}
-                        <i class="fas fa-microchip" style="font-size: 3rem; color: var(--border-color);"></i>
-                    {% endif %}
+                    <img src="{{ get_image_url_enhanced(favorite) }}" 
+                        alt="{{ favorite.description|default('Producto') }}" 
+                        class="product-image"
+                        onerror="this.src='https://via.placeholder.com/400x400/1C2A2F/FFFFFF?text=IT+DATA+GLOBAL'">
                 </div>
                 <div class="card-header">
                     <div class="vendor-name">{{ favorite.vendorName or 'Sin marca' }}</div>

@@ -620,10 +620,10 @@
                     <!-- Image -->
                     <div class="product-image-container">
                         {% if producto.links and producto.links|length > 0 %}
-                            <img src="{{ producto.links[0].href }}" 
-                                 alt="{{ producto.description }}"
-                                 class="product-image"
-                                 onerror="this.src='https://via.placeholder.com/200x200?text=Sin+Imagen'">
+                            <img src="{{ get_image_url_enhanced(producto) }}" 
+                                alt="{{ producto.description }}" 
+                                class="product-image"
+                                onerror="this.src='https://via.placeholder.com/400x400/1C2A2F/FFFFFF?text=IT+DATA+GLOBAL'">
                         {% else %}
                             <img src="https://via.placeholder.com/200x200?text=Sin+Imagen" 
                                  alt="{{ producto.description }}"

@@ -294,7 +294,7 @@ def view_cart():
             formatted_total_with_tax=f"${total_with_tax:,.2f} MXN",
             count=len(cart_items),
             flash_message=flash_message,
-            get_product_image=get_product_image,
+            get_image_url_enhanced=ImageHandler.get_image_url_enhanced,
             user_type='public'
         )
         

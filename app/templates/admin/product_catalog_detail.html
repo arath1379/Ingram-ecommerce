@@ -159,14 +159,15 @@
             padding: 2rem;
         }
 
-        /* Product Image */
+        /* Product Image - CORREGIDO */
         .product-image-container {
             position: relative;
             background: linear-gradient(135deg, var(--background-color) 0%, #F1F5F9 100%);
             border-radius: 16px;
-            padding: 2.5rem;
+            padding: 1.5rem;
             margin-bottom: 2rem;
-            min-height: 350px;
+            min-height: 250px;
+            max-height: 280px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -175,8 +176,9 @@
 
         .product-image {
             width: 100%;
-            height: auto;
-            max-height: 350px;
+            height: 100%;
+            max-width: 240px;
+            max-height: 240px;
             object-fit: contain;
             transition: transform 0.4s ease;
         }
@@ -560,6 +562,16 @@
             .specs-table td:last-child {
                 padding-top: 0.5rem;
             }
+
+            .product-image-container {
+                min-height: 200px;
+                max-height: 220px;
+            }
+
+            .product-image {
+                max-width: 180px;
+                max-height: 180px;
+            }
         }
     </style>
 </head>
@@ -628,10 +640,10 @@
                     <div class="card-body-modern">
                         <!-- Product Image -->
                         <div class="product-image-container">
-                            <img src="{{ imagen_url if imagen_url else 'https://via.placeholder.com/400x400?text=Sin+Imagen' }}" 
-                                 alt="{{ detalle.description }}" 
-                                 class="product-image"
-                                 onerror="this.src='https://via.placeholder.com/400x400?text=Sin+Imagen'">
+                            <img src="{{ get_image_url_enhanced(detalle) }}" 
+                                alt="{{ detalle.description }}" 
+                                class="product-image"
+                                onerror="this.src='https://via.placeholder.com/400x400/1C2A2F/FFFFFF?text=IT+DATA+GLOBAL'">
                         </div>
                         
                         <!-- Price Section -->

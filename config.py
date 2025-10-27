@@ -35,6 +35,20 @@ class Config:
     INGRAM_API_KEY = os.getenv('INGRAM_API_KEY') or os.getenv('INGRAM_CLIENT_ID')
     INGRAM_API_SECRET = os.getenv('INGRAM_API_SECRET') or os.getenv('INGRAM_CLIENT_SECRET')
     
-    # Stripe Configuration - AGREGAR ESTAS LÍNEAS
+    # Stripe Configuration
     STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
     STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+    
+    # 🔥 NUEVAS CONFIGURACIONES PARA IMÁGENES 🔥
+    
+    # SerpAPI Configuration - Para búsqueda de imágenes con Vendor Part Number
+    SERPAPI_KEY = os.getenv('SERPAPI_API_KEY') or os.getenv('SERPAPI_KEY')
+    
+    # Unsplash API Configuration - Como respaldo
+    UNSPLASH_ACCESS_KEY = os.getenv('UNSPLASH_ACCESS_KEY')
+    
+    # Proxy/VPN Configuration (opcional)
+    PROXY_CONFIG = os.getenv('PROXY_CONFIG')
+    
+    # Configuración de cache para imágenes
+    IMAGE_CACHE_TIMEOUT = int(os.getenv('IMAGE_CACHE_TIMEOUT', 3600))  # 1 hora por defecto

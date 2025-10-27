@@ -871,8 +871,10 @@
                     {% for item in items %}
                     <div class="cart-item" data-part-number="{{ item.product.ingramPartNumber }}">
                         <div class="item-image-container">
-                            <img src="{{ item.product.productImages[0] if item.product.productImages else '/static/images/placeholder.jpg' }}" 
-                                 alt="{{ item.product.description }}" class="item-image" loading="lazy">
+                            <img src="{{ get_image_url_enhanced(item.product) }}" 
+                                alt="{{ item.product.description|default('Producto') }}" 
+                                class="item-image"
+                                onerror="this.src='https://via.placeholder.com/400x400/1C2A2F/FFFFFF?text=IT+DATA+GLOBAL'">
                         </div>
                         
                         <div class="item-details">

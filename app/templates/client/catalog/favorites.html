@@ -323,6 +323,7 @@
             height: 4px;
             background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
             border-radius: 20px 20px 0 0;
+            z-index: 1;
         }
 
         .favorite-card:hover {
@@ -330,6 +331,31 @@
             box-shadow: 
                 0 30px 60px rgba(28, 42, 47, 0.12),
                 0 15px 30px rgba(28, 42, 47, 0.06);
+        }
+
+        /* Contenedor de imagen con límites */
+        .card-image {
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            padding: 1.5rem;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            transition: transform 0.3s ease;
+        }
+
+        .favorite-card:hover .product-image {
+            transform: scale(1.05);
         }
 
         .card-header {
@@ -355,6 +381,12 @@
             color: var(--text-primary);
             margin-bottom: 1.5rem;
             line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-height: 2.8em;
         }
 
         .product-sku {
@@ -582,6 +614,10 @@
             .card-actions {
                 padding: 1.5rem;
             }
+
+            .card-image {
+                height: 240px;
+            }
         }
     </style>
 </head>
@@ -668,6 +704,12 @@
         <div class="favorites-grid">
             {% for favorite in favorites %}
             <div class="favorite-card">
+                <div class="card-image">
+                    <img src="{{ get_image_url_enhanced(favorite) }}" 
+                         alt="{{ favorite.description|default('Producto') }}" 
+                         class="product-image"
+                         onerror="this.src='https://via.placeholder.com/400x400/1C2A2F/FFFFFF?text=IT+DATA+GLOBAL'">
+                </div>
                 <div class="card-header">
                     <div class="vendor-name">
                         <i class="fas fa-tag"></i>

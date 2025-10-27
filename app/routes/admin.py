@@ -248,15 +248,8 @@ def products():
             page_size=page_size, 
             use_keywords=bool(query)
         )
-        
-        print(f"DEBUG - Productos recibidos: {len(productos)}")
-        
         # DEBUG DETALLADO DE LA ESTRUCTURA DE DATOS
         if productos:
-            print(f"DEBUG - Tipo de productos: {type(productos)}")
-            print(f"DEBUG - Primer producto completo: {productos[0]}")
-            print(f"DEBUG - Claves del primer producto: {list(productos[0].keys()) if isinstance(productos[0], dict) else 'No es dict'}")
-            
             # Buscar la clave correcta para el SKU
             primer_producto = productos[0]
             if isinstance(primer_producto, dict):
@@ -362,8 +355,6 @@ def products():
             producto_admin['ingram_part_number'] = sku
             productos_admin.append(producto_admin)
         
-        print(f"DEBUG - Productos después de procesar: {len(productos_admin)}")
-        
         # Cálculos de paginación
         total_pages = max(1, (total_records + page_size - 1) // page_size) if total_records > 0 else 1
         page_number = max(1, min(page_number, total_pages))
@@ -405,8 +396,7 @@ def product_catalog_detail(part_number):
             return redirect(url_for('admin.products', view='catalog'))
         
         user = User.query.get(session['user_id'])
-        print(f"✅ Detalle producto catálogo por: {user.email} - SKU: {part_number}")
-        
+
         # Detalle del producto
         detail_url = f"https://api.ingrammicro.com/resellers/v6/catalog/details/{part_number}"
         detalle_res = APIClient.make_request("GET", detail_url)
@@ -452,7 +442,6 @@ def product_catalog_detail(part_number):
                 precio_publico_val = round(precio_original_val * 1.15, 2)
                 precio_publico_formatted = ProductUtils.format_currency(precio_publico_val, currency)
             except Exception as e:
-                print(f"Error formateando precios: {e}")
                 precio_original_formatted = "Consultar"
                 precio_publico_formatted = "Consultar"
         else:
@@ -490,7 +479,7 @@ def product_catalog_detail(part_number):
             disponibilidad=disponibilidad,
             inventory_info=inventory_info,
             atributos=atributos,
-            imagen_url=imagen_url,
+            get_image_url_enhanced=ImageHandler.get_image_url_enhanced,
             part_number=part_number
         )
     
@@ -1499,12 +1488,10 @@ def purchases():
             page=page, per_page=per_page, error_out=False
         )
         
-        # CORREGIDO: Cargar carritos con información de productos usando joinedload
         active_carts = Cart.query.options(
             joinedload(Cart.items).joinedload(CartItem.product)
         ).filter(Cart.status == 'active').order_by(Cart.updated_at.desc()).all()
         
-        # ✅ CORREGIDO: Calcular totales CON IVA para carritos activos
         carts_with_tax = []
         for cart in active_carts:
             # Calcular subtotal
